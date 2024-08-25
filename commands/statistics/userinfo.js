@@ -98,6 +98,7 @@ module.exports = {
         .setColor("#80bdff")
         .setThumbnail(`https://tetr.io/user-content/avatars/${statDt._id}.jpg`)
         .setTitle(`${capitalizeFirstLetter(statDt.username)}'s Profile:`)
+        .setURL(`https://ch.tetr.io/u/${statDt.username}`)
         .setFooter({ text: `User ID: ${statDt._id} | Role: ${statDt.role}`})
         .setDescription(`
 ${statDt.bio || ""}
@@ -107,12 +108,8 @@ Level ${formatNumber(Math.round(calculateLevel(statDt.xp)))} (${formatNumber(Mat
 Country: ${country}
 Friends: ${statDt.friend_count}
 ${supporterConvert(statDt.supporter, statDt.supporter_tier)}
-${badgesConvert(badgeArray)}Achievement Rating: ${statDt.ar}
-${achievementCountsConvert(statDt.ar_counts)}${gamesPlayedConvert(statDt.gamesplayed, statDt.gameswon, statDt.gametime)}
-${formatZenith(sumDt, country)}
-${formatZenithExpert(sumDt, country)}
-${format40Lines(sumDt, country)}
-${formatBlitz(sumDt, country)}
+${badgesConvert(badgeArray)}Achievement Rating: ${statDt.ar}${achievementCountsConvert(statDt.ar_counts)}${gamesPlayedConvert(statDt.gamesplayed, statDt.gameswon, statDt.gametime)}
+${formatLeague(sumDt, country)}${formatZenith(sumDt, country)}${formatZenithExpert(sumDt, country)}${format40Lines(sumDt, country)}${formatBlitz(sumDt, country)}${formatZen(sumDt)}
 ${connectionsConvert(statDt.connections)}
             `)
         .setTimestamp();
@@ -178,7 +175,7 @@ function supporterConvert(supporter, supporterTier) {
             supporterString = supporterString.concat("<:supporter_star:1277300953111855231>")
             
         }
-        return (`Supporter:${supporterString}\n`)
+        return (`Supporter${supporterString}\n`)
     } else {
         return ""
     }
@@ -239,7 +236,7 @@ function achievementCountsConvert(ar_counts) {
     }
 
     // Join the list items with pipes (|) and return the formatted string
-    return formattedList.join(' | ');
+    return "\n"+formattedList.join(' | ');
 }
 
 function connectionsConvert(connections) {
@@ -265,7 +262,7 @@ function connectionsConvert(connections) {
     }
 
     // Join the list items with new lines and return the formatted string
-    return "__**Connections:**__\n"+formattedList.join('\n');
+    return "__**Connections:**__ \n"+formattedList.join('\n');
 }
 
 function reformatTimestamp(isoString) {
@@ -307,7 +304,7 @@ function calculateLevel(xp) {
 function format40Lines(statistics, country) {
     if (statistics['40l'].record) {
         let flStatistics = statistics['40l'];
-        return `### <:40lines:1277298516380614786> 40 Lines:
+        return `\n### <:40lines:1277298516380614786> 40 Lines:
 - PB: ${convertToTimeFormat(flStatistics.record.results.stats.finaltime)}s (${Math.round(flStatistics.record.results.aggregatestats.pps*100)/100} PPS)
 - Rank: #${formatNumber(flStatistics.rank)} (#${formatNumber(flStatistics.rank_local)} ${country})`
     } else {
@@ -318,7 +315,7 @@ function format40Lines(statistics, country) {
 function formatBlitz(statistics, country) {
     if (statistics['blitz'].record) {
         let blStatistics = statistics['blitz'];
-        return `### <:blitz:1277298507920838718> Blitz:
+        return `\n### <:blitz:1277298507920838718> Blitz:
 - PB: ${formatNumber(blStatistics.record.results.stats.score)} (${Math.round(blStatistics.record.results.aggregatestats.pps*100)/100} PPS)
 - Rank: #${formatNumber(blStatistics.rank)} (#${formatNumber(blStatistics.rank_local)} ${country})`
     } else {
@@ -329,7 +326,7 @@ function formatBlitz(statistics, country) {
 function formatZenith(statistics, country) {
     if (statistics['zenith'].record) {
         let zStatistics = statistics['zenith'];
-        return `### <:quickplay:1277296551428886588> Quick Play:
+        return `\n### <:quickplay:1277296551428886588> Quick Play:
 - PB: ${formatNumber(Math.round(zStatistics.record.results.stats.zenith.altitude*100)/100)}m
 - Rank: #${formatNumber(zStatistics.rank)} (#${formatNumber(zStatistics.rank_local)} ${country})
 - All-Time Best: ${formatNumber(Math.round(zStatistics.best.record.results.stats.zenith.altitude*100)/100)}m (#${formatNumber(zStatistics.best.rank)})`
@@ -341,11 +338,91 @@ function formatZenith(statistics, country) {
 function formatZenithExpert(statistics, country) {
     if (statistics['zenithex'].record) {
         let zxStatistics = statistics['zenithex'];
-        return `### <:quickplayexpert:1277351744413896724> Expert Quick Play:
+        return `\n### <:quickplayexpert:1277351744413896724> Expert Quick Play:
 - PB: ${formatNumber(Math.round(zxStatistics.record.results.stats.zenith.altitude*100)/100)}m
 - Rank: #${formatNumber(zxStatistics.rank)} (#${formatNumber(zxStatistics.rank_local)} ${country})
 - All-Time Best: ${formatNumber(Math.round(zxStatistics.best.record.results.stats.zenith.altitude*100)/100)}m (#${formatNumber(zxStatistics.best.rank)})`
     } else {
         return ""
+    }
+}
+
+function formatZen(statistics) {
+    if (statistics['zen']) {
+        let zenStatistics = statistics['zen'];
+        return `\n### <:zen:1277364107883974676> Zen:
+- Level ${zenStatistics.level} (${formatNumber(Math.round(zenStatistics.score))})`
+    } else {
+        return ""
+    }
+}
+
+function formatLeague(statistics, country)  {
+    const leagueStats = statistics['league']
+    console.log(leagueStats)
+
+    const rankEmojis = {
+        "rank_xplus": "1277293685058310288",
+        "rank_x": "1277293677873463368",
+        "rank_u": "1277293667891286046",
+        "rank_ss": "1277293658403770388",
+        "rank_splus": "1277293647225819196",
+        "rank_s": "1277293636928933888",
+        "rank_sminus": "1277293624157278228",
+        "rank_aplus": "1277293615114358997",
+        "rank_a": "1277293607648231527",
+        "rank_aminus": "1277293600438227106",
+        "rank_bplus": "1277293592511250553",
+        "rank_b": "1277293576895856751",
+        "rank_bminus": "1277293566284267581",
+        "rank_cplus": "1277293553147449505",
+        "rank_c": "1277293540547756115",
+        "rank_cminus": "1277293530095685745",
+        "rank_dplus": "1277293513616265216",
+        "rank_d": "1277293312696516690",
+        "rank_z": "1277382169538461746"
+    }
+
+    if (leagueStats.gamesplayed === 0) {
+        return '';
+    }
+
+    let gamesPlayed = leagueStats.gamesplayed;
+    let gamesWon = leagueStats.gameswon;
+    let glicko = leagueStats.glicko;
+    let ratingDeviation = leagueStats.rd;
+    let rating = leagueStats.tr;
+    let glixaire = leagueStats.gxe;
+    let rank = leagueStats.rank;
+
+    // Convert to desired format
+    let formattedRank = 'rank_' + rank.toLowerCase().replace("+", "plus").replace("-", "minus");
+
+    if (rating < 0) {
+        rating = `${leagueStats.gamesplayed}/10 Rating Games Played`
+    } else if (ratingDeviation > 100) {
+        rating = `Unranked`;
+    } else {
+        rating = `${(Math.floor(rating*100))/100} TR`
+    }
+
+    return `## <:league:1277378168717840497> Tetra League:
+# <:${formattedRank}:${rankEmojis[formattedRank]}> ${formatNumber(rating)}${formatLeagueStanding(leagueStats.standing, leagueStats.standing_local, glicko, ratingDeviation, country)}
+**Record: ${gamesWon}/${gamesPlayed}** (${Math.round(10000*(gamesWon/gamesPlayed))/100}%)
+
+Attack Per Minute: ${leagueStats.apm}
+Pieces Per Second: ${leagueStats.pps}
+Versus Score: ${leagueStats.vs}
+`
+
+}
+
+
+function formatLeagueStanding(standing, localStanding, glicko, ratingDeviation, country) {
+    if (standing > 0) {
+        return `\n**\\\#${formatNumber(standing)}** (#${formatNumber(localStanding)} ${country})
+**Glicko: ${formatNumber((Math.floor(glicko*100))/100)} ± ${(Math.floor(ratingDeviation*100))/100}**`
+    } else {
+        return ''
     }
 }
