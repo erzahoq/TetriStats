@@ -90,24 +90,6 @@ module.exports = {
         const sumDt = summary.data
 
         let country = countryCodeToEmoji(statDt.country);
-    
-        //console.log(sumDt['zenith'].record.results)
-
-        let gamesPlayed = statDt.gamesplayed
-        let gamesWon = statDt.gameswon
-        let gamesTime = statDt.gametime
-
-        if (gamesPlayed === -1) {
-            gamesPlayed = 'Hidden'
-        }
-
-        if (gamesWon === -1) {
-            gamesWon = 'Hidden'
-        }
-
-        if (gamesTime === -1) {
-            gamesTime = 'Hidden'
-        }
 
         let badgeArray = statDt.badges.map(badge => badge.id);
 
@@ -125,23 +107,15 @@ Level ${formatNumber(Math.round(calculateLevel(statDt.xp)))} (${formatNumber(Mat
 Country: ${country}
 Friends: ${statDt.friend_count}
 ${supporterConvert(statDt.supporter, statDt.supporter_tier)}
-
-**Badges:** ${badgeArray.length}
-Achievement Rating: ${statDt.ar}
-${achievementCountsConvert(statDt.ar_counts)}
-
-__**Connections:**__
-${connectionsConvert(statDt.connections)}
-
-### Games Played: ${gamesPlayed}
-- Games Won: ${gamesWonConvert(gamesWon, gamesPlayed)}
-- Playtime: ${playtimeConvert(gamesTime)}
-## Records:
+${badgesConvert(badgeArray)}Achievement Rating: ${statDt.ar}
+${achievementCountsConvert(statDt.ar_counts)}${gamesPlayedConvert(statDt.gamesplayed, statDt.gameswon, statDt.gametime)}
+${formatZenith(sumDt, country)}
+${formatZenithExpert(sumDt, country)}
 ${format40Lines(sumDt, country)}
 ${formatBlitz(sumDt, country)}
+${connectionsConvert(statDt.connections)}
             `)
         .setTimestamp();
-
         await interaction.reply({embeds: [userEmbed]}) 
 
 
@@ -160,9 +134,9 @@ function gamesWonConvert(gamesWon, gamesPlayed) {
 
 function badgesConvert(badgelist) {
     if (badgelist.length > 0) {
-        return `${badgelist}`
+        return `**Badges**: ${badgelist.length} | `
     } else {
-        return `None`
+        return ``
     }
 }
 
@@ -186,6 +160,16 @@ function playtimeConvert(playtime) {
     return `${Math.round(secondsToHours(playtime)*10)/10} Hours`    
 }
 
+function gamesPlayedConvert(gamesplayed, gameswon, gamestime) {
+    if (gamesplayed > -1) {
+        return `\n### Games Played: ${gamesplayed}
+- Games Won: ${gamesWonConvert(gameswon, gamesplayed)}
+- Playtime: ${playtimeConvert(gamestime)}`
+    } else {
+        return ""
+    }
+}
+
 function supporterConvert(supporter, supporterTier) {
     if (supporter) {
         let supporterString = '';
@@ -194,7 +178,7 @@ function supporterConvert(supporter, supporterTier) {
             supporterString = supporterString.concat("<:supporter_star:1277300953111855231>")
             
         }
-        return (`Supporter:${supporterString}`)
+        return (`Supporter:${supporterString}\n`)
     } else {
         return ""
     }
@@ -277,11 +261,11 @@ function connectionsConvert(connections) {
     });
 
     if (formattedList.length === 0) {
-        return 'None'
+        return ''
     }
 
     // Join the list items with new lines and return the formatted string
-    return formattedList.join('\n');
+    return "__**Connections:**__\n"+formattedList.join('\n');
 }
 
 function reformatTimestamp(isoString) {
@@ -333,12 +317,35 @@ function format40Lines(statistics, country) {
 
 function formatBlitz(statistics, country) {
     if (statistics['blitz'].record) {
-        let flStatistics = statistics['blitz'];
+        let blStatistics = statistics['blitz'];
         return `### <:blitz:1277298507920838718> Blitz:
-- PB: ${formatNumber(flStatistics.record.results.stats.score)} (${Math.round(flStatistics.record.results.aggregatestats.pps*100)/100} PPS)
-- Rank: #${formatNumber(flStatistics.rank)} (#${formatNumber(flStatistics.rank_local)} ${country})`
+- PB: ${formatNumber(blStatistics.record.results.stats.score)} (${Math.round(blStatistics.record.results.aggregatestats.pps*100)/100} PPS)
+- Rank: #${formatNumber(blStatistics.rank)} (#${formatNumber(blStatistics.rank_local)} ${country})`
     } else {
         return ""
     }
 }
 
+function formatZenith(statistics, country) {
+    if (statistics['zenith'].record) {
+        let zStatistics = statistics['zenith'];
+        return `### <:quickplay:1277296551428886588> Quick Play:
+- PB: ${formatNumber(Math.round(zStatistics.record.results.stats.zenith.altitude*100)/100)}m
+- Rank: #${formatNumber(zStatistics.rank)} (#${formatNumber(zStatistics.rank_local)} ${country})
+- All-Time Best: ${formatNumber(Math.round(zStatistics.best.record.results.stats.zenith.altitude*100)/100)}m (#${formatNumber(zStatistics.best.rank)})`
+    } else {
+        return ""
+    }
+}
+
+function formatZenithExpert(statistics, country) {
+    if (statistics['zenithex'].record) {
+        let zxStatistics = statistics['zenithex'];
+        return `### <:quickplayexpert:1277351744413896724> Expert Quick Play:
+- PB: ${formatNumber(Math.round(zxStatistics.record.results.stats.zenith.altitude*100)/100)}m
+- Rank: #${formatNumber(zxStatistics.rank)} (#${formatNumber(zxStatistics.rank_local)} ${country})
+- All-Time Best: ${formatNumber(Math.round(zxStatistics.best.record.results.stats.zenith.altitude*100)/100)}m (#${formatNumber(zxStatistics.best.rank)})`
+    } else {
+        return ""
+    }
+}
