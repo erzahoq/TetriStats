@@ -341,3 +341,4 @@ function formatBlitz(statistics, country) {
         return ""
     }
 }
+
