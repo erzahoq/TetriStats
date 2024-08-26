@@ -324,13 +324,20 @@ function formatBlitz(statistics, country) {
 }
 
 function formatZenith(statistics, country) {
-    if (statistics['zenith'].record) {
+    if (statistics['zenith'].record && statistics['zenith'].best.record) {
         let zStatistics = statistics['zenith'];
         return `\n### <:quickplay:1277296551428886588> Quick Play:
 - PB: ${formatNumber(Math.round(zStatistics.record.results.stats.zenith.altitude*100)/100)}m
 - Rank: #${formatNumber(zStatistics.rank)} (#${formatNumber(zStatistics.rank_local)} ${country})
 - All-Time Best: ${formatNumber(Math.round(zStatistics.best.record.results.stats.zenith.altitude*100)/100)}m (#${formatNumber(zStatistics.best.rank)})`
-    } else {
+    } else if (statistics['zenith'].record) {
+        let zStatistics = statistics['zenith'];
+        return `\n### <:quickplay:1277296551428886588> Quick Play:
+        - PB: ${formatNumber(Math.round(zStatistics.record.results.stats.zenith.altitude*100)/100)}m
+        - Rank: #${formatNumber(zStatistics.rank)} (#${formatNumber(zStatistics.rank_local)} ${country})
+        - All-Time Best: ${formatNumber(Math.round(zStatistics.record.results.stats.zenith.altitude*100)/100)}m`
+    }
+    else {
         return ""
     }
 }
@@ -359,7 +366,61 @@ function formatZen(statistics) {
 
 function formatLeague(statistics, country)  {
     const leagueStats = statistics['league']
-    console.log(leagueStats)
+
+    if (leagueStats.gamesplayed === 0) {
+        return '';
+    }
+
+    let gamesPlayed = leagueStats.gamesplayed;
+    let gamesWon = leagueStats.gameswon;
+    let glicko = leagueStats.glicko;
+    let ratingDeviation = leagueStats.rd;
+    let rating = leagueStats.tr;
+    let glixaire = leagueStats.gxe;
+    let rank = leagueStats.rank;
+    let rankBoolean = true;
+
+    let progressToNextRank = (leagueStats.prev_at - leagueStats.standing)/(leagueStats.prev_at - leagueStats.next_at)
+
+    let prevRank = leagueStats.prev_rank;
+    let nextRank = leagueStats.next_rank;
+
+    if (!nextRank && prevRank === 'x') {
+        prevRank = 'x+'
+        nextRank = '#1'
+    }
+
+    if (!prevRank && nextRank === 'd+') {
+        prevRank = "d"
+    }
+
+    if (rating < 0) {
+        rating = `${leagueStats.gamesplayed}/10 Rating Games Played`
+        rankBoolean = false;
+    } else if (ratingDeviation > 100) {
+        rating = `Unranked`;
+        rankBoolean = false;
+    } else {
+        rating = `${(Math.round(rating*100))/100} TR`
+    }
+
+    return `## <:league:1277378168717840497> Tetra League:
+# ${getEmojiOfRank(rank)} ${formatNumber(rating)}${formatLeagueStanding(leagueStats.standing, leagueStats.standing_local, glicko, ratingDeviation, country)}
+**Record: ${gamesWon}/${gamesPlayed}** (${Math.round(10000*(gamesWon/gamesPlayed))/100}%)
+
+Attack Per Minute: ${leagueStats.apm}
+Pieces Per Second: ${leagueStats.pps}
+Versus Score: ${leagueStats.vs}${generateProgressBar(rankBoolean, progressToNextRank, getEmojiOfRank(prevRank), getEmojiOfRank(nextRank))}`
+}
+
+function getEmojiOfRank(rank) {
+    if (!rank) {
+        return;
+    }
+
+    if (rank === '#1') {
+        return rank
+    }
 
     const rankEmojis = {
         "rank_xplus": "1277293685058310288",
@@ -382,47 +443,35 @@ function formatLeague(statistics, country)  {
         "rank_d": "1277293312696516690",
         "rank_z": "1277382169538461746"
     }
-
-    if (leagueStats.gamesplayed === 0) {
-        return '';
-    }
-
-    let gamesPlayed = leagueStats.gamesplayed;
-    let gamesWon = leagueStats.gameswon;
-    let glicko = leagueStats.glicko;
-    let ratingDeviation = leagueStats.rd;
-    let rating = leagueStats.tr;
-    let glixaire = leagueStats.gxe;
-    let rank = leagueStats.rank;
-
-    // Convert to desired format
     let formattedRank = 'rank_' + rank.toLowerCase().replace("+", "plus").replace("-", "minus");
-
-    if (rating < 0) {
-        rating = `${leagueStats.gamesplayed}/10 Rating Games Played`
-    } else if (ratingDeviation > 100) {
-        rating = `Unranked`;
-    } else {
-        rating = `${(Math.floor(rating*100))/100} TR`
-    }
-
-    return `## <:league:1277378168717840497> Tetra League:
-# <:${formattedRank}:${rankEmojis[formattedRank]}> ${formatNumber(rating)}${formatLeagueStanding(leagueStats.standing, leagueStats.standing_local, glicko, ratingDeviation, country)}
-**Record: ${gamesWon}/${gamesPlayed}** (${Math.round(10000*(gamesWon/gamesPlayed))/100}%)
-
-Attack Per Minute: ${leagueStats.apm}
-Pieces Per Second: ${leagueStats.pps}
-Versus Score: ${leagueStats.vs}
-`
-
+    return `<:${formattedRank}:${rankEmojis[formattedRank]}>`
 }
 
 
 function formatLeagueStanding(standing, localStanding, glicko, ratingDeviation, country) {
     if (standing > 0) {
         return `\n**\\\#${formatNumber(standing)}** (#${formatNumber(localStanding)} ${country})
-**Glicko: ${formatNumber((Math.floor(glicko*100))/100)} ± ${(Math.floor(ratingDeviation*100))/100}**`
+**Glicko: ${formatNumber((Math.round(glicko*100))/100)} ± ${(Math.round(ratingDeviation*100))/100}**`
     } else {
         return ''
     }
 }
+
+function generateProgressBar(generateBar, progress, symbolA, symbolB, length = 14) {
+    if (!generateBar) {
+        return '';
+    }
+
+    // Ensure the progress is within the 0-1 range
+    progress = Math.max(0, Math.min(progress, 1));
+
+    // Calculate the position of the "!" marker
+    const position = Math.round(progress * length);
+
+    // Generate the progress bar
+    const bar = Array.from({ length: length }, (_, i) => (i === position ? "<:bar_half:1277414382795489412>" : (i < position ? "<:bar_full:1277414375988400128>" : "<:bar_empty:1277414391201005589>"))).join("");
+
+    // Return the complete progress bar with symbols
+    return `\n\n${symbolA} <:bar_start:1277414364432830545>${bar}<:bar_end:1277414398713004116> ${symbolB}\n\n`;
+}
+
