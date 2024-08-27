@@ -1,39 +1,16 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
-import('node-fetch'); // Ensure 'node-fetch' is imported properly
+const { SlashCommandBuilder, EmbedBuilder, MessageButton } = require('discord.js');
+import("node-fetch");
 
 module.exports = {
-	data: new SlashCommandBuilder()
-		.setName('user-info')
-		.setDescription('Get detailed information about a specific user via their TETR.IO (or Discord) username/ID.')
-        .addSubcommand(subcommand =>
-            subcommand
-                .setName('tetrio')
-                .setDescription('Get detailed information about a specific user via their TETR.IO username/ID.')
-                .addStringOption((option) =>
-                    option
-                      .setName('user')
-                      .setDescription('the username/ID to search for')
-                      .setRequired(true),
-                  ),
-        )        
-        .addSubcommand(subcommand =>
-            subcommand
-                .setName('discord')
-                .setDescription('Get info about a specific user via their Discord, the user must have linked their Discord to TETR.IO')
-                .addUserOption((option) =>
-                    option
-                      .setName('user')
-                      .setDescription('the discord user to search for')
-                      .setRequired(true),
-                  ),
-            ),
-
 	async execute(interaction) {
-        let stats, summary;
+        let response;
+        let stats;
+        let summary;
+
         if (interaction.options.getSubcommand() === 'tetrio') {
 			const user = interaction.options.getString('user').toLowerCase();
 
-            const response = await fetch(`https://ch.tetr.io/api/users/${user}`);
+            response = await fetch(`https://ch.tetr.io/api/users/${user}`);
             stats = await response.json();
 
             if (!stats.success) {
@@ -56,7 +33,8 @@ module.exports = {
 		} else if (interaction.options.getSubcommand() === 'discord') {
 			const user = interaction.options.getUser('user');
 
-            let response = await fetch(`https://ch.tetr.io/api/users/search/discord:${user.id}`);
+            response = await fetch(`https://ch.tetr.io/api/users/search/discord:${user.id}`);
+
             stats = await response.json();
 
             if (stats.data === null) {
@@ -82,87 +60,39 @@ module.exports = {
             summary = await summaryRaw.json();
 		}
 
-        const statData = stats.data;
-        const summaryData = summary.data;
+        const statDt = stats.data
+        const sumDt = summary.data
 
-        const country = countryCodeToEmoji(statData.country);
+        let country = countryCodeToEmoji(statDt.country);
 
-        const badgeArray = statData.badges.map(badge => badge.id);
-        
+        let badgeArray = statDt.badges.map(badge => badge.id);
 
-        const pages = [
-            new EmbedBuilder()
-                .setColor("#80bdff")
-                .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
-                .setTitle(`${capitalizeFirstLetter(statData.username)}'s Profile:`)
-                .setURL(`https://ch.tetr.io/u/${statData.username}`)
-                .setFooter({ text: `User ID: ${statData._id} | Role: ${statData.role}`})
-                .setDescription(`
-## General Information
 
-${statData.bio || ""}
+        const userEmbed = new EmbedBuilder()
+        .setColor("#80bdff")
+        .setThumbnail(`https://tetr.io/user-content/avatars/${statDt._id}.jpg`)
+        .setTitle(`${capitalizeFirstLetter(statDt.username)}'s Profile:`)
+        .setURL(`https://ch.tetr.io/u/${statDt.username}`)
+        .setFooter({ text: `User ID: ${statDt._id} | Role: ${statDt.role}`})
+        .setDescription(`
+${statDt.bio || ""}
 
-Account Creation: ${reformatTimestamp(statData.ts)}
-Level ${formatNumber(Math.round(calculateLevel(statData.xp)))} (${formatNumber(Math.round(statData.xp))} XP)
+Account Creation: ${reformatTimestamp(statDt.ts) || "Before join dates were recorded"}
+Level ${formatNumber(Math.round(calculateLevel(statDt.xp)))} (${formatNumber(Math.round(statDt.xp))} XP)
 Country: ${country}
-Friends: ${statData.friend_count}
-${supporterConvert(statData.supporter, statData.supporter_tier)}
-Achievement Rating: ${statData.ar}${badgesConvert(badgeArray)}${achievementCountsConvert(statData.ar_counts)}${gamesPlayedConvert(statData.gamesplayed, statData.gameswon, statData.gametime)}
+Friends: ${statDt.friend_count}
+${supporterConvert(statDt.supporter, statDt.supporter_tier)}
+${badgesConvert(badgeArray)}Achievement Rating: ${statDt.ar}${achievementCountsConvert(statDt.ar_counts)}${gamesPlayedConvert(statDt.gamesplayed, statDt.gameswon, statDt.gametime)}
+${formatLeague(sumDt, country)}${formatZenith(sumDt, country)}${formatZenithExpert(sumDt, country)}${format40Lines(sumDt, country)}${formatBlitz(sumDt, country)}${formatZen(sumDt)}
+${connectionsConvert(statDt.connections)}
+            `)
+        .setTimestamp();
 
-${connectionsConvert(statData.connections)}
-                    `)
-                    .setTimestamp(),
-            new EmbedBuilder()
-                .setColor("#ff7dc0")
-                .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
-                .setTitle(`${capitalizeFirstLetter(statData.username)}'s Profile:`)
-                .setURL(`https://ch.tetr.io/u/${statData.username}`)
-                .setFooter({ text: `User ID: ${statData._id} | Role: ${statData.role}`})
-                .setDescription(`
-## Records:
-${formatZenith(summaryData, country)}${formatZenithExpert(summaryData, country)}${format40Lines(summaryData, country)}${formatBlitz(summaryData, country)}${formatZen(summaryData)}
-                    `)
-                .setTimestamp(),
-            new EmbedBuilder()
-                .setColor("#ff9d7d")
-                .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
-                .setTitle(`${capitalizeFirstLetter(statData.username)}'s Profile:`)
-                .setURL(`https://ch.tetr.io/u/${statData.username}`)
-                .setFooter({ text: `User ID: ${statData._id} | Role: ${statData.role}`})
-                .setDescription(`${formatLeague(summaryData, country)}`)
-        ];
+        await interaction.reply({embeds: [userEmbed]}) 
 
-        // Initial row of buttons
-		const row = new ActionRowBuilder().addComponents(
-			new ButtonBuilder()
-				.setCustomId('profilepage_0')
-				.setLabel('General')
-				.setStyle(ButtonStyle.Primary)
-				.setDisabled(true), // Disable the first button initially
-			new ButtonBuilder()
-				.setCustomId('profilepage_1')
-				.setLabel('Records')
-				.setStyle(ButtonStyle.Primary),
-			new ButtonBuilder()
-				.setCustomId('profilepage_2')
-				.setLabel('Tetra League')
-				.setStyle(ButtonStyle.Primary)
-		);
 
-		// Send the initial message with the first page and buttons
-		await interaction.reply({
-			embeds: [pages[0]],
-			components: [row]
-		});
 
-		// Attach pages to the interaction for future reference
-		interaction.client.pageData = {
-			[interaction.id]: {
-				pages,
-				currentPage: 0
-			}
-		};
-    }
+	},
 };
 
 
@@ -176,7 +106,7 @@ function gamesWonConvert(gamesWon, gamesPlayed) {
 
 function badgesConvert(badgelist) {
     if (badgelist.length > 0) {
-        return ` | **Badges**: ${badgelist.length}`
+        return `**Badges**: ${badgelist.length} | `
     } else {
         return ``
     }
@@ -217,7 +147,7 @@ function supporterConvert(supporter, supporterTier) {
         let supporterString = '';
 
         for (let i = 1; i < supporterTier; i++) {
-            supporterString = supporterString.concat(" <:supporter_star:1277300953111855231>")
+            supporterString = supporterString.concat("<:supporter_star:1277300953111855231>")
             
         }
         return (`Supporter${supporterString}\n`)
@@ -311,10 +241,6 @@ function connectionsConvert(connections) {
 }
 
 function reformatTimestamp(isoString) {
-    if (!isoString) {
-        return "Before account creation was tracked"
-    }
-
     // Create a Date object from the ISO string
     const date = new Date(isoString);
 
@@ -373,42 +299,34 @@ function formatBlitz(statistics, country) {
 }
 
 function formatZenith(statistics, country) {
-    let zenithText = ''
-    let zStatistics = statistics['zenith'];
-
-    if (statistics['zenith'].record) {
-        zenithText += `\n- PB: ${formatNumber(Math.round(zStatistics.record.results.stats.zenith.altitude*100)/100)}m
-- #${formatNumber(zStatistics.rank)} (#${formatNumber(zStatistics.rank_local)} ${country})`
+    if (statistics['zenith'].record && statistics['zenith'].best.record) {
+        let zStatistics = statistics['zenith'];
+        return `\n### <:quickplay:1277296551428886588> Quick Play:
+- PB: ${formatNumber(Math.round(zStatistics.record.results.stats.zenith.altitude*100)/100)}m
+- Rank: #${formatNumber(zStatistics.rank)} (#${formatNumber(zStatistics.rank_local)} ${country})
+- All-Time Best: ${formatNumber(Math.round(zStatistics.best.record.results.stats.zenith.altitude*100)/100)}m (#${formatNumber(zStatistics.best.rank)})`
+    } else if (statistics['zenith'].record) {
+        let zStatistics = statistics['zenith'];
+        return `\n### <:quickplay:1277296551428886588> Quick Play:
+        - PB: ${formatNumber(Math.round(zStatistics.record.results.stats.zenith.altitude*100)/100)}m
+        - Rank: #${formatNumber(zStatistics.rank)} (#${formatNumber(zStatistics.rank_local)} ${country})
+        - All-Time Best: ${formatNumber(Math.round(zStatistics.record.results.stats.zenith.altitude*100)/100)}m`
     }
-    if (statistics['zenith'].best.record) {
-        zenithText += `\n- All-Time Best: ${formatNumber(Math.round(zStatistics.best.record.results.stats.zenith.altitude*100)/100)}m (#${formatNumber(zStatistics.best.rank)})`
+    else {
+        return ""
     }
-
-    if (zenithText.length > 0) {
-        zenithText = `\n### <:quickplay:1277296551428886588> Quick Play:` + zenithText 
-    }
-
-    return zenithText;
-
 }
 
 function formatZenithExpert(statistics, country) {
-    let zenithText = ''
-    let zStatistics = statistics['zenithex'];
-
     if (statistics['zenithex'].record) {
-        zenithText += `\n- PB: ${formatNumber(Math.round(zStatistics.record.results.stats.zenith.altitude*100)/100)}m
-- #${formatNumber(zStatistics.rank)} (#${formatNumber(zStatistics.rank_local)} ${country})`
+        let zxStatistics = statistics['zenithex'];
+        return `\n### <:quickplayexpert:1277351744413896724> Expert Quick Play:
+- PB: ${formatNumber(Math.round(zxStatistics.record.results.stats.zenith.altitude*100)/100)}m
+- Rank: #${formatNumber(zxStatistics.rank)} (#${formatNumber(zxStatistics.rank_local)} ${country})
+- All-Time Best: ${formatNumber(Math.round(zxStatistics.best.record.results.stats.zenith.altitude*100)/100)}m (#${formatNumber(zxStatistics.best.rank)})`
+    } else {
+        return ""
     }
-    if (statistics['zenithex'].best.record) {
-        zenithText += `\n- All-Time Best: ${formatNumber(Math.round(zStatistics.best.record.results.stats.zenith.altitude*100)/100)}m (#${formatNumber(zStatistics.best.rank)})`
-    }
-
-    if (zenithText.length > 0) {
-        zenithText = `\n### <:quickplayexpert:1277351744413896724> Expert Quick Play:` + zenithText 
-    }
-
-    return zenithText;
 }
 
 function formatZen(statistics) {
@@ -424,6 +342,10 @@ function formatZen(statistics) {
 function formatLeague(statistics, country)  {
     const leagueStats = statistics['league']
 
+    if (leagueStats.gamesplayed === 0) {
+        return '';
+    }
+
     let gamesPlayed = leagueStats.gamesplayed;
     let gamesWon = leagueStats.gameswon;
     let glicko = leagueStats.glicko;
@@ -431,8 +353,6 @@ function formatLeague(statistics, country)  {
     let rating = leagueStats.tr;
     let glixaire = leagueStats.gxe;
     let rank = leagueStats.rank;
-
-
     let rankBoolean = true;
 
     let progressToNextRank = (leagueStats.prev_at - leagueStats.standing)/(leagueStats.prev_at - leagueStats.next_at)
@@ -449,27 +369,9 @@ function formatLeague(statistics, country)  {
         prevRank = "d"
     }
 
-    prevRank = getEmojiOfRank(prevRank);
-    nextRank = getEmojiOfRank(nextRank);
-
-    let glixaireDisplay = "";
-
-    let recordDisplay = Math.round(10000*(gamesWon/gamesPlayed))/100;
-
-    if (glixaire !== -1) {
-        glixaireDisplay = `Win Odds: ${Math.round(glixaire*100)/100}%\n`
-    }
-
     if (rating < 0) {
-        if (leagueStats.gamesplayed === 0) {
-            recordDisplay = 0;
-        }
         rating = `${leagueStats.gamesplayed}/10 Rating Games Played`
-        progressToNextRank = leagueStats.gamesplayed/10
-            prevRank = '';
-            nextRank = '<:rank_z:1277382169538461746>';
-        
-        rankBoolean = "yesnt";
+        rankBoolean = false;
     } else if (ratingDeviation > 100) {
         rating = `Unranked`;
         rankBoolean = false;
@@ -477,13 +379,13 @@ function formatLeague(statistics, country)  {
         rating = `${(Math.round(rating*100))/100} TR`
     }
 
-    return `# <:league:1277378168717840497> Tetra League:
+    return `## <:league:1277378168717840497> Tetra League:
 # ${getEmojiOfRank(rank)} ${formatNumber(rating)}${formatLeagueStanding(leagueStats.standing, leagueStats.standing_local, glicko, ratingDeviation, country)}
-**Record: ${gamesWon}/${gamesPlayed}** (${recordDisplay}%)
-${glixaireDisplay}
-Attack Per Minute: ${leagueStats.apm || 0}
-Pieces Per Second: ${leagueStats.pps || 0}
-Versus Score: ${leagueStats.vs || 0}${generateProgressBar(rankBoolean, progressToNextRank, prevRank, nextRank)}`
+**Record: ${gamesWon}/${gamesPlayed}** (${Math.round(10000*(gamesWon/gamesPlayed))/100}%)
+
+Attack Per Minute: ${leagueStats.apm}
+Pieces Per Second: ${leagueStats.pps}
+Versus Score: ${leagueStats.vs}${generateProgressBar(rankBoolean, progressToNextRank, getEmojiOfRank(prevRank), getEmojiOfRank(nextRank))}`
 }
 
 function getEmojiOfRank(rank) {
@@ -535,12 +437,6 @@ function generateProgressBar(generateBar, progress, symbolA, symbolB, length = 1
         return '';
     }
 
-    let startSymbol = "<:bar_start:1277463580513669160>"
-
-    if (generateBar === "yesnt") {
-        startSymbol = "<:bar_start_rankless:1277779429199712317>"
-    }
-
     // Ensure the progress is within the 0-1 range
     progress = Math.max(0, Math.min(progress, 1));
 
@@ -548,9 +444,9 @@ function generateProgressBar(generateBar, progress, symbolA, symbolB, length = 1
     const position = Math.round(progress * length);
 
     // Generate the progress bar
-    const bar = Array.from({ length: length }, (_, i) => (i === position ? "<:bar_half:1277463557016916010>" : (i < position ? "<:bar_full:1277463587249586269>" : "<:bar_empty:1277463572863254589>"))).join("");
+    const bar = Array.from({ length: length }, (_, i) => (i === position ? "<:bar_half:1277414382795489412>" : (i < position ? "<:bar_full:1277414375988400128>" : "<:bar_empty:1277414391201005589>"))).join("");
 
     // Return the complete progress bar with symbols
-    return `\n\n${symbolA} ${startSymbol}${bar}<:bar_end:1277463565036683264> ${symbolB}\n\n`;
+    return `\n\n${symbolA} <:bar_start:1277414364432830545>${bar}<:bar_end:1277414398713004116> ${symbolB}\n\n`;
 }
 
