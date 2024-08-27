@@ -107,7 +107,7 @@ Level ${formatNumber(Math.round(calculateLevel(statData.xp)))} (${formatNumber(M
 Country: ${country}
 Friends: ${statData.friend_count}
 ${supporterConvert(statData.supporter, statData.supporter_tier)}
-Achievement Rating: ${statData.ar}${badgesConvert(badgeArray)}${achievementCountsConvert(statData.ar_counts)}${gamesPlayedConvert(statData.gamesplayed, statData.gameswon, statData.gametime)}
+Achievement Rating: ${statData.ar}${badgesConvert(badgeArray)}${achievementCountsConvert(statData.ar_counts)}${displayedAchesConvert(statData.achievements,summary.achievements)}${gamesPlayedConvert(statData.gamesplayed, statData.gameswon, statData.gametime)}
 
 ${connectionsConvert(statData.connections)}
                     `)
@@ -220,13 +220,13 @@ function supporterConvert(supporter, supporterTier) {
             supporterString = supporterString.concat(" <:supporter_star:1277300953111855231>")
             
         }
-        return (`Supporter${supporterString}\n`)
+        return (`Supporter ${supporterString}\n`)
     } else {
         return ""
     }
 }
 
-function achievementCountsConvert(ar_counts) {
+function getEmojiOfAch(name) {
     //mapping of emoji names to their IDs
     const achEmojis = {
         "ach_issued": "1277286439205339146",
@@ -242,9 +242,16 @@ function achievementCountsConvert(ar_counts) {
         "ach_t10": "1277286339527577730",
         "ach_t3": "1277286318824620042"
     }
+    return `<:ach_${name}:${achEmojis["ach_"+name]}>`
+}
+
+function achievementCountsConvert(ar_counts) {
+    // Initialize an array to store the formatted achievements
+    const formattedList = [];
 
     // Mapping of keys to their corresponding names
     const achievementMapping = {
+        100: 'issued',
         1: 'bronze',
         2: 'silver',
         3: 'gold',
@@ -258,12 +265,9 @@ function achievementCountsConvert(ar_counts) {
         t3: 't3'
     };
 
-    // Initialize an array to store the formatted achievements
-    const formattedList = [];
-
     // Check if issued achievement exists and add it to the start of the list
     if (ar_counts[100]) {
-        formattedList.push(`<:ach_issued:${achEmojis["ach_issued"]}> ${ar_counts[100]}`);
+        formattedList.push(`${getEmojiOfAch('issued')} ${ar_counts[100]}`);
     }
 
     // Loop through the rest of the achievements (excluding issued)
@@ -271,7 +275,7 @@ function achievementCountsConvert(ar_counts) {
         // Check if the achievement exists in the ar_counts object
         if (ar_counts[key]) {
             // Push the formatted string to the list with the count
-            formattedList.push(`<:ach_${name}:${achEmojis["ach_"+name]}> ${ar_counts[key]}`);
+            formattedList.push(`${getEmojiOfAch(name)} ${ar_counts[key]}`);
         }
     }
 
@@ -554,3 +558,32 @@ function generateProgressBar(generateBar, progress, symbolA, symbolB, length = 1
     return `\n\n${symbolA} ${startSymbol}${bar}<:bar_end:1277463565036683264> ${symbolB}\n\n`;
 }
 
+function displayedAchesConvert(displayed,all) {
+    const achievementMapping = {
+        100: 'issued',
+        1: 'bronze',
+        2: 'silver',
+        3: 'gold',
+        4: 'platinum',
+        5: 'diamond'
+    };
+    let displayCase = "Displayed Achivements:"
+
+    all.forEach(achievement => {
+        if (displayed.contains(achievement['k'])) {
+            displayCase += `\n` + getEmojiOfAch(achievementMapping[achievement['rank']])
+            displayCase += ` **${achievement['name']}**`
+            if (achievement['rank'] === 100) {
+                displayCase += ` - Issue ${achievement['pos']}/${achievement['total']}`
+            } else {
+                if (achievement['pos'] < 100) {
+                    displayCase += ` - __#${achievement['pos']+1}__`
+                } else {
+                    displayCase += ` - Top ${Math.round(achievement['pos']/achievement['total']*1000)/10}`
+                }
+            }
+        }
+    })
+    if (displayCase != "Displayed Achievements:") return displayCase
+    return ""
+}
