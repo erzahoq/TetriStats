@@ -107,7 +107,7 @@ Level ${formatNumber(Math.round(calculateLevel(statData.xp)))} (${formatNumber(M
 Country: ${country}
 Friends: ${statData.friend_count}
 ${supporterConvert(statData.supporter, statData.supporter_tier)}
-Achievement Rating: ${statData.ar}${badgesConvert(badgeArray)}${achievementCountsConvert(statData.ar_counts)}${displayedAchesConvert(statData.achievements,summary.achievements)}${gamesPlayedConvert(statData.gamesplayed, statData.gameswon, statData.gametime)}
+Achievement Rating: ${statData.ar}${badgesConvert(badgeArray)}${achievementCountsConvert(statData.ar_counts)}${displayedAchesConvert(statData.achievements, summaryData.achievements)}${gamesPlayedConvert(statData.gamesplayed, statData.gameswon, statData.gametime)}
 
 ${connectionsConvert(statData.connections)}
                     `)
@@ -558,7 +558,7 @@ function generateProgressBar(generateBar, progress, symbolA, symbolB, length = 1
     return `\n\n${symbolA} ${startSymbol}${bar}<:bar_end:1277463565036683264> ${symbolB}\n\n`;
 }
 
-function displayedAchesConvert(displayed,all) {
+function displayedAchesConvert(displayed, all) {
     const achievementMapping = {
         100: 'issued',
         1: 'bronze',
@@ -567,10 +567,10 @@ function displayedAchesConvert(displayed,all) {
         4: 'platinum',
         5: 'diamond'
     };
-    let displayCase = "Displayed Achivements:"
+    let displayCase = "\nDisplayed Achivements:"
 
     all.forEach(achievement => {
-        if (displayed.contains(achievement['k'])) {
+        if (displayed.includes(achievement['k'])) {
             displayCase += `\n` + getEmojiOfAch(achievementMapping[achievement['rank']])
             displayCase += ` **${achievement['name']}**`
             if (achievement['rank'] === 100) {
@@ -579,11 +579,11 @@ function displayedAchesConvert(displayed,all) {
                 if (achievement['pos'] < 100) {
                     displayCase += ` - __#${achievement['pos']+1}__`
                 } else {
-                    displayCase += ` - Top ${Math.round(achievement['pos']/achievement['total']*1000)/10}`
+                    displayCase += ` - Top ${Math.round(achievement['pos']/achievement['total']*10000)/100}%`
                 }
             }
         }
     })
-    if (displayCase != "Displayed Achievements:") return displayCase
-    return ""
+    if (displayCase != "Displayed Achievements:") return displayCase;
+    return "";
 }
