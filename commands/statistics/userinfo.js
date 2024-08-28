@@ -572,14 +572,14 @@ function displayedAchesConvert(displayed, all) {
     all.forEach(achievement => {
         if (displayed.includes(achievement['k'])) {
             displayCase += `\n` + getEmojiOfAch(achievementMapping[achievement['rank']])
-            displayCase += ` **${achievement['name']}**`
+            displayCase += ` **${achievement['name']}** - **${formatNumber(Math.round(achievement.v))}** ${achievement.object}`
             if (achievement['rank'] === 100) {
-                displayCase += ` - Issue ${achievement['pos']}/${achievement['total']}`
+                displayCase += ` (Issue ${achievement['pos']}/${achievement['total']})`
             } else {
                 if (achievement['pos'] < 100) {
-                    displayCase += ` - __#${achievement['pos']+1}__`
+                    displayCase += ` (__#${achievement['pos']+1}__)`
                 } else {
-                    displayCase += ` - Top ${Math.round(achievement['pos']/achievement['total']*10000)/100}%`
+                    displayCase += ` (Top ${Math.round(achievement['pos']/achievement['total']*10000)/100}%)`
                 }
             }
         }
