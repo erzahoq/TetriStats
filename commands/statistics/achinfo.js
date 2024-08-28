@@ -95,17 +95,10 @@ module.exports = {
         achs = achs.data;
 
         username = capitalizeFirstLetter(username);
-        
 
-        let achGeneral = [];
-        let achSolo = [];
-        let achLeague = [];
-        let achZenith = [];
-
-        let dsGeneral = `a`;
-        let dsLeague = `a`;
-        let dsSolo = `a`;
-        let dsZenith = `a`;
+		let categories = ["general","league","solo","zenith"];
+		let achList = {};
+		let achDisplays = {};
 
         //magic voodoo sorting raah
         let sortedAchs = sortByAchievementRank(achs);
@@ -113,66 +106,47 @@ module.exports = {
         sortedAchs.forEach(achievement => {
             //check if the user actually has this achievement lmao
             if (achievement.rank) {
-
-                //there's a better way to do it then just 4 if statements, but that's for future me to figure out :thubm_up:
-                if (achievement.category === 'general') {
-                    achGeneral.push(achievement);
-                } else if (achievement.category === 'solo') {
-                    achSolo.push(achievement);
-                } else if (achievement.category === 'league') {
-                    achLeague.push(achievement);
-                } else if (achievement.category === 'zenith') {
-                    achZenith.push(achievement);
-                }
-
-
+				if (!achList[achievement.category]) {
+					achList[achievement.category] = [];
+				}
+				achList[achievement.category].push(achievement);
                 //displayString += `\n` + getEmojiOfAch(achievementMapping[achievement['rank']])
                 //displayString += ` **${achievement['name']}** - **${formatNumber(Math.round(achievement.v))}** ${achievement.object}` // hippity hoppity i stole your code
             }
 
         });
 
-        //again, there's prob a better way than 4 if statements but raah procrastinating raah
-        if (achGeneral.length === 0) {
-            dsGeneral += "<:ach_none:1278178486586048575> No general achievements unlocked yet... :("
-        }
-        if (achLeague.length === 0) {
-            dsLeague += "<:ach_none:1278178486586048575> No Tetra League achievements unlocked yet... :("
-        }
-        if (achSolo.length === 0) {
-            dsSolo += "<:ach_none:1278178486586048575> No solo achievements unlocked yet... :("
-        }
-        if (achZenith.length === 0) {
-            dsZenith += "<:ach_none:1278178486586048575> No Quick Play achievements unlocked yet... :("
-        }
-
-
-
+		categories.forEach(cat => {
+			if (!achList[cat]) {
+				achDisplays[cat] = `<:ach_none:1278178486586048575> No ${cat} achievements unlocked yet... :(`	
+			}
+		})
+		
         const pages = [
             new EmbedBuilder()
                 .setColor("#6dc971")
                 .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
                 .setTitle(`${capitalizeFirstLetter(username)}'s General Achievements:`)
                 .setURL(`https://ch.tetr.io/u/${username}`)
-                .setDescription(dsGeneral),
+                .setDescription(achDisplays['general']),
             new EmbedBuilder()
                 .setColor("#80bdff")
                 .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
                 .setTitle(`${capitalizeFirstLetter(username)}'s Tetra League Achievements:`)
                 .setURL(`https://ch.tetr.io/u/${username}`)
-                .setDescription(dsLeague),
+                .setDescription(achDisplays['league']),
             new EmbedBuilder()
                 .setColor("#80bdff")
                 .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
                 .setTitle(`${capitalizeFirstLetter(username)}'s Solo Achievements:`)
                 .setURL(`https://ch.tetr.io/u/${username}`)
-                .setDescription(dsSolo),
+                .setDescription(achDisplays['solo']),
             new EmbedBuilder()
                .setColor("#80bdff")
                .setTitle(`${capitalizeFirstLetter(username)}'s Quick Play Achievements:`)
                 .setURL(`https://ch.tetr.io/u/${username}`)
                .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
-                .setDescription(dsZenith),
+                .setDescription(achDisplays['zenith']),
         ];
 
         // Initial row of buttons
