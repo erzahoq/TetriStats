@@ -61,7 +61,7 @@ module.exports = {
 
             if (stats.data === null) {
                 return await interaction.reply({
-                    content: 'No such user found on TETR.IO! | Either the account no longer exists, or this person has not linked their Discord with TETR.IO.', 
+                    content: 'No such user found on TETR.IO! Either the account no longer exists, or this person has not linked their Discord with TETR.IO.', 
                     ephemeral: true
                 });
             }
@@ -251,7 +251,6 @@ function achievementCountsConvert(ar_counts) {
 
     // Mapping of keys to their corresponding names
     const achievementMapping = {
-        100: 'issued',
         1: 'bronze',
         2: 'silver',
         3: 'gold',

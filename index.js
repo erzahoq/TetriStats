@@ -52,7 +52,8 @@ client.on(Events.InteractionCreate, async interaction => {
         
         //regex thing
 
-        profilePageRegex = new RegExp('profilepage_[0-2]');
+        let profilePageRegex = new RegExp('profilepage_[0-2]');
+        let achPageRegex = new RegExp('achpage_[0-3]');
         if (profilePageRegex.test(buttonId)) {
             if (interaction.user.id !== interaction.message.interaction.user.id) {
                 return await interaction.reply({content: 'You cannot interact with this!', ephemeral: true});
@@ -82,6 +83,53 @@ client.on(Events.InteractionCreate, async interaction => {
                     .setLabel('Tetra League')
                     .setStyle(ButtonStyle.Primary)
                     .setDisabled(newPageIndex === 2)
+            );
+
+            // Update interaction with the selected page
+            await interaction.update({
+                embeds: [pages[newPageIndex]],
+                components: [row]
+            });
+
+            // Update current page index
+            interaction.client.pageData[interactionId].currentPage = newPageIndex;
+        }
+
+        if (achPageRegex.test(buttonId)) {
+            if (interaction.user.id !== interaction.message.interaction.user.id) {
+                return await interaction.reply({content: 'You cannot interact with this!', ephemeral: true});
+            }
+
+            // Retrieve stored page data
+            const pageData = interaction.client.pageData?.[interactionId];
+            if (!pageData) return; // Exit if no page data is found
+
+            const { pages, currentPage } = pageData;
+            const newPageIndex = parseInt(buttonId.split('_')[1]);
+
+            // Create updated buttons with the correct page disabled
+            const row = new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                    .setCustomId('achpage_0')
+                    .setLabel('General')
+                    .setStyle(ButtonStyle.Primary)
+                    .setDisabled(newPageIndex === 0),
+                new ButtonBuilder()
+                    .setCustomId('achpage_1')
+                    .setLabel('League')
+                    .setStyle(ButtonStyle.Primary)
+                    .setDisabled(newPageIndex === 1),
+                new ButtonBuilder()
+                    .setCustomId('achpage_2')
+                    .setLabel('Solo')
+                    .setStyle(ButtonStyle.Primary)
+                    .setDisabled(newPageIndex === 2),
+                new ButtonBuilder()
+                    .setCustomId('achpage_3')
+                    .setLabel('Zenith')
+                    .setStyle(ButtonStyle.Primary)
+                    .setDisabled(newPageIndex === 3)
+                
             );
 
             // Update interaction with the selected page
