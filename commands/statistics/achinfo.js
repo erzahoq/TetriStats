@@ -255,7 +255,7 @@ function formatAchievementListText(achlist) {
         if (ach.vt === 2) displayVal = `${formatNumber(Math.round((ach.v)/100)/10)}s`
         else if (ach.vt === 3) displayVal = `${formatNumber(-Math.round((ach.v)/100)/10)}s`
         else if (ach.vt === 4) displayVal = `${formatNumber(Math.round((ach.v)*100)/100)}m (Floor ${Math.floor(ach.a)})`
-        else if (ach.name === "Guardian Angel") displayVal = `${formatNumber(Math.round((ach.v)*100)/100)}m`
+        else if (ach.name === "Guardian Angel") displayVal = `${formatNumber(Math.round((ach.v)*100)/100)}m` //fuck you OSK you bitch
         else if (ach.vt === 5) displayVal = `Obtained ${reformatTimestamp(-ach.v)}`
         else if (ach.vt === 6) displayVal = formatNumber(-Math.round(ach.v))
 
