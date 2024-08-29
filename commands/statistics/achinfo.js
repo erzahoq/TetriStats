@@ -251,6 +251,8 @@ function formatAchievementListText(achlist) {
     if (!achlist) return null;
 
     achlist.forEach(ach => {
+
+        //format thing because fuck your API OSK
         let displayVal = formatNumber(Math.round(ach.v));
         if (ach.vt === 2) displayVal = `${formatNumber(Math.round((ach.v)/100)/10)}s`
         else if (ach.vt === 3) displayVal = `${formatNumber(-Math.round((ach.v)/100)/10)}s`
@@ -260,8 +262,36 @@ function formatAchievementListText(achlist) {
         else if (ach.vt === 6) displayVal = formatNumber(-Math.round(ach.v))
 
         achText += `\n` + getEmojiOfAch(achievementMapping[ach['rank']])
-        achText += ` **${ach['name']}** - **${displayVal}** ${ach.object}`
 
+        //check for attributes
+        let attCount = 0;
+        if (ach.art === 0) {
+            achText += "<:au:1278179023188398211>"
+            attCount++;
+        } else if (ach.art === 2) {
+            achText += "<:ac:1278179007468277770>"
+            attCount++;
+        }
+        if (ach.hidden) {
+            achText += "<:ah:1278179015156432978>"
+            attCount++;
+        }
+
+        while (attCount !== 2) {
+            attCount++;
+            achText += "<:na:1278856076955222027>"
+        }
+        
+        //don't display edscription if zenith category :3
+        //this is a lazy solution, probably should figure out how to paginate
+        if (ach.category === "zenith") {
+            achText += ` **${ach['name']}** - **${displayVal}**`
+        } else {
+            achText += ` **${ach['name']}** - **${displayVal}** ${ach.object}`
+        }
+        
+
+        //something something rank
         if (ach['rank'] === 100) {
             achText += ` (Issue ${ach['pos']}/${ach['total']})`
         } else {
