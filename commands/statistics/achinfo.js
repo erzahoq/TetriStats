@@ -90,7 +90,6 @@ module.exports = {
 		
         }
 
-        console.log(statData)
 
         achs = achs.data;
 
@@ -103,6 +102,8 @@ module.exports = {
         //magic voodoo sorting raah
         let sortedAchs = sortByAchievementRank(achs);
 
+        
+
         sortedAchs.forEach(achievement => {
             //check if the user actually has this achievement lmao
             if (achievement.rank) {
@@ -110,16 +111,17 @@ module.exports = {
 					achList[achievement.category] = [];
 				}
 				achList[achievement.category].push(achievement);
-                //displayString += `\n` + getEmojiOfAch(achievementMapping[achievement['rank']])
-                //displayString += ` **${achievement['name']}** - **${formatNumber(Math.round(achievement.v))}** ${achievement.object}` // hippity hoppity i stole your code
             }
 
         });
 
 		categories.forEach(cat => {
-			if (!achList[cat]) {
-				achDisplays[cat] = `<:ach_none:1278178486586048575> No ${cat} achievements unlocked yet... :(`	
-			}
+			if (achList[cat]) {
+                achDisplays[cat] = formatAchievementListText(achList[cat]);
+			} else {
+                achDisplays[cat] = `<:ach_none:1278178486586048575> No ${cat} achievements unlocked yet... :(`
+            }
+
 		})
 		
         const pages = [
@@ -220,7 +222,21 @@ function formatNumber(num) {
     return numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
-function displayedAchesConvert(displayed, all) {
+
+function sortByAchievementRank(items) { 
+    // Create a mapping for sorting priority, lower values mean higher priority
+    const sortOrder = {
+        1: 6,   // bronze
+        2: 5,   // silver
+        3: 4,   // gold
+        4: 3,   // platinum
+        5: 2,   // diamond
+        100: 1  // issued
+    };
+    return items.sort((a, b) => sortOrder[a.rank] - sortOrder[b.rank]);
+}
+
+function formatAchievementListText(achlist) {
     const achievementMapping = {
         100: 'issued',
         1: 'bronze',
@@ -229,37 +245,45 @@ function displayedAchesConvert(displayed, all) {
         4: 'platinum',
         5: 'diamond'
     };
-    let displayCase = "\nDisplayed Achivements:"
 
-    all.forEach(achievement => {
-        if (displayed.includes(achievement['k'])) {
-            displayCase += `\n` + getEmojiOfAch(achievementMapping[achievement['rank']])
-            displayCase += ` **${achievement['name']}** - **${formatNumber(Math.round(achievement.v))}** ${achievement.object}`
-            if (achievement['rank'] === 100) {
-                displayCase += ` (Issue ${achievement['pos']}/${achievement['total']})`
+    var achText = ""
+
+    if (!achlist) return null;
+
+    achlist.forEach(ach => {
+        let displayVal = formatNumber(Math.round(ach.v));
+        if (ach.vt === 2) displayVal = `${formatNumber(Math.round((ach.v)/100)/10)}s`
+        else if (ach.vt === 3) displayVal = `${formatNumber(-Math.round((ach.v)/100)/10)}s`
+        else if (ach.vt === 4) displayVal = `${formatNumber(Math.round((ach.v)*100)/100)}m (Floor ${Math.floor(ach.a)})`
+        else if (ach.name === "Guardian Angel") displayVal = `${formatNumber(Math.round((ach.v)*100)/100)}m`
+        else if (ach.vt === 5) displayVal = `Obtained ${reformatTimestamp(-ach.v)}`
+        else if (ach.vt === 6) displayVal = formatNumber(-Math.round(ach.v))
+
+        achText += `\n` + getEmojiOfAch(achievementMapping[ach['rank']])
+        achText += ` **${ach['name']}** - **${displayVal}** ${ach.object}`
+
+        if (ach['rank'] === 100) {
+            achText += ` (Issue ${ach['pos']}/${ach['total']})`
+        } else {
+            if (ach['pos'] < 100) {
+                achText += ` (__#${ach['pos']+1}__)`
             } else {
-                if (achievement['pos'] < 100) {
-                    displayCase += ` (__#${achievement['pos']+1}__)`
-                } else {
-                    displayCase += ` (Top ${Math.round(achievement['pos']/achievement['total']*10000)/100}%)`
-                }
+                achText += ` (Top ${Math.round(ach['pos']/ach['total']*10000)/100}%)`
             }
         }
-    })
-    if (displayCase != "Displayed Achievements:") return displayCase;
-    return "";
+    });
+
+    return achText;
 }
 
+function reformatTimestamp(isoString) {
+    if (!isoString) {
+        return "Before account creation was tracked"
+    }
 
-function sortByAchievementRank(items) { 
-    // Create a mapping for sorting priority, lower values mean higher priority
-    const sortOrder = {
-        1: 1,   // bronze
-        2: 2,   // silver
-        3: 3,   // gold
-        4: 4,   // platinum
-        5: 5,   // diamond
-        100: 6  // issued
-    };
-    return items.sort((a, b) => sortOrder[a.rank] - sortOrder[b.rank]);
+    // Create a Date object from the ISO string
+    const date = new Date(isoString);
+
+    // Return the Unix timestamp by dividing the milliseconds by 1000
+    return `<t:${Math.floor(date.getTime() / 1000)}:R>`;
 }
