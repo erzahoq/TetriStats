@@ -445,7 +445,7 @@ function formatLeague(statistics, country)  {
 
     if (!nextRank && prevRank === 'x') {
         prevRank = 'x+'
-        nextRank = '#1'
+        nextRank = 'top'
     }
 
     if (!prevRank && nextRank === 'd+') {
@@ -494,10 +494,6 @@ function getEmojiOfRank(rank) {
         return;
     }
 
-    if (rank === '#1') {
-        return rank
-    }
-
     const rankEmojis = {
         "rank_xplus": "1277293685058310288",
         "rank_x": "1277293677873463368",
@@ -517,7 +513,8 @@ function getEmojiOfRank(rank) {
         "rank_cminus": "1277293530095685745",
         "rank_dplus": "1277293513616265216",
         "rank_d": "1277293312696516690",
-        "rank_z": "1277382169538461746"
+        "rank_z": "1277382169538461746",
+		"rank_top": "1278185429656670269"
     }
     let formattedRank = 'rank_' + rank.toLowerCase().replace("+", "plus").replace("-", "minus");
     return `<:${formattedRank}:${rankEmojis[formattedRank]}>`
@@ -539,6 +536,7 @@ function generateProgressBar(generateBar, progress, symbolA, symbolB, length = 1
     }
 
     let startSymbol = "<:bar_start:1277463580513669160>"
+	let endSymbol = "<:bar_end:1277463565036683264>"
 
     if (generateBar === "yesnt") {
         startSymbol = "<:bar_start_rankless:1277779429199712317>"
@@ -546,6 +544,9 @@ function generateProgressBar(generateBar, progress, symbolA, symbolB, length = 1
 
     // Ensure the progress is within the 0-1 range
     progress = Math.max(0, Math.min(progress, 1));
+	if (progress === 1) {
+		endSymbol = "<:bar_end_full:1278896013502976000>"
+	}
 
     // Calculate the position of the "!" marker
     const position = Math.round(progress * length);
@@ -554,7 +555,7 @@ function generateProgressBar(generateBar, progress, symbolA, symbolB, length = 1
     const bar = Array.from({ length: length }, (_, i) => (i === position ? "<:bar_half:1277463557016916010>" : (i < position ? "<:bar_full:1277463587249586269>" : "<:bar_empty:1277463572863254589>"))).join("");
 
     // Return the complete progress bar with symbols
-    return `\n\n${symbolA} ${startSymbol}${bar}<:bar_end:1277463565036683264> ${symbolB}\n\n`;
+    return `\n\n${symbolA} ${startSymbol}${bar}${endSymbol} ${symbolB}\n\n`;
 }
 
 function displayedAchesConvert(displayed, all) {
