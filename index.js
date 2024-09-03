@@ -51,9 +51,10 @@ client.on(Events.InteractionCreate, async interaction => {
         const interactionId = interaction.message.interaction.id;
         
         //regex thing
-
         let profilePageRegex = new RegExp('profilepage_[0-2]');
         let achPageRegex = new RegExp('achpage_[0-3]');
+
+        //handle "userinfo.js" buttons
         if (profilePageRegex.test(buttonId)) {
             if (interaction.user.id !== interaction.message.interaction.user.id) {
                 return await interaction.reply({content: 'You cannot interact with this!', ephemeral: true});
@@ -95,6 +96,7 @@ client.on(Events.InteractionCreate, async interaction => {
             interaction.client.pageData[interactionId].currentPage = newPageIndex;
         }
 
+        //handle "achinfo.js" buttons
         if (achPageRegex.test(buttonId)) {
             if (interaction.user.id !== interaction.message.interaction.user.id) {
                 return await interaction.reply({content: 'You cannot interact with this!', ephemeral: true});
