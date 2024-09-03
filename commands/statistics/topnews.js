@@ -6,8 +6,8 @@ const pageCount = 4;
 
 module.exports = {
 	data: new SlashCommandBuilder()
-		.setName('news-global')
-		.setDescription('Fetches all the latest Tetra News.'),
+		.setName('news-top')
+		.setDescription('Fetches all the latest top Tetra News.'),
 	async execute(interaction) {        
         const response = await fetch(`https://ch.tetr.io/api/news/global?limit=${itemsPerPage * pageCount}`);
         const stats = await response.json(); // Use .json() to parse the response as JSON
@@ -65,39 +65,39 @@ module.exports = {
         const pages = [
             new EmbedBuilder()
                 .setColor("#ffc619")
-                .setTitle(`Global News (1)`)
+                .setTitle(`Top News (1)`)
                 .setDescription(pageData[0].join('\n')),
             new EmbedBuilder()
                 .setColor("#ffc619")
-                .setTitle(`Global News (2)`)
+                .setTitle(`Top News (2)`)
                 .setDescription(pageData[1].join('\n')),
             new EmbedBuilder()
                 .setColor("#ffc619")
-                .setTitle(`Global News (3)`)
+                .setTitle(`Top News (3)`)
                 .setDescription(pageData[2].join('\n')),
                 new EmbedBuilder()
                 .setColor("#ffc619")
-                .setTitle(`Global News (4)`)
+                .setTitle(`Top News (4)`)
                 .setDescription(pageData[3].join('\n')),
             ];
 
         // Initial row of buttons
 		const row = new ActionRowBuilder().addComponents(
 			new ButtonBuilder()
-				.setCustomId('gennewspage_0')
+				.setCustomId('topnewspage_0')
 				.setLabel('Page 1')
 				.setStyle(ButtonStyle.Primary)
 				.setDisabled(true), // Disable the first button initially
 			new ButtonBuilder()
-				.setCustomId('gennewspage_1')
+				.setCustomId('topnewspage_1')
 				.setLabel('Page 2')
 				.setStyle(ButtonStyle.Primary),
 			new ButtonBuilder()
-				.setCustomId('gennewspage_2')
+				.setCustomId('topnewspage_2')
 				.setLabel('Page 3')
 				.setStyle(ButtonStyle.Primary),
             new ButtonBuilder()
-				.setCustomId('gennewspage_3')
+				.setCustomId('topnewspage_3')
 				.setLabel('Page 4')
 				.setStyle(ButtonStyle.Primary),
 		);

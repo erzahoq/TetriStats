@@ -53,7 +53,7 @@ client.on(Events.InteractionCreate, async interaction => {
         //regex thing
         let profilePageRegex = new RegExp('profilepage_[0-2]');
         let achPageRegex = new RegExp('achpage_[0-3]');
-        let genNewsRegex = new RegExp('gennewspage_[0-3]')
+        let topNewsRegex = new RegExp('topnewspage_[0-3]')
 
         //handle "userinfo.js" buttons
         if (profilePageRegex.test(buttonId)) {
@@ -146,7 +146,7 @@ client.on(Events.InteractionCreate, async interaction => {
         }
 
         //handle "allnews.js" buttons
-        if (genNewsRegex.test(buttonId)) {
+        if (topNewsRegex.test(buttonId)) {
             if (interaction.user.id !== interaction.message.interaction.user.id) {
                 return await interaction.reply({content: 'You cannot interact with this!', ephemeral: true});
             }
@@ -161,22 +161,22 @@ client.on(Events.InteractionCreate, async interaction => {
             // Create updated buttons with the correct page disabled
             const row = new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
-                    .setCustomId('gennewspage_0')
+                    .setCustomId('topnewspage_0')
                     .setLabel('Page 1')
                     .setStyle(ButtonStyle.Primary)
                     .setDisabled(newPageIndex === 0),
                 new ButtonBuilder()
-                    .setCustomId('gennewspage_1')
+                    .setCustomId('topnewspage_1')
                     .setLabel('Page 2')
                     .setStyle(ButtonStyle.Primary)
                     .setDisabled(newPageIndex === 1),
                 new ButtonBuilder()
-                    .setCustomId('gennewspage_2')
+                    .setCustomId('topnewspage_2')
                     .setLabel('Page 3')
                     .setStyle(ButtonStyle.Primary)
                     .setDisabled(newPageIndex === 2),
                 new ButtonBuilder()
-                    .setCustomId('gennewspage_3')
+                    .setCustomId('topnewspage_3')
                     .setLabel('Page 4')
                     .setStyle(ButtonStyle.Primary)
                     .setDisabled(newPageIndex === 3)
