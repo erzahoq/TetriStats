@@ -567,12 +567,21 @@ function displayedAchesConvert(displayed, all) {
         4: 'platinum',
         5: 'diamond'
     };
-    let displayCase = "\nDisplayed Achivements:"
+    let displayCase = "\n__Displayed Achivements:__"
 
     all.forEach(achievement => {
         if (displayed.includes(achievement['k'])) {
             displayCase += `\n` + getEmojiOfAch(achievementMapping[achievement['rank']])
-            displayCase += ` **${achievement['name']}** - **${formatNumber(Math.round(achievement.v))}** ${achievement.object}`
+
+            //wehhhhhhh
+            if (achievement.vt === 4) {
+                displayCase += ` **${achievement['name']}** - **Floor ${Math.floor(achievement.a)}** (${formatNumber(Math.round((achievement.v)*100)/100)}m) ${achievement.object}`
+            } else {
+                displayCase += ` **${achievement['name']}** - **${formatNumber(Math.round(achievement.v))}** ${achievement.object}`
+            }
+
+            console.log(achievement)
+            
             if (achievement['rank'] === 100) {
                 displayCase += ` (Issue ${achievement['pos']}/${achievement['total']})`
             } else {

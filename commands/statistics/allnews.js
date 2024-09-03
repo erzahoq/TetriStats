@@ -16,13 +16,32 @@ module.exports = {
             });
         }
 
-        const data = stats.data;
+        //get the news info more cleanly
+        const data = stats.data.news;
 
-        console.log(data)
+        //initialise message
+        let message = "";
 
-        interaction.reply(`${data.news.length} items wow :3`)
+        data.forEach(user => {
+            userData = user.data;
+            console.log(user.type);
+            if (user.type === 'leaderboard') {
+                message += `[${capitalizeFirstLetter(userData.username)}](https://ch.tetr.io/u/${userData.username}) reached #${userData.rank} in ${userData.gametype}`
+            } else if (user.type === 'badge') {
+                message += `[${capitalizeFirstLetter(userData.username)}](https://ch.tetr.io/u/${userData.username}) recieved the "${userData.label}" badge`;
+            }
+
+            //lazy
+            message += "\n";
+        });
+
+        interaction.reply(message);
 
 
 
     }
 };
+
+function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
