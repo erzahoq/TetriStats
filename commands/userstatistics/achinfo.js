@@ -95,9 +95,16 @@ module.exports = {
 
         username = capitalizeFirstLetter(username);
 
+        const catMap = {
+            "general": "General",
+            "league": "Tetra League",
+            "solo": "Solo",
+            "zenith": "Quick Play"
+        }
 		let categories = ["general","league","solo","zenith"];
 		let achList = {};
 		let achDisplays = {};
+        let pages = {};
 
         //magic voodoo sorting raah
         let sortedAchs = sortByAchievementRank(achs);
@@ -117,60 +124,44 @@ module.exports = {
 
 		categories.forEach(cat => {
 			if (achList[cat]) {
-                achDisplays[cat] = formatAchievementListText(achList[cat]);
+                var list = formatAchievementListText(achList[cat]);
+                var ind = 0;
+                list.forEach(text => {
+                    achDisplays[`${cat}${ind}`] = text;
+                    ind++;
+                })
+                pages[cat] = ind;
 			} else {
-                achDisplays[cat] = `<:ach_none:1278178486586048575> No ${cat} achievements unlocked yet... :(`
+                achDisplays[`${cat}0`] = `<:ach_none:1278178486586048575> No ${cat} achievements unlocked yet... :(`
             }
-
 		})
-		
-        const pages = [
-            new EmbedBuilder()
+
+        let textPages = []
+        let buttons = []
+
+        Object.entries(achDisplays).forEach(([curCat,text]) => {
+            let trimmedCat = curCat.replace(/\d*/,"")
+            textPages.push(new EmbedBuilder()
                 .setColor("#6dc971")
                 .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
-                .setTitle(`${capitalizeFirstLetter(username)}'s General Achievements:`)
+                .setTitle(`${capitalizeFirstLetter(username)}'s ${catMap[trimmedCat]} Achievements:`)
                 .setURL(`https://ch.tetr.io/u/${username}`)
-                .setDescription(achDisplays['general']),
-            new EmbedBuilder()
-                .setColor("#80bdff")
-                .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
-                .setTitle(`${capitalizeFirstLetter(username)}'s Tetra League Achievements:`)
-                .setURL(`https://ch.tetr.io/u/${username}`)
-                .setDescription(achDisplays['league']),
-            new EmbedBuilder()
-                .setColor("#80bdff")
-                .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
-                .setTitle(`${capitalizeFirstLetter(username)}'s Solo Achievements:`)
-                .setURL(`https://ch.tetr.io/u/${username}`)
-                .setDescription(achDisplays['solo']),
-            new EmbedBuilder()
-               .setColor("#80bdff")
-               .setTitle(`${capitalizeFirstLetter(username)}'s Quick Play Achievements:`)
-                .setURL(`https://ch.tetr.io/u/${username}`)
-               .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
-                .setDescription(achDisplays['zenith']),
-        ];
+                .setDescription(text)
+            )
+            let button = new ButtonBuilder()
+                .setCustomId(`achpage_${buttons.length}`)
+                .setLabel(`${catMap[trimmedCat]}`)
+                .setStyle(ButtonStyle.Primary)
+            if (buttons.length === 0) {
+                button.setDisabled(true)
+            }
+            if (pages[trimmedCat] > 1) {
+                button.setLabel(`${catMap[trimmedCat]} (${curCat.match(/\d*/)})`)
+            }
+        })
 
         // Initial row of buttons
-		const row = new ActionRowBuilder().addComponents(
-			new ButtonBuilder()
-				.setCustomId('achpage_0')
-				.setLabel('General')
-				.setStyle(ButtonStyle.Primary)
-				.setDisabled(true), // Disable the first button initially
-			new ButtonBuilder()
-				.setCustomId('achpage_1')
-				.setLabel('League')
-				.setStyle(ButtonStyle.Primary),
-			new ButtonBuilder()
-				.setCustomId('achpage_2')
-				.setLabel('Solo')
-				.setStyle(ButtonStyle.Primary),
-            new ButtonBuilder()
-				.setCustomId('achpage_3')
-				.setLabel('Zenith')
-				.setStyle(ButtonStyle.Primary),
-		);
+		const row = new ActionRowBuilder().addComponents(buttons);
 
         // Send the initial message with the first page and buttons
 		await interaction.reply({
@@ -188,15 +179,9 @@ module.exports = {
     }
 };
 
-
-
-
 function capitalizeFirstLetter(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
-
-
-
 
 function getEmojiOfAch(name) {
     //mapping of emoji names to their IDs
@@ -246,12 +231,15 @@ function formatAchievementListText(achlist) {
         5: 'diamond'
     };
 
-    var achText = ""
+    var allText = []
+    var achCount = 0;
+    const pageSize = 15
 
     if (!achlist) return null;
 
     achlist.forEach(ach => {
-
+        var achText = ""
+        achCount++;
         //format thing because fuck your API OSK
         let displayVal = formatNumber(Math.round(ach.v));
         if (ach.vt === 2) displayVal = `${formatNumber(Math.round((ach.v)/100)/10)}s`
@@ -301,9 +289,10 @@ function formatAchievementListText(achlist) {
                 achText += ` (Top ${Math.round(ach['pos']/ach['total']*10000)/100}%)`
             }
         }
+        allText[Math.floor(achCount/pageSize)] += achText
     });
 
-    return achText;
+    return allText;
 }
 
 function reformatTimestamp(isoString) {
