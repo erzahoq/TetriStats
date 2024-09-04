@@ -94,7 +94,7 @@ module.exports = {
             new EmbedBuilder()
                 .setColor("#80bdff")
                 .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
-                .setTitle(`${capitalizeFirstLetter(statData.username)}'s Profile:`)
+                .setTitle(`${capitalizeFirstLetter(escapeUnderscores(statData.username))}'s Profile:`)
                 .setURL(`https://ch.tetr.io/u/${statData.username}`)
                 .setFooter({ text: `User ID: ${statData._id} | Role: ${statData.role}`})
                 .setDescription(`
@@ -115,7 +115,7 @@ ${connectionsConvert(statData.connections)}
             new EmbedBuilder()
                 .setColor("#ff7dc0")
                 .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
-                .setTitle(`${capitalizeFirstLetter(statData.username)}'s Profile:`)
+                .setTitle(`${capitalizeFirstLetter(escapeUnderscores(statData.username))}'s Profile:`)
                 .setURL(`https://ch.tetr.io/u/${statData.username}`)
                 .setFooter({ text: `User ID: ${statData._id} | Role: ${statData.role}`})
                 .setDescription(`
@@ -126,7 +126,7 @@ ${formatZenith(summaryData, country)}${formatZenithExpert(summaryData, country)}
             new EmbedBuilder()
                 .setColor("#ff9d7d")
                 .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
-                .setTitle(`${capitalizeFirstLetter(statData.username)}'s Profile:`)
+                .setTitle(`${capitalizeFirstLetter(escapeUnderscores(statData.username))}'s Profile:`)
                 .setURL(`https://ch.tetr.io/u/${statData.username}`)
                 .setFooter({ text: `User ID: ${statData._id} | Role: ${statData.role}`})
                 .setDescription(`${formatLeague(summaryData, country)}`)
@@ -595,4 +595,8 @@ function displayedAchesConvert(displayed, all) {
     })
     if (displayCase != "Displayed Achievements:") return displayCase;
     return "";
+}
+
+function escapeUnderscores(input) {
+    return input.replace(/_/g, '\\_');
 }

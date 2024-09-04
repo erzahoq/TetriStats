@@ -137,3 +137,4 @@ function reformatTimestamp(isoString) {
     // Return the Unix timestamp by dividing the milliseconds by 1000
     return `<t:${Math.floor(date.getTime() / 1000)}:R>`;
 }
+
