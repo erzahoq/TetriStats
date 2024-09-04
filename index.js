@@ -52,7 +52,7 @@ client.on(Events.InteractionCreate, async interaction => {
         
         //regex thing
         let profilePageRegex = new RegExp('profilepage_[0-2]');
-        let achPageRegex = new RegExp('achpage_[0-3]');
+        let achPageRegex = new RegExp('achpage_\d');
         let topNewsRegex = new RegExp('topnewspage_[0-3]');
         let allNewsRegex = new RegExp('allnewspage_[0-3]');
 
