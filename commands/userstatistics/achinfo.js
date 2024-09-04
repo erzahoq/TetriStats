@@ -173,7 +173,8 @@ module.exports = {
 		interaction.client.pageData = {
 			[interaction.id]: {
 				pages,
-				currentPage: 0
+				currentPage: 0,
+                buttons
 			}
 		};
     }

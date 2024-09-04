@@ -108,33 +108,15 @@ client.on(Events.InteractionCreate, async interaction => {
             const pageData = interaction.client.pageData?.[interactionId];
             if (!pageData) return; // Exit if no page data is found
 
-            const { pages, currentPage } = pageData;
+            const { pages, currentPage, buttons } = pageData;
             const newPageIndex = parseInt(buttonId.split('_')[1]);
 
             // Create updated buttons with the correct page disabled
-            const row = new ActionRowBuilder().addComponents(
-                new ButtonBuilder()
-                    .setCustomId('achpage_0')
-                    .setLabel('General')
-                    .setStyle(ButtonStyle.Primary)
-                    .setDisabled(newPageIndex === 0),
-                new ButtonBuilder()
-                    .setCustomId('achpage_1')
-                    .setLabel('League')
-                    .setStyle(ButtonStyle.Primary)
-                    .setDisabled(newPageIndex === 1),
-                new ButtonBuilder()
-                    .setCustomId('achpage_2')
-                    .setLabel('Solo')
-                    .setStyle(ButtonStyle.Primary)
-                    .setDisabled(newPageIndex === 2),
-                new ButtonBuilder()
-                    .setCustomId('achpage_3')
-                    .setLabel('Zenith')
-                    .setStyle(ButtonStyle.Primary)
-                    .setDisabled(newPageIndex === 3)
-                
-            );
+            for (var i = 0; i < buttons.length(); i++) {
+                buttons[i].setDisabled(newPageIndex === i);
+            }
+
+            const row = new ActionRowBuilder().addComponents(buttons)
 
             // Update interaction with the selected page
             await interaction.update({
