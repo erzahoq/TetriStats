@@ -116,7 +116,10 @@ client.on(Events.InteractionCreate, async interaction => {
                 buttons[i].setDisabled(newPageIndex === i);
             }
 
-            const row = new ActionRowBuilder().addComponents(buttons)
+            const row = new ActionRowBuilder();
+            buttons.forEach(but => {
+                row.addComponents(but);
+            })
 
             // Update interaction with the selected page
             await interaction.update({

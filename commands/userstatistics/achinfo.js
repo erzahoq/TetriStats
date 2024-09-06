@@ -161,7 +161,10 @@ module.exports = {
         })
 
         // Initial row of buttons
-		const row = new ActionRowBuilder().addComponents(buttons);
+		const row = new ActionRowBuilder();
+        buttons.forEach(but => {
+            row.addComponents(but);
+        })
 
         // Send the initial message with the first page and buttons
 		await interaction.reply({
@@ -271,14 +274,7 @@ function formatAchievementListText(achlist) {
             achText += "<:na:1278856076955222027>"
         }
         
-        //don't display edscription if zenith category :3
-        //this is a lazy solution, probably should figure out how to paginate
-        if (ach.category === "zenith") {
-            achText += ` **${ach['name']}** - **${displayVal}**`
-        } else {
-            achText += ` **${ach['name']}** - **${displayVal}** ${ach.object}`
-        }
-        
+        achText += ` **${ach['name']}** - **${displayVal}**`
 
         //something something rank
         if (ach['rank'] === 100) {
