@@ -117,7 +117,9 @@ client.on(Events.InteractionCreate, async interaction => {
             }
 
             const row = new ActionRowBuilder();
-            row.addComponents(buttons);
+            buttons.forEach(but => {
+                row.addComponents(but);
+            })
 
             // Update interaction with the selected page
             await interaction.update({

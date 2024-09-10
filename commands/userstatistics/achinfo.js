@@ -162,11 +162,13 @@ module.exports = {
 
         // Initial row of buttons
 		const row = new ActionRowBuilder();
-        row.addComponents(buttons)
+        buttons.forEach(but => {
+            row.addComponents(but);
+        })
 
         // Send the initial message with the first page and buttons
 		await interaction.reply({
-			embeds: [textPages[0]],
+			embeds: [pages[0]],
 			components: [row]
 		});
 
