@@ -107,9 +107,12 @@ client.on(Events.InteractionCreate, async interaction => {
 
             // Retrieve stored page data
             const pageData = interaction.client.pageData?.[interactionId];
+
+            console.log(pageData)
+
             if (!pageData) return; // Exit if no page data is found
 
-            const { pages, currentPage, buttons } = pageData;
+            const { textPages, currentPage, buttons } = pageData;
             const newPageIndex = parseInt(buttonId.split('_')[1]);
 
             // Create updated buttons with the correct page disabled
@@ -122,9 +125,10 @@ client.on(Events.InteractionCreate, async interaction => {
                 row.addComponents(but);
             })
 
+
             // Update interaction with the selected page
             await interaction.update({
-                embeds: [pages[newPageIndex]],
+                embeds: [textPages[newPageIndex]],
                 components: [row]
             });
 
