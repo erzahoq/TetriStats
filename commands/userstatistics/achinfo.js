@@ -167,16 +167,18 @@ module.exports = {
             row.addComponents(but);
         })
 
+        console.log(textPages)
+
         // Send the initial message with the first page and buttons
 		await interaction.reply({
-			embeds: [pages[0]],
+			embeds: [textPages[0]],
 			components: [row]
 		});
 
 		// Attach pages to the interaction for future reference
 		interaction.client.pageData = {
 			[interaction.id]: {
-				pages,
+				textPages,
 				currentPage: 0,
                 buttons
 			}
