@@ -158,6 +158,7 @@ module.exports = {
             if (pages[trimmedCat] > 1) {
                 button.setLabel(`${catMap[trimmedCat]} (${curCat.match(/\d*/)})`)
             }
+            buttons.push(button)
         })
 
         // Initial row of buttons
