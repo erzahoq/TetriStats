@@ -152,6 +152,8 @@ module.exports = {
                 .setCustomId(`achpage_${buttons.length}`)
                 .setLabel(`${catMap[trimmedCat]}`)
                 .setStyle(ButtonStyle.Primary)
+            
+            console.log(button);
             if (buttons.length === 0) {
                 button.setDisabled(true)
             }
