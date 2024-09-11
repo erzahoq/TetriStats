@@ -159,7 +159,7 @@ module.exports = {
                 button.setDisabled(true)
             }
             if (pages[trimmedCat] > 1) {
-                button.setLabel(`${catMap[trimmedCat]} (${curCat.match(/\d*/)})`)
+                button.setLabel(`${catMap[trimmedCat]} (${parseInt(curCat.match(/\d+/)) + 1})`)
             }
             buttons.push(button)
         })
