@@ -141,6 +141,7 @@ module.exports = {
 
         Object.entries(achDisplays).forEach(([curCat,text]) => {
             let trimmedCat = curCat.replace(/\d*/,"")
+            console.log(`trimmedCat = ${trimmedCat}`);
             textPages.push(new EmbedBuilder()
                 .setColor("#6dc971")
                 .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
@@ -277,7 +278,7 @@ function formatAchievementListText(achlist) {
             achText += "<:na:1278856076955222027>"
         }
         
-        achText += ` **${ach['name']}** - **${displayVal}**`
+        achText += ` **${ach['name']}** - **${displayVal}** ${ach['desc']}`
 
         //something something rank
         if (ach['rank'] === 100) {
@@ -289,6 +290,7 @@ function formatAchievementListText(achlist) {
                 achText += ` (Top ${Math.round(ach['pos']/ach['total']*10000)/100}%)`
             }
         }
+        allText[Math.floor(achCount/pageSize)] = allText[Math.floor(achCount/pageSize)] ?? "";
         allText[Math.floor(achCount/pageSize)] += achText
     });
 
