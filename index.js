@@ -113,7 +113,7 @@ client.on(Events.InteractionCreate, async interaction => {
             const newPageIndex = parseInt(buttonId.split('_')[1]);
 
             // Create updated buttons with the correct page disabled
-            for (var i = 0; i < buttons.length(); i++) {
+            for (var i = 0; i < buttons.length; i++) {
                 buttons[i].setDisabled(newPageIndex === i);
             }
 
