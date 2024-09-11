@@ -35,14 +35,13 @@ module.exports = {
             pageData.push([]);
         }
 
-        console.log(pageData);
 
         for (let i = 0; i < data.length; i++) {
             let message = "";  // Reset the message for each user
             const user = data[i];
             const userData = user.data;
 
-            console.log(user)
+            
 
             if (user.type === 'personalbest') {
                 message += `<:news_lblocal:1280356184640983122> [${capitalizeFirstLetter(userData.username)}](https://ch.tetr.io/u/${userData.username}) got a new PB in ${gametypeMapping[userData.gametype]}!`

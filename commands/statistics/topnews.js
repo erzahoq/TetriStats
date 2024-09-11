@@ -42,8 +42,6 @@ module.exports = {
             pageData.push([]);
         }
 
-        console.log(pageData);
-
         for (let i = 0; i < data.length; i++) {
             let message = "";  // Reset the message for each user
             const user = data[i];

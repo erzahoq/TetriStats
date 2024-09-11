@@ -100,6 +100,8 @@ client.on(Events.InteractionCreate, async interaction => {
 
         //handle "achinfo.js" buttons
         if (achPageRegex.test(buttonId)) {
+            console.log(`mrrow (${buttonId})`);
+
             if (interaction.user.id !== interaction.message.interaction.user.id) {
                 return await interaction.reply({content: 'You cannot interact with this!', ephemeral: true});
             }

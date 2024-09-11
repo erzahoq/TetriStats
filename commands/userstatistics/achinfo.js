@@ -167,8 +167,6 @@ module.exports = {
             row.addComponents(but);
         })
 
-        console.log(textPages)
-
         // Send the initial message with the first page and buttons
 		await interaction.reply({
 			embeds: [textPages[0]],
