@@ -55,6 +55,7 @@ client.on(Events.InteractionCreate, async interaction => {
         let topNewsRegex = new RegExp('topnewspage_[0-3]');
         let allNewsRegex = new RegExp('allnewspage_[0-3]');
         let achPageRegex = new RegExp('achpage_[0-9]'); //good job morky
+        let recordsPageRegex = new RegExp('recordspage_[0-9]');
         //handle "userinfo.js" buttons
         if (profilePageRegex.test(buttonId)) {
             if (interaction.user.id !== interaction.message.interaction.user.id) {
@@ -97,10 +98,7 @@ client.on(Events.InteractionCreate, async interaction => {
             interaction.client.pageData[interactionId].currentPage = newPageIndex;
         }
 
-        //handle "achinfo.js" buttons
-        if (achPageRegex.test(buttonId)) {
-            console.log(`mrrow (${buttonId})`);
-
+        if (recordsPageRegex.test(buttonId)) {
             if (interaction.user.id !== interaction.message.interaction.user.id) {
                 return await interaction.reply({content: 'You cannot interact with this!', ephemeral: true});
             }
@@ -108,7 +106,39 @@ client.on(Events.InteractionCreate, async interaction => {
             // Retrieve stored page data
             const pageData = interaction.client.pageData?.[interactionId];
 
-            console.log(pageData)
+            if (!pageData) return; // Exit if no page data is found
+
+            const { pages, currentPage, buttons } = pageData;
+            const newPageIndex = parseInt(buttonId.split('_')[1]);
+
+            // Create updated buttons with the correct page disabled
+            for (var i = 0; i < buttons.length; i++) {
+                buttons[i].setDisabled(newPageIndex === i);
+            }
+
+            const row = new ActionRowBuilder();
+            buttons.forEach(but => {
+                row.addComponents(but);
+            })
+
+            // Update interaction with the selected page
+            await interaction.update({
+                embeds: [textPages[newPageIndex]],
+                components: [row]
+            });
+
+            // Update current page index
+            interaction.client.pageData[interactionId].currentPage = newPageIndex;
+        }
+
+        //handle "achinfo.js" buttons
+        if (achPageRegex.test(buttonId)) {
+            if (interaction.user.id !== interaction.message.interaction.user.id) {
+                return await interaction.reply({content: 'You cannot interact with this!', ephemeral: true});
+            }
+
+            // Retrieve stored page data
+            const pageData = interaction.client.pageData?.[interactionId];
 
             if (!pageData) return; // Exit if no page data is found
 

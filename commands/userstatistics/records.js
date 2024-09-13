@@ -84,18 +84,47 @@ module.exports = {
             'zenithex': 'Expert Quick Play',
             'league': 'Tetra League'
         }
-        let embeds = {};
+        let pages = {};
+        let buttons = [];
 
         Object.entries(records).forEach(([category, data]) => {
-            let embed = new EmbedBuilder()
+            const embed = new EmbedBuilder()
                 .setColor('#57b1ff')
                 .setThumbnail(`https://tetr.io/user-content/avatars/${tetrioID}.jpg`)
-                .setTitle(`${capitalizeFirstLetter(username)}'s ${catMap[category]} Records:`)
+                .setTitle(`${capitalizeFirstLetter(username)}'s ${gametypeMapping[category]} Records:`)
                 .setURL(`https://ch.tetr.io/u/${username}`)
+            const button = new ButtonBuilder()
+                .setCustomId(`recordspage_${buttons.length}`)
+                .setDisabled(buttons.length === 0)
+                .setLabel(gametypeMapping[category])
+                .setStyle(ButtonStyle.Primary)
+            
             let desc = "";
+            desc += `<:news_lblocal:1280356184640983122> ${formatRecord(data['top'][0])}`
+            data['all'].forEach((rec) => {
+                desc += `\n${formatRecord(rec)}`;
+            })
 
-
+            embed.setDescription(desc);
+            pages[category] = embed;
+            buttons.push(button)
         })
+
+        const row = new ActionRowBuilder()
+            .addComponents(buttons);
+        
+        await interaction.reply({
+            embeds: [pages[0]],
+            components: [row]
+        });
+        
+        interaction.client.pageData = {
+            [interaction.id]: {
+                pages,
+                currentPage: 0,
+                buttons
+            }
+        };
 
     }
 }
@@ -115,22 +144,69 @@ async function fetchAll(user) {
 
 function formatRecord(record) {
     let formatted = `<t:${record.ts}:d> <t:${record.ts}:t> - `
+    let stats = record.results.stats
     switch (record.gamemode) {
         case ('40l'):
-            formatted += `**${Math.floor(record.stats.finaltime/60000)}:${Math.floor(record.stats.finaltime/1000%60)}.${record.stats.finaltime%1000}**`
+            formatted += `**${Math.floor(stats.finaltime/60000)}:${Math.floor(record.stats.finaltime/1000%60)}.${record.stats.finaltime%1000}**`;
             break;
         case ('blitz'):
-            formatted += `**${formatNumber(record.stats.score)}**`
+            formatted += `**${formatNumber(stats.score)}**`;
             break;
         case ('zenithex'):
         case ('zenith'):
-            formatted += ``
+            formatted += `**${formatNumber(Math.round(stats.zenith.altitude*10)/10)}m**`;
+            stats = record.results.aggregatestats;
+            if (record.extras.zenith.mods) {
+                formatted += ' ';
+                record.extras.zenith.mods.forEach(mod => {
+                    formatted += getModEmoji(mod);
+                })
+            }
             break;
+        case ('league'):
+            const players = record.results.leaderboard
+            stats = players[0].stats
+            switch (record.result) {
+                case ('victory'):
+                    formatted += `**VICTORY ${players[0].wins}-${players[1].wins}**`;
+                    break;
+                case ('dqvictory'):
+                    formatted += `**VICTORY by DQ**`;
+                    break;
+                case ('defeat'):
+                    formatted += `**DEFEAT ${players[0].wins}-${players[1].wins}**`;
+                    break;
+                case ('dqdefeat'):
+                    formatted += `**DEFEAT by DQ**`;
+            }
+            formatted += ` vs ${players[1].username}`;
     }
+    if (['zenith','zenithex','league'].indexOf(record.gamemode) != -1)
+        formatted += ` | ${formatNumber(Math.round(stats.apm*100)/100)} APM, ${formatNumber(Math.round(stats.pps*100)/100)} PPS, ${formatNumber(Math.round(stats.vsscore*100)/100)} VS`;
+    else 
+        formatted += ` | ${formatNumber(Math.round(record.results.aggregatestats*100)/100)} PPS, ${Math.round(stats.finesse.perfectpieces/stats.piecesplaced*10000)/100}% (${stats.finesse.faults}F) Finesse`;
 
+    formatted += ` | [[Replay]](https://tetr.io/#R:${record.replayid})`;
+
+    return formatted;
 }
 
 function formatNumber(num) {
     const numStr = num.toString();
     return numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+function getModEmoji(emoji) {
+    const mapping = {
+        "expert":     "1284286589576675348",
+        "nohold":     "1284286599319912468",
+        "messy":      "1284286607754793031",
+        "gravity":    "1284286616629809193",
+        "volatile":   "1284286624523354163",
+        "doublehole": "1284286635118301245",
+        "invisible":  "1284286644328988734",
+        "allspin":    "1284286652759412899",
+        "duo":        "1284286660800020620",
+    };
+    return `<:${emoji}:${mapping[emoji]}>`;
 }
