@@ -21,7 +21,7 @@ module.exports = {
         .addSubcommand(subcommand =>
             subcommand
                 .setName('discord')
-                .setDescription('Get a user\'s latest and top records via their Discord, the user must have linked their Discord to TETR.IO')
+                .setDescription('Get a user\'s records via their Discord, the user must have linked their Discord to TETR.IO')
                 .addUserOption((option) =>
                     option
                       .setName('user')
