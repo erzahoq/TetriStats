@@ -210,3 +210,7 @@ function getModEmoji(emoji) {
     };
     return `<:${emoji}:${mapping[emoji]}>`;
 }
+
+function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
