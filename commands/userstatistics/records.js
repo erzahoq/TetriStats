@@ -87,7 +87,7 @@ module.exports = {
         let pages = {};
         let buttons = [];
 
-        Object.entries(records).forEach(([category, data]) => {
+        Object.entries(records).forEach(([category, fetched]) => {
             const embed = new EmbedBuilder()
                 .setColor('#57b1ff')
                 .setThumbnail(`https://tetr.io/user-content/avatars/${tetrioID}.jpg`)
@@ -100,8 +100,8 @@ module.exports = {
                 .setStyle(ButtonStyle.Primary)
             
             let desc = "";
-            desc += `<:news_lblocal:1280356184640983122> ${formatRecord(data['top'][0])}`
-            data['all'].forEach((rec) => {
+            desc += `<:news_lblocal:1280356184640983122> ${formatRecord(fetched['top'][0])}\n`
+            fetched['all'].forEach((rec) => {
                 desc += `\n${formatRecord(rec)}`;
             })
 
