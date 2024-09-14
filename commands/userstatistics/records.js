@@ -91,7 +91,7 @@ module.exports = {
             const embed = new EmbedBuilder()
                 .setColor('#57b1ff')
                 .setThumbnail(`https://tetr.io/user-content/avatars/${tetrioID}.jpg`)
-                .setTitle(`${capitalizeFirstLetter(stats.username)}'s ${gametypeMapping[category]} Records:`)
+                .setTitle(`${capitalizeFirstLetter(stats.data.user.username)}'s ${gametypeMapping[category]} Records:`)
                 .setURL(`https://ch.tetr.io/u/${stats.username}`)
             const button = new ButtonBuilder()
                 .setCustomId(`recordspage_${buttons.length}`)
