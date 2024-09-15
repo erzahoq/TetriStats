@@ -55,7 +55,7 @@ client.on(Events.InteractionCreate, async interaction => {
         let topNewsRegex = new RegExp('topnewspage_[0-3]');
         let allNewsRegex = new RegExp('allnewspage_[0-3]');
         let achPageRegex = new RegExp('achpage_[0-9]'); //good job morky
-        let recordsPageRegex = new RegExp('recordspage_[0-9]');
+        let recordsPageRegex = new RegExp('recordspage_*.');
         //handle "userinfo.js" buttons
         if (profilePageRegex.test(buttonId)) {
             if (interaction.user.id !== interaction.message.interaction.user.id) {
@@ -109,11 +109,12 @@ client.on(Events.InteractionCreate, async interaction => {
             if (!pageData) return; // Exit if no page data is found
 
             const { pages, currentPage, buttons } = pageData;
-            const newPageIndex = parseInt(buttonId.split('_')[1]);
+            const newPageIndex = buttonId.split('_')[1];
+            const newPageButtonIndex = parseInt(buttonId.split('_')[2]);
 
             // Create updated buttons with the correct page disabled
             for (var i = 0; i < buttons.length; i++) {
-                buttons[i].setDisabled(newPageIndex === i);
+                buttons[i].setDisabled(newPageButtonIndex === i);
             }
 
             const row = new ActionRowBuilder();
@@ -123,7 +124,7 @@ client.on(Events.InteractionCreate, async interaction => {
 
             // Update interaction with the selected page
             await interaction.update({
-                embeds: [textPages[newPageIndex]],
+                embeds: [pages[newPageIndex]],
                 components: [row]
             });
 
