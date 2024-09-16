@@ -2,36 +2,38 @@ const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, Butt
 import('node-fetch'); // Ensure 'node-fetch' is imported properly
 
 module.exports = {
-	data: new SlashCommandBuilder()
-		.setName('user-info')
-		.setDescription('Get detailed information about a specific user via their TETR.IO (or Discord) username/ID.')
+    data: new SlashCommandBuilder()
+        .setName('user-info')
+        .setDescription('Get detailed information about a specific user via their TETR.IO (or Discord) username/ID.')
         .addSubcommand(subcommand =>
             subcommand
                 .setName('tetrio')
                 .setDescription('Get detailed information about a specific user via their TETR.IO username/ID.')
                 .addStringOption((option) =>
                     option
-                      .setName('user')
-                      .setDescription('the username/ID to search for')
-                      .setRequired(true),
-                  ),
-        )        
+                        .setName('user')
+                        .setDescription('the username/ID to search for')
+                        .setRequired(true),
+                ),
+        )
         .addSubcommand(subcommand =>
             subcommand
                 .setName('discord')
                 .setDescription('Get info about a specific user via their Discord, the user must have linked their Discord to TETR.IO')
                 .addUserOption((option) =>
                     option
-                      .setName('user')
-                      .setDescription('the discord user to search for')
-                      .setRequired(true),
-                  ),
-            ),
+                        .setName('user')
+                        .setDescription('the discord user to search for')
+                        .setRequired(true),
+                ),
+        ),
 
-	async execute(interaction) {
+    async execute(interaction) {
         let stats, summary;
+
+        // Fetch the account with either discord or tetrio
         if (interaction.options.getSubcommand() === 'tetrio') {
-			const user = interaction.options.getString('user').toLowerCase();
+            const user = interaction.options.getString('user').toLowerCase();
 
             const response = await fetch(`https://ch.tetr.io/api/users/${user}`);
             stats = await response.json();
@@ -39,64 +41,62 @@ module.exports = {
             if (!stats.success) {
                 if (stats.error.msg === "No such user! | Either you mistyped something, or the account no longer exists.") {
                     return await interaction.reply({
-                        content: 'No such user! Either you mistyped something, or this user no longer exists.', 
+                        content: 'No such user! Either you mistyped something, or this user no longer exists.',
                         ephemeral: true
                     });
                 } else {
                     return await interaction.reply({
-                        content: 'I had an issue accessing the TETR.IO servers! Please try again later.', 
+                        content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
                         ephemeral: true
                     });
                 }
-            }   
-            
+            }
+
             const summaryRaw = await fetch(`https://ch.tetr.io/api/users/${user}/summaries`);
             summary = await summaryRaw.json();
 
-		} else if (interaction.options.getSubcommand() === 'discord') {
-			const user = interaction.options.getUser('user');
+        } else if (interaction.options.getSubcommand() === 'discord') {
+            const user = interaction.options.getUser('user');
 
             let response = await fetch(`https://ch.tetr.io/api/users/search/discord:${user.id}`);
             stats = await response.json();
 
             if (stats.data === null) {
                 return await interaction.reply({
-                    content: 'No such user found on TETR.IO! Either the account no longer exists, or this person has not linked their Discord with TETR.IO.', 
+                    content: 'No such user found on TETR.IO! Either the account no longer exists, or this person has not linked their Discord with TETR.IO.',
                     ephemeral: true
                 });
             }
 
             if (!stats.success) {
                 return await interaction.reply({
-                    content: 'I had an issue accessing the TETR.IO servers! Please try again later.', 
+                    content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
                     ephemeral: true
                 });
             }
 
             const tetrioID = stats.data.user._id
 
-            response = await fetch(`https://ch.tetr.io/api/users/${tetrioID}`);   
+            response = await fetch(`https://ch.tetr.io/api/users/${tetrioID}`);
             const summaryRaw = await fetch(`https://ch.tetr.io/api/users/${tetrioID}/summaries`);
 
             stats = await response.json();
             summary = await summaryRaw.json();
-		}
+        }
 
         const statData = stats.data;
         const summaryData = summary.data;
-
         const country = countryCodeToEmoji(statData.country);
+        const badgeArray = statData.badges.map(badge => badge.id); // ??? some magic badge thing erz pls explain
 
-        const badgeArray = statData.badges.map(badge => badge.id);
-        
-
+        // big wall embeds, functions are split up inside them though so click those
         const pages = [
             new EmbedBuilder()
                 .setColor("#80bdff")
                 .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
                 .setTitle(`${capitalizeFirstLetter(escapeUnderscores(statData.username))}'s Profile:`)
                 .setURL(`https://ch.tetr.io/u/${statData.username}`)
-                .setFooter({ text: `User ID: ${statData._id} | Role: ${statData.role}`})
+                .setFooter({ text: `User ID: ${statData._id} | Role: ${statData.role}` })
                 .setDescription(`
 ## General Information
 
@@ -111,13 +111,13 @@ Achievement Rating: ${statData.ar}${badgesConvert(badgeArray)}${achievementCount
 
 ${connectionsConvert(statData.connections)}
                     `)
-                    .setTimestamp(),
+                .setTimestamp(),
             new EmbedBuilder()
                 .setColor("#ff7dc0")
                 .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
                 .setTitle(`${capitalizeFirstLetter(escapeUnderscores(statData.username))}'s Profile:`)
                 .setURL(`https://ch.tetr.io/u/${statData.username}`)
-                .setFooter({ text: `User ID: ${statData._id} | Role: ${statData.role}`})
+                .setFooter({ text: `User ID: ${statData._id} | Role: ${statData.role}` })
                 .setDescription(`
 ## Records:
 ${formatZenith(summaryData, country)}${formatZenithExpert(summaryData, country)}${format40Lines(summaryData, country)}${formatBlitz(summaryData, country)}${formatZen(summaryData)}
@@ -128,50 +128,51 @@ ${formatZenith(summaryData, country)}${formatZenithExpert(summaryData, country)}
                 .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
                 .setTitle(`${capitalizeFirstLetter(escapeUnderscores(statData.username))}'s Profile:`)
                 .setURL(`https://ch.tetr.io/u/${statData.username}`)
-                .setFooter({ text: `User ID: ${statData._id} | Role: ${statData.role}`})
+                .setFooter({ text: `User ID: ${statData._id} | Role: ${statData.role}` })
                 .setDescription(`${formatLeague(summaryData, country)}`)
         ];
 
         // Initial row of buttons
-		const row = new ActionRowBuilder().addComponents(
-			new ButtonBuilder()
-				.setCustomId('profilepage_0')
-				.setLabel('General')
-				.setStyle(ButtonStyle.Primary)
-				.setDisabled(true), // Disable the first button initially
-			new ButtonBuilder()
-				.setCustomId('profilepage_1')
-				.setLabel('Records')
-				.setStyle(ButtonStyle.Primary),
-			new ButtonBuilder()
-				.setCustomId('profilepage_2')
-				.setLabel('Tetra League')
-				.setStyle(ButtonStyle.Primary)
-		);
+        const row = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setCustomId('profilepage_0')
+                .setLabel('General')
+                .setStyle(ButtonStyle.Primary)
+                .setDisabled(true), // Disable the first button initially
+            new ButtonBuilder()
+                .setCustomId('profilepage_1')
+                .setLabel('Records')
+                .setStyle(ButtonStyle.Primary),
+            new ButtonBuilder()
+                .setCustomId('profilepage_2')
+                .setLabel('Tetra League')
+                .setStyle(ButtonStyle.Primary)
+        );
 
-		// Send the initial message with the first page and buttons
-		await interaction.reply({
-			embeds: [pages[0]],
-			components: [row]
-		});
+        // Send the initial message with the first page and buttons
+        await interaction.reply({
+            embeds: [pages[0]],
+            components: [row]
+        });
 
-		// Attach pages to the interaction for future reference
-		interaction.client.pageData = {
-			[interaction.id]: {
-				pages,
-				currentPage: 0
-			}
-		};
+        // Attach pages to the interaction for future reference
+        interaction.client.pageData = {
+            [interaction.id]: {
+                pages,
+                currentPage: 0
+            }
+        };
     }
 };
 
+// most of these functions are self-explainatory
 
 function gamesWonConvert(gamesWon, gamesPlayed) {
     if (gamesWon === 'Hidden' || gamesPlayed === 'Hidden' || gamesPlayed === 0) {
         return gamesWon;
     }
 
-    return `${gamesWon} (${Math.round(10000*(gamesWon/gamesPlayed))/100}%)`
+    return `${gamesWon} (${Math.round(10000 * (gamesWon / gamesPlayed)) / 100}%)`
 }
 
 function badgesConvert(badgelist) {
@@ -186,7 +187,7 @@ function convertToTimeFormat(inputSeconds) {
     const totalSeconds = inputSeconds / 1000
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = (totalSeconds % 60).toFixed(3); // Keep milliseconds as part of seconds
-    
+
     // Format seconds to ensure two digits before decimal
     const [intSeconds, fracSeconds] = seconds.split('.');
     const formattedSeconds = intSeconds.padStart(2, '0') + '.' + (fracSeconds || '000').padEnd(3, '0');
@@ -199,7 +200,7 @@ function playtimeConvert(playtime) {
         return playtime;
     }
 
-    return `${Math.round(secondsToHours(playtime)*10)/10} Hours`    
+    return `${Math.round(secondsToHours(playtime) * 10) / 10} Hours`
 }
 
 function gamesPlayedConvert(gamesplayed, gameswon, gamestime) {
@@ -216,9 +217,9 @@ function supporterConvert(supporter, supporterTier) {
     if (supporter) {
         let supporterString = '';
 
-        for (let i = 1; i < supporterTier; i++) {
+        for (let i = 1; i < supporterTier; i++) { // add stars because those exist
             supporterString = supporterString.concat(" <:supporter_star:1277300953111855231>")
-            
+
         }
         return (`Supporter ${supporterString}\n`)
     } else {
@@ -242,7 +243,7 @@ function getEmojiOfAch(name) {
         "ach_t10": "1277286339527577730",
         "ach_t3": "1277286318824620042"
     }
-    return `<:ach_${name}:${achEmojis["ach_"+name]}>`
+    return `<:ach_${name}:${achEmojis["ach_" + name]}>`
 }
 
 function achievementCountsConvert(ar_counts) {
@@ -284,7 +285,7 @@ function achievementCountsConvert(ar_counts) {
     }
 
     // Join the list items with pipes (|) and return the formatted string
-    return "\n"+formattedList.join(' | ');
+    return "\n" + formattedList.join(' | ');
 }
 
 function connectionsConvert(connections) {
@@ -310,7 +311,7 @@ function connectionsConvert(connections) {
     }
 
     // Join the list items with new lines and return the formatted string
-    return "__**Connections:**__ \n"+formattedList.join('\n');
+    return "__**Connections:**__ \n" + formattedList.join('\n');
 }
 
 function reformatTimestamp(isoString) {
@@ -334,6 +335,7 @@ function capitalizeFirstLetter(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
+// this is such a function (and it's only used once lmao)
 function secondsToHours(seconds) {
     const secondsPerHour = 60 * 60;
     return seconds / secondsPerHour;
@@ -345,19 +347,20 @@ function countryCodeToEmoji(countryCode) {
         .toUpperCase() // Make sure the code is uppercase
         .split('')     // Split the letters
         .map(char => 127397 + char.charCodeAt()); // Convert to regional indicator symbol
-    
+
     return String.fromCodePoint(...codePoints);
 }
 
+// a magic formula stolen from somewhere online
 function calculateLevel(xp) {
-    return ((xp/500)**0.6) + (xp/(5000+((Math.max(0, xp - (4*10**6)))/5000))) + 1
+    return ((xp / 500) ** 0.6) + (xp / (5000 + ((Math.max(0, xp - (4 * 10 ** 6))) / 5000))) + 1
 }
 
 function format40Lines(statistics, country) {
     if (statistics['40l'].record) {
         let flStatistics = statistics['40l'];
         return `\n### <:40lines:1277298516380614786> 40 Lines:
-- PB: ${convertToTimeFormat(flStatistics.record.results.stats.finaltime)}s (${Math.round(flStatistics.record.results.aggregatestats.pps*100)/100} PPS)
+- PB: ${convertToTimeFormat(flStatistics.record.results.stats.finaltime)}s (${Math.round(flStatistics.record.results.aggregatestats.pps * 100) / 100} PPS)
 - Rank: #${formatNumber(flStatistics.rank)} (#${formatNumber(flStatistics.rank_local)} ${country})`
     } else {
         return ""
@@ -368,7 +371,7 @@ function formatBlitz(statistics, country) {
     if (statistics['blitz'].record) {
         let blStatistics = statistics['blitz'];
         return `\n### <:blitz:1277298507920838718> Blitz:
-- PB: ${formatNumber(blStatistics.record.results.stats.score)} (${Math.round(blStatistics.record.results.aggregatestats.pps*100)/100} PPS)
+- PB: ${formatNumber(blStatistics.record.results.stats.score)} (${Math.round(blStatistics.record.results.aggregatestats.pps * 100) / 100} PPS)
 - Rank: #${formatNumber(blStatistics.rank)} (#${formatNumber(blStatistics.rank_local)} ${country})`
     } else {
         return ""
@@ -380,15 +383,15 @@ function formatZenith(statistics, country) {
     let zStatistics = statistics['zenith'];
 
     if (statistics['zenith'].record) {
-        zenithText += `\n- PB: ${formatNumber(Math.round(zStatistics.record.results.stats.zenith.altitude*100)/100)}m
+        zenithText += `\n- PB: ${formatNumber(Math.round(zStatistics.record.results.stats.zenith.altitude * 100) / 100)}m
 - #${formatNumber(zStatistics.rank)} (#${formatNumber(zStatistics.rank_local)} ${country})`
     }
     if (statistics['zenith'].best.record) {
-        zenithText += `\n- All-Time Best: ${formatNumber(Math.round(zStatistics.best.record.results.stats.zenith.altitude*100)/100)}m (#${formatNumber(zStatistics.best.rank)})`
+        zenithText += `\n- All-Time Best: ${formatNumber(Math.round(zStatistics.best.record.results.stats.zenith.altitude * 100) / 100)}m (#${formatNumber(zStatistics.best.rank)})`
     }
 
     if (zenithText.length > 0) {
-        zenithText = `\n### <:quickplay:1277296551428886588> Quick Play:` + zenithText 
+        zenithText = `\n### <:quickplay:1277296551428886588> Quick Play:` + zenithText
     }
 
     return zenithText;
@@ -400,15 +403,15 @@ function formatZenithExpert(statistics, country) {
     let zStatistics = statistics['zenithex'];
 
     if (statistics['zenithex'].record) {
-        zenithText += `\n- PB: ${formatNumber(Math.round(zStatistics.record.results.stats.zenith.altitude*100)/100)}m
+        zenithText += `\n- PB: ${formatNumber(Math.round(zStatistics.record.results.stats.zenith.altitude * 100) / 100)}m
 - #${formatNumber(zStatistics.rank)} (#${formatNumber(zStatistics.rank_local)} ${country})`
     }
     if (statistics['zenithex'].best.record) {
-        zenithText += `\n- All-Time Best: ${formatNumber(Math.round(zStatistics.best.record.results.stats.zenith.altitude*100)/100)}m (#${formatNumber(zStatistics.best.rank)})`
+        zenithText += `\n- All-Time Best: ${formatNumber(Math.round(zStatistics.best.record.results.stats.zenith.altitude * 100) / 100)}m (#${formatNumber(zStatistics.best.rank)})`
     }
 
     if (zenithText.length > 0) {
-        zenithText = `\n### <:quickplayexpert:1277351744413896724> Expert Quick Play:` + zenithText 
+        zenithText = `\n### <:quickplayexpert:1277351744413896724> Expert Quick Play:` + zenithText
     }
 
     return zenithText;
@@ -424,9 +427,10 @@ function formatZen(statistics) {
     }
 }
 
-function formatLeague(statistics, country)  {
+function formatLeague(statistics, country) {
     const leagueStats = statistics['league']
 
+    // lots of vars
     let gamesPlayed = leagueStats.gamesplayed;
     let gamesWon = leagueStats.gameswon;
     let glicko = leagueStats.glicko;
@@ -438,7 +442,7 @@ function formatLeague(statistics, country)  {
 
     let rankBoolean = true;
 
-    let progressToNextRank = (leagueStats.prev_at - leagueStats.standing)/(leagueStats.prev_at - leagueStats.next_at)
+    let progressToNextRank = (leagueStats.prev_at - leagueStats.standing) / (leagueStats.prev_at - leagueStats.next_at)
 
     let prevRank = leagueStats.prev_rank;
     let nextRank = leagueStats.next_rank;
@@ -457,27 +461,28 @@ function formatLeague(statistics, country)  {
 
     let glixaireDisplay = "";
 
-    let recordDisplay = Math.round(10000*(gamesWon/gamesPlayed))/100;
+    let recordDisplay = Math.round(10000 * (gamesWon / gamesPlayed)) / 100;
 
     if (glixaire !== -1) {
-        glixaireDisplay = `Win Odds: ${Math.round(glixaire*100)/100}%\n`
+        glixaireDisplay = `Win Odds: ${Math.round(glixaire * 100) / 100}%\n`
     }
 
+    // TR display stuff
     if (rating < 0) {
         if (leagueStats.gamesplayed === 0) {
             recordDisplay = 0;
         }
         rating = `${leagueStats.gamesplayed}/10 Rating Games Played`
-        progressToNextRank = leagueStats.gamesplayed/10
-            prevRank = '';
-            nextRank = '<:rank_z:1277382169538461746>';
-        
-        rankBoolean = "yesnt";
+        progressToNextRank = leagueStats.gamesplayed / 10
+        prevRank = '';
+        nextRank = '<:rank_z:1277382169538461746>';
+
+        rankBoolean = "yesnt"; // so true
     } else if (ratingDeviation > 100) {
         rating = `Unranked`;
         rankBoolean = false;
     } else {
-        rating = `${(Math.round(rating*100))/100} TR`
+        rating = `${(Math.round(rating * 100)) / 100} TR`
     }
 
     return `# <:league:1277378168717840497> Tetra League:
@@ -514,7 +519,7 @@ function getEmojiOfRank(rank) {
         "rank_dplus": "1277293513616265216",
         "rank_d": "1277293312696516690",
         "rank_z": "1277382169538461746",
-		"rank_top": "1278185429656670269"
+        "rank_top": "1278185429656670269"
     }
     let formattedRank = 'rank_' + rank.toLowerCase().replace("+", "plus").replace("-", "minus");
     return `<:${formattedRank}:${rankEmojis[formattedRank]}>`
@@ -524,7 +529,7 @@ function getEmojiOfRank(rank) {
 function formatLeagueStanding(standing, localStanding, glicko, ratingDeviation, country) {
     if (standing > 0) {
         return `\n**\\\#${formatNumber(standing)}** (#${formatNumber(localStanding)} ${country})
-**Glicko: ${formatNumber((Math.round(glicko*100))/100)} ± ${(Math.round(ratingDeviation*100))/100}**`
+**Glicko: ${formatNumber((Math.round(glicko * 100)) / 100)} ± ${(Math.round(ratingDeviation * 100)) / 100}**`
     } else {
         return ''
     }
@@ -536,17 +541,17 @@ function generateProgressBar(generateBar, progress, symbolA, symbolB, length = 1
     }
 
     let startSymbol = "<:bar_start:1277463580513669160>"
-	let endSymbol = "<:bar_end:1277463565036683264>"
+    let endSymbol = "<:bar_end:1277463565036683264>"
 
-    if (generateBar === "yesnt") {
+    if (generateBar === "yesnt") { // this is when there's no rank
         startSymbol = "<:bar_start_rankless:1277779429199712317>"
     }
 
     // Ensure the progress is within the 0-1 range
     progress = Math.max(0, Math.min(progress, 1));
-	if (progress === 1) {
-		endSymbol = "<:bar_end_full:1278896013502976000>"
-	}
+    if (progress === 1) { // this is for when the player is #1 in the world (wow)
+        endSymbol = "<:bar_end_full:1278896013502976000>"
+    }
 
     // Calculate the position of the "!" marker
     const position = Math.round(progress * length);
@@ -569,31 +574,32 @@ function displayedAchesConvert(displayed, all) {
     };
     let displayCase = "\n__Displayed Achivements:__"
 
+    // loop thru each displayed ach
     all.forEach(achievement => {
         if (displayed.includes(achievement['k'])) {
             displayCase += `\n` + getEmojiOfAch(achievementMapping[achievement['rank']])
 
             //wehhhhhhh
+            // funny formatting
             if (achievement.vt === 4) {
-                displayCase += ` **${achievement['name']}** - **Floor ${Math.floor(achievement.a)}** (${formatNumber(Math.round((achievement.v)*100)/100)}m) ${achievement.object}`
+                displayCase += ` **${achievement['name']}** - **Floor ${Math.floor(achievement.a)}** (${formatNumber(Math.round((achievement.v) * 100) / 100)}m) ${achievement.object}`
             } else {
                 displayCase += ` **${achievement['name']}** - **${formatNumber(Math.round(achievement.v))}** ${achievement.object}`
             }
 
-            console.log(achievement)
-            
             if (achievement['rank'] === 100) {
                 displayCase += ` (Issue ${achievement['pos']}/${achievement['total']})`
             } else {
                 if (achievement['pos'] < 100) {
-                    displayCase += ` (__#${achievement['pos']+1}__)`
+                    displayCase += ` (__#${achievement['pos'] + 1}__)`
                 } else {
-                    displayCase += ` (Top ${Math.round(achievement['pos']/achievement['total']*10000)/100}%)`
+                    displayCase += ` (Top ${Math.round(achievement['pos'] / achievement['total'] * 10000) / 100}%)`
                 }
             }
         }
     })
-    if (displayCase != "Displayed Achievements:") return displayCase;
+    // make sure the display isn't nothing
+    if (displayCase != "\n__Displayed Achivements:__") return displayCase;
     return "";
 }
 
