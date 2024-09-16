@@ -108,6 +108,10 @@ module.exports = {
                 desc += `${formatRecord(rec)}\n`;
             })
 
+            if (desc === '') {
+                desc = `<:ach_none:1278178486586048575> No ${gametypeMapping[category]} records yet...`
+            }
+
             embed.setDescription(desc);
             pages[category] = embed;
             buttons.push(button)
