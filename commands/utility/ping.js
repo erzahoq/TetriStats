@@ -1,5 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 
+// it's a ping command
+// yes i'm commenting in the ping command fuck you
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('ping')

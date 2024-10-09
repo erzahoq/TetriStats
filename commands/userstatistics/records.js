@@ -30,8 +30,11 @@ module.exports = {
                 ),
         ),
     async execute(interaction) {
-        await interaction.deferReply()
+        await interaction.deferReply() // defer because this one can take a while (it's 10 API calls)
+
         let records, tetrioID;
+
+        // Fetch the account with either discord or tetrio
         if (interaction.options.getSubcommand() === 'tetrio') {
             const user = interaction.options.getString('user').toLowerCase();
 
@@ -78,6 +81,7 @@ module.exports = {
             records = await fetchAll(tetrioID);
         }
 
+        // mappings and vars
         const gametypeMapping = {
             '40l': '40 Lines',
             'blitz': "Blitz",
@@ -88,7 +92,10 @@ module.exports = {
         let pages = {};
         let buttons = [];
 
+        // loop through each category and what was fetched (see fetchAll)
         Object.entries(records).forEach(([category, fetched]) => {
+
+            // create embed and button
             const embed = new EmbedBuilder()
                 .setColor('#57b1ff')
                 .setThumbnail(`https://tetr.io/user-content/avatars/${tetrioID}.jpg`)
@@ -100,6 +107,7 @@ module.exports = {
                 .setLabel(gametypeMapping[category])
                 .setStyle(ButtonStyle.Primary)
 
+            // do the description
             let desc = "";
             if (fetched['top']) {
                 desc += `<:news_lblocal:1280356184640983122> ${formatRecord(fetched['top'])}\n\n`
@@ -112,6 +120,7 @@ module.exports = {
                 desc = `<:ach_none:1278178486586048575> No ${gametypeMapping[category]} records yet...`
             }
 
+            // set description and push to list
             embed.setDescription(desc);
             pages[category] = embed;
             buttons.push(button)
@@ -140,14 +149,21 @@ async function fetchAll(user) {
     const toFetch = ['40l', 'blitz', 'zenith', 'zenithex', 'league'];
     let responses = {};
 
+    // go through each category and fetch them
     for (const item of toFetch) {
         responses[item] = {};
+
+        // fetch the last 10 games
         let allResponse = await fetch(`https://ch.tetr.io/api/users/${user}/records/${item}/recent?limit=${maxItems}`);
         allResponse = await allResponse.json();
         responses[item]['all'] = allResponse.data.entries;
+
+        // ignore league because it doesn't have a top
         if (item === 'league') {
             continue;
         }
+
+        // fetch the top game
         let topResponse = await fetch(`https://ch.tetr.io/api/users/${user}/records/${item}/top?limit=1`);
         topResponse = await topResponse.json();
         responses[item]['top'] = topResponse.data.entries[0];
@@ -160,22 +176,30 @@ function formatRecord(record) {
     let formatted = `<t:${reformatTimestamp(record.ts)}:d> <t:${reformatTimestamp(record.ts)}:t> - `
     let stats = record.results.stats
 
+    // checks for each gamemode
     if (record.gamemode === '40l') {
         formatted += `**${convertToTimeFormat(stats.finaltime)}**`;
-    } else if (record.gamemode === 'blitz') {
+    } 
+    else if (record.gamemode === 'blitz') {
         formatted += `**${formatNumber(stats.score)}**`;
-    } else if (record.gamemode === 'zenithex' || record.gamemode === 'zenith') {
+    } 
+    else if (record.gamemode === 'zenithex' || record.gamemode === 'zenith') {
         formatted += `**${formatNumber(Math.round(stats.zenith.altitude * 10) / 10)}m**`;
-        stats = record.results.aggregatestats;
+        stats = record.results.aggregatestats; // for some reason pps and vs score are in aggregate
+
+        // add mod emojis
         if (record.extras.zenith.mods) {
             formatted += ' ';
             record.extras.zenith.mods.forEach(mod => {
                 formatted += getModEmoji(mod);
             })
         }
-    } else if (record.gamemode === 'league') {
+    } 
+    else if (record.gamemode === 'league') {
         const players = record.results.leaderboard
         stats = players[0].stats
+
+        // switch statement wow!! (checks the result)
         switch (record.extras.result) {
             case ('victory'):
                 formatted += `**VICTORY ${players[0].wins}-${players[1].wins}**`;
@@ -185,15 +209,18 @@ function formatRecord(record) {
                 break;
             case ('defeat'):
                 formatted += `**DEFEAT ${players[1].wins}-${players[0].wins}**`;
+                stats = players[1].stats // the user is only in the first slot if they win apparently
                 break;
             case ('dqdefeat'):
+                stats = players[1].stats
                 formatted += `**DEFEAT by DQ**`;
         }
         formatted += ` vs ${record.otherusers[0].username}`;
     } else {
-        formatted += `[Invalid gamemode.]`
+        formatted += `[Invalid gamemode.]` // this shouldn't be possible
     }
 
+    // add some extra stats
     if (['zenith', 'zenithex', 'league'].indexOf(record.gamemode) != -1)
         formatted += ` | ${formatNumber(Math.round(stats.apm * 100) / 100)} APM, ${formatNumber(Math.round(stats.pps * 100) / 100)} PPS, ${formatNumber(Math.round(stats.vsscore * 100) / 100)} VS`;
     else

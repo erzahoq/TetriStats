@@ -5,16 +5,16 @@ const itemsPerPage = 15;
 const pageCount = 4;
 
 module.exports = {
-	data: new SlashCommandBuilder()
-		.setName('news-all')
-		.setDescription('Fetches all the latest Tetra News.'),
-	async execute(interaction) {        
+    data: new SlashCommandBuilder()
+        .setName('news-all')
+        .setDescription('Fetches all the latest Tetra News.'),
+    async execute(interaction) {
         const response = await fetch(`https://ch.tetr.io/api/news/?limit=${itemsPerPage * pageCount}`);
         const stats = await response.json(); // Use .json() to parse the response as JSON
-        
+
         if (!stats.success) {
             return await interaction.reply({
-                content: 'I had an issue accessing the TETR.IO servers! Please try again later.', 
+                content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
                 ephemeral: true
             });
         }
@@ -35,22 +35,21 @@ module.exports = {
             pageData.push([]);
         }
 
-
         for (let i = 0; i < data.length; i++) {
             let message = "";  // Reset the message for each user
             const user = data[i];
             const userData = user.data;
 
-            
 
+            // Handle different types of stuff
             if (user.type === 'personalbest') {
                 message += `<:news_lblocal:1280356184640983122> [${capitalizeFirstLetter(userData.username)}](https://ch.tetr.io/u/${userData.username}) got a new PB in ${gametypeMapping[userData.gametype]}!`
 
                 if (userData.gametype === 'zenith' || userData.gametype === 'zenithex') {
-                    message += ` (${Math.round(userData.result*10)/10}m)`
+                    message += ` (${Math.round(userData.result * 10) / 10}m)`
                 } else {
                     message += ` (${convertToTimeFormat(userData.result)})`
-                } 
+                }
             } else if (user.type === 'supporter') {
                 message += `<:supporter_star:1277300953111855231> [${userData.username}](https://ch.tetr.io/u/${userData.username}) has become a **TETR.IO Supporter!**`
             } else if (user.type === 'rankup') {
@@ -60,11 +59,11 @@ module.exports = {
             }
             message += ` (${reformatTimestamp(user.ts)})`;
 
-            
-
+            // Put the message in the page
             pageData[Math.floor(i / itemsPerPage)].push(message);
         }
 
+        // hardcoded pages
         const pages = [
             new EmbedBuilder()
                 .setColor("#d384f5")
@@ -78,49 +77,46 @@ module.exports = {
                 .setColor("#d384f5")
                 .setTitle(`All News (3)`)
                 .setDescription(pageData[2].join('\n')),
-                new EmbedBuilder()
+            new EmbedBuilder()
                 .setColor("#d384f5")
                 .setTitle(`All News (4)`)
                 .setDescription(pageData[3].join('\n')),
-            ];
+        ];
 
         // Initial row of buttons
-		const row = new ActionRowBuilder().addComponents(
-			new ButtonBuilder()
-				.setCustomId('allnewspage_0')
-				.setLabel('Page 1')
-				.setStyle(ButtonStyle.Primary)
-				.setDisabled(true), // Disable the first button initially
-			new ButtonBuilder()
-				.setCustomId('allnewspage_1')
-				.setLabel('Page 2')
-				.setStyle(ButtonStyle.Primary),
-			new ButtonBuilder()
-				.setCustomId('allnewspage_2')
-				.setLabel('Page 3')
-				.setStyle(ButtonStyle.Primary),
+        const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
-				.setCustomId('allnewspage_3')
-				.setLabel('Page 4')
-				.setStyle(ButtonStyle.Primary),
-		);
+                .setCustomId('allnewspage_0')
+                .setLabel('Page 1')
+                .setStyle(ButtonStyle.Primary)
+                .setDisabled(true), // Disable the first button initially
+            new ButtonBuilder()
+                .setCustomId('allnewspage_1')
+                .setLabel('Page 2')
+                .setStyle(ButtonStyle.Primary),
+            new ButtonBuilder()
+                .setCustomId('allnewspage_2')
+                .setLabel('Page 3')
+                .setStyle(ButtonStyle.Primary),
+            new ButtonBuilder()
+                .setCustomId('allnewspage_3')
+                .setLabel('Page 4')
+                .setStyle(ButtonStyle.Primary),
+        );
 
         // Send the initial message with the first page and buttons
-		await interaction.reply({
-			embeds: [pages[0]],
-			components: [row]
-		});
+        await interaction.reply({
+            embeds: [pages[0]],
+            components: [row]
+        });
 
-		// Attach pages to the interaction for future reference
-		interaction.client.pageData = {
-			[interaction.id]: {
-				pages,
-				currentPage: 0
-			}
-		};
-
-
-
+        // Attach pages to the interaction for future reference
+        interaction.client.pageData = {
+            [interaction.id]: {
+                pages,
+                currentPage: 0
+            }
+        };
     }
 };
 
@@ -141,7 +137,7 @@ function convertToTimeFormat(inputSeconds) {
     const totalSeconds = inputSeconds / 1000
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = (totalSeconds % 60).toFixed(3); // Keep milliseconds as part of seconds
-    
+
     // Format seconds to ensure two digits before decimal
     const [intSeconds, fracSeconds] = seconds.split('.');
     const formattedSeconds = intSeconds.padStart(2, '0') + '.' + (fracSeconds || '000').padEnd(3, '0');
@@ -174,7 +170,7 @@ function getEmojiOfRank(rank) {
         "rank_dplus": "1277293513616265216",
         "rank_d": "1277293312696516690",
         "rank_z": "1277382169538461746",
-		"rank_top": "1278185429656670269"
+        "rank_top": "1278185429656670269"
     }
     let formattedRank = 'rank_' + rank.toLowerCase().replace("+", "plus").replace("-", "minus");
     return `<:${formattedRank}:${rankEmojis[formattedRank]}>`
