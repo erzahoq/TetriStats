@@ -103,7 +103,7 @@ module.exports = {
 ${statData.bio || ""}
 
 Account Creation: ${reformatTimestamp(statData.ts)}
-Level ${formatNumber(Math.round(calculateLevel(statData.xp)))} (${formatNumber(Math.round(statData.xp))} XP)
+Level ${formatNumber(Math.floor(calculateLevel(statData.xp)))} (${formatNumber(Math.floor(statData.xp))} XP)
 Country: ${country}
 Friends: ${statData.friend_count}
 ${supporterConvert(statData.supporter, statData.supporter_tier)}
@@ -199,7 +199,7 @@ function playtimeConvert(playtime) {
         return playtime;
     }
 
-    return `${Math.round(secondsToHours(playtime)*10)/10} Hours`    
+    return `${Math.floor(secondsToHours(playtime)*10)/10} Hours`    
 }
 
 function gamesPlayedConvert(gamesplayed, gameswon, gamestime) {
