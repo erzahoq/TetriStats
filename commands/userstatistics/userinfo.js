@@ -86,8 +86,30 @@ module.exports = {
 
         const statData = stats.data;
         const summaryData = summary.data;
-        const country = countryCodeToEmoji(statData.country);
         const badgeArray = statData.badges.map(badge => badge.id); // ??? some magic badge thing erz pls explain
+
+        if (statData.role === 'bot') {
+            const embed = new EmbedBuilder()
+                .setColor("#80bdff")
+                .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
+                .setTitle(`${capitalizeFirstLetter(escapeUnderscores(statData.username))}'s Profile:`)
+                .setURL(`https://ch.tetr.io/u/${statData.username}`)
+                .setFooter({ text: `User ID: ${statData._id}` })
+                .setDescription(`
+# BOT
+This user is a **BOT**, owned by ${statData.botmaster.toLowerCase()}. Their records are not available, but some general information can be shown.
+
+## General Information
+
+Account Creation: ${reformatTimestamp(statData.ts)}
+Level ${formatNumber(Math.floor(calculateLevel(statData.xp)))} (${formatNumber(Math.floor(statData.xp))} XP)
+Friends: ${statData.friend_count}${gamesPlayedConvert(statData.gamesplayed, statData.gameswon, statData.gametime)}`)
+            return await interaction.reply({
+                embeds: [embed]
+            })
+        }
+        
+        const country = countryCodeToEmoji(statData.country);
 
         // big wall embeds, functions are split up inside them though so click those
         const pages = [
