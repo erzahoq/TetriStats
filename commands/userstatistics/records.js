@@ -43,12 +43,12 @@ module.exports = {
 
             if (!stats.success) {
                 if (stats.error.msg === "No such user! | Either you mistyped something, or the account no longer exists.") {
-                    return await interaction.reply({
+                    return await interaction.editReply({
                         content: 'No such user! Either you mistyped something, or this user no longer exists.',
                         ephemeral: true
                     });
                 } else {
-                    return await interaction.reply({
+                    return await interaction.editReply({
                         content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
                         ephemeral: true
                     });
@@ -64,14 +64,14 @@ module.exports = {
             stats = await response.json();
 
             if (stats.data === null) {
-                return await interaction.reply({
+                return await interaction.editReply({
                     content: 'No such user found on TETR.IO! Either the account no longer exists, or this person has not linked their Discord with TETR.IO.',
                     ephemeral: true
                 });
             }
 
             if (!stats.success) {
-                return await interaction.reply({
+                return await interaction.editReply({
                     content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
                     ephemeral: true
                 });
