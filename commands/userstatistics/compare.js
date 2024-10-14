@@ -168,15 +168,21 @@ module.exports = {
             .setColor('#ff9159') // Set embed color
             .setTitle(`${userStats1.username} vs. ${userStats2.username}`)
             .addFields(
-            { name: 'Stat', value: 'Games Played\nWins\nPlaytime\nXP', inline: true },
-
+            { name: 'Stat', value: 'Games Played\nWins\nPlaytime\nLevel\nAR\nFriend Count', inline: true },
             { name: `${userStats1.username}`, value: `${userStats1.gamesplayed}
             ${userStats1.gameswon} (${Math.round(userStats1.gameswon/userStats1.gamesplayed*10000)/100}%)
             ${playtimeConvert(userStats1.gametime)}
-            ${formatNumber(Math.floor(userStats1.xp))} XP (Level ${formatNumber(Math.floor(calculateLevel(userStats1.xp)))})
-    
-
+            Level ${formatNumber(Math.floor(calculateLevel(userStats1.xp)))}
+            ${userStats1.ar}
+            ${userStats1.friend_count}
             `, inline: true},
+            { name: `${userStats2.username}`, value: `${userStats2.gamesplayed}
+            ${userStats2.gameswon} (${Math.round(userStats2.gameswon/userStats2.gamesplayed*10000)/100}%)
+            ${playtimeConvert(userStats2.gametime)}
+            Level ${formatNumber(Math.floor(calculateLevel(userStats2.xp)))}
+            ${userStats2.ar}
+            ${userStats2.friend_count}
+            `, inline: true}
             )
             .setTimestamp();
         
@@ -206,4 +212,28 @@ function formatNumber(num) {
 // a magic formula stolen from somewhere online
 function calculateLevel(xp) {
     return ((xp / 500) ** 0.6) + (xp / (5000 + ((Math.max(0, xp - (4 * 10 ** 6))) / 5000))) + 1
+}
+
+// Convert country code to flag emoji
+function countryCodeToEmoji(countryCode) {
+    const codePoints = countryCode
+        .toUpperCase() // Make sure the code is uppercase
+        .split('')     // Split the letters
+        .map(char => 127397 + char.charCodeAt()); // Convert to regional indicator symbol
+
+    return String.fromCodePoint(...codePoints);
+}
+
+function supporterConvert(supporter, supporterTier) {
+    if (supporter) {
+        let supporterString = '';
+
+        for (let i = 1; i < supporterTier; i++) { // add stars because those exist
+            supporterString = supporterString.concat(" <:supporter_star:1277300953111855231>")
+
+        }
+        return (`Supporter ${supporterString}\n`)
+    } else {
+        return ""
+    }
 }

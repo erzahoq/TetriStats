@@ -112,6 +112,7 @@ Friends: ${statData.friend_count}${gamesPlayedConvert(statData.gamesplayed, stat
         const country = countryCodeToEmoji(statData.country);
 
         // big wall embeds, functions are split up inside them though so click those
+        // i love function spam
         const pages = [
             new EmbedBuilder()
                 .setColor("#80bdff")
