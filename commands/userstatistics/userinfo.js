@@ -460,6 +460,7 @@ function formatLeague(statistics, country) {
     let rating = leagueStats.tr;
     let glixaire = leagueStats.gxe;
     let rank = leagueStats.rank;
+    let estRank = leagueStats.percentile_rank;
 
 
     let rankBoolean = true;
@@ -501,14 +502,14 @@ function formatLeague(statistics, country) {
 
         rankBoolean = "yesnt"; // so true
     } else if (ratingDeviation > 100) {
-        rating = `Unranked`;
+        rating = `Unranked\n### Probably around ${getEmojiOfRank(estRank)} rank (**${formatNumber(Math.round(rating * 100) / 100)} TR**)`;
         rankBoolean = false;
     } else {
-        rating = `${(Math.round(rating * 100)) / 100} TR`
+        rating = `${formatNumber(Math.round(rating * 100) / 100)} TR` // okay so i was doing an extremely stupid thing called formatting the entire expression because i was lazy
     }
 
     return `# <:league:1277378168717840497> Tetra League:
-# ${getEmojiOfRank(rank)} ${formatNumber(rating)}${formatLeagueStanding(leagueStats.standing, leagueStats.standing_local, glicko, ratingDeviation, country)}
+# ${getEmojiOfRank(rank)} ${rating}${formatLeagueStanding(leagueStats.bestrank, leagueStats.standing, leagueStats.standing_local, glicko, ratingDeviation, country)}
 **Record: ${gamesWon}/${gamesPlayed}** (${recordDisplay}%)
 ${glixaireDisplay}
 Attack Per Minute: ${leagueStats.apm || 0}
@@ -548,9 +549,10 @@ function getEmojiOfRank(rank) {
 }
 
 
-function formatLeagueStanding(standing, localStanding, glicko, ratingDeviation, country) {
+function formatLeagueStanding(bestRank, standing, localStanding, glicko, ratingDeviation, country) {
+    //what does this even mean lmao, i frogor
     if (standing > 0) {
-        return `\n**\\\#${formatNumber(standing)}** (#${formatNumber(localStanding)} ${country})
+        return `\n**Highest Rank: ${getEmojiOfRank(bestRank)}**\n**\\\#${formatNumber(standing)}** (#${formatNumber(localStanding)} ${country})
 **Glicko: ${formatNumber((Math.round(glicko * 100)) / 100)} ± ${(Math.round(ratingDeviation * 100)) / 100}**`
     } else {
         return ''

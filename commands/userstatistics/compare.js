@@ -27,9 +27,11 @@ module.exports = {
 
         let response = null;
 
+        let summary = null;
+
         const discordRegex = new RegExp('<@[0-9]+>');
 
-        //calls api 4 times in the worst case sceneario
+        //calls api 8 times in the worst case sceneario
         //thats probably bad
         
         //user one
@@ -161,27 +163,42 @@ module.exports = {
         userStats1 = userStats1.data;
         userStats2 = userStats2.data;
 
-        console.log(userStats1)
+        let userSummary1 = await fetch(`https://ch.tetr.io/api/users/${userStats1._id}/summaries`);
+        let userSummary2 = await fetch(`https://ch.tetr.io/api/users/${userStats2._id}/summaries`);
+
+        //im not smart enough to make this better
+        userSummary1 = await userSummary1.json();
+        userSummary2 = await userSummary2.json();
+        userSummary1 = userSummary1.data;
+        userSummary2 = userSummary2.data;
+
+        console.log(userSummary1)
         
         // Create the embed
         const comparisonEmbed = new EmbedBuilder()
             .setColor('#ff9159') // Set embed color
             .setTitle(`${userStats1.username} vs. ${userStats2.username}`)
             .addFields(
-            { name: 'Stat', value: 'Games Played\nWins\nPlaytime\nLevel\nAR\nFriend Count', inline: true },
+            { name: 'Stat', value: 'Games Played\nWins\nPlaytime\nLevel\nAR\nLeague Rank\nTR\nPieces Per Second\nAttack Per Minute', inline: true },
             { name: `${userStats1.username}`, value: `${userStats1.gamesplayed}
             ${userStats1.gameswon} (${Math.round(userStats1.gameswon/userStats1.gamesplayed*10000)/100}%)
             ${playtimeConvert(userStats1.gametime)}
-            Level ${formatNumber(Math.floor(calculateLevel(userStats1.xp)))}
+            ${formatNumber(Math.floor(calculateLevel(userStats1.xp)))}
             ${userStats1.ar}
-            ${userStats1.friend_count}
+            ${getEmojiOfRank(userSummary1.league.rank)}
+            ${calculateTR(userSummary1.league.tr)}
+            ${userSummary1.league.pps || 0}
+            ${userSummary1.league.apm || 0}
             `, inline: true},
             { name: `${userStats2.username}`, value: `${userStats2.gamesplayed}
             ${userStats2.gameswon} (${Math.round(userStats2.gameswon/userStats2.gamesplayed*10000)/100}%)
             ${playtimeConvert(userStats2.gametime)}
-            Level ${formatNumber(Math.floor(calculateLevel(userStats2.xp)))}
+            ${formatNumber(Math.floor(calculateLevel(userStats2.xp)))}
             ${userStats2.ar}
-            ${userStats2.friend_count}
+            ${getEmojiOfRank(userSummary2.league.rank)}
+            ${calculateTR(userSummary2.league.tr)}
+            ${userSummary2.league.pps || 0}
+            ${userSummary2.league.apm || 0}
             `, inline: true}
             )
             .setTimestamp();
@@ -190,6 +207,13 @@ module.exports = {
 	},
 };
  
+function calculateTR(tr) {
+    if (tr === -1) {
+        return "N/A";
+    } else {
+        return formatNumber((Math.round(tr * 100)) / 100);
+    }
+}
 
 function playtimeConvert(playtime) {
     if (playtime === 'Hidden') {
@@ -237,3 +261,36 @@ function supporterConvert(supporter, supporterTier) {
         return ""
     }
 }
+
+
+function getEmojiOfRank(rank) {
+    if (!rank) {
+        return;
+    }
+
+    const rankEmojis = {
+        "rank_xplus": "1277293685058310288",
+        "rank_x": "1277293677873463368",
+        "rank_u": "1277293667891286046",
+        "rank_ss": "1277293658403770388",
+        "rank_splus": "1277293647225819196",
+        "rank_s": "1277293636928933888",
+        "rank_sminus": "1277293624157278228",
+        "rank_aplus": "1277293615114358997",
+        "rank_a": "1277293607648231527",
+        "rank_aminus": "1277293600438227106",
+        "rank_bplus": "1277293592511250553",
+        "rank_b": "1277293576895856751",
+        "rank_bminus": "1277293566284267581",
+        "rank_cplus": "1277293553147449505",
+        "rank_c": "1277293540547756115",
+        "rank_cminus": "1277293530095685745",
+        "rank_dplus": "1277293513616265216",
+        "rank_d": "1277293312696516690",
+        "rank_z": "1277382169538461746",
+        "rank_top": "1278185429656670269"
+    }
+    let formattedRank = 'rank_' + rank.toLowerCase().replace("+", "plus").replace("-", "minus");
+    return `<:${formattedRank}:${rankEmojis[formattedRank]}>`
+}
+
