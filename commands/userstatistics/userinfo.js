@@ -3,7 +3,7 @@ import('node-fetch'); // Ensure 'node-fetch' is imported properly
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('user-info')
+        .setName('user')
         .setDescription('Get detailed information about a specific user via their TETR.IO (or Discord) username/ID.')
         .addSubcommand(subcommand =>
             subcommand
