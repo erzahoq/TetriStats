@@ -220,7 +220,7 @@ function formatRecord(record) {
                 stats = players[1].stats
                 formatted += `**DEFEAT by DQ**`;
         }
-        formatted += ` vs ${record.otherusers[0].username}`;
+        formatted += ` vs ${escapeUnderscores(record.otherusers[0].username)}`;
     } else {
         formatted += `[Invalid gamemode.]` // this shouldn't be possible
     }
@@ -275,11 +275,16 @@ function reformatTimestamp(isoString) {
 function convertToTimeFormat(inputSeconds) {
     const totalSeconds = inputSeconds / 1000
     const minutes = Math.floor(totalSeconds / 60);
-    const seconds = (totalSeconds % 60).toFixed(3); // Keep milliseconds as part of seconds
+    const seconds = (totalSeconds % 60).toFixed(3); // keep milliseconds as part of seconds
     
-    // Format seconds to ensure two digits before decimal
+    // format seconds to ensure two digits before decimal
     const [intSeconds, fracSeconds] = seconds.split('.');
     const formattedSeconds = intSeconds.padStart(2, '0') + '.' + (fracSeconds || '000').padEnd(3, '0');
 
     return `${minutes}:${formattedSeconds}`;
+}
+
+function escapeUnderscores(inputString) {
+    // replace _ with \_ :3
+    return inputString.replace(/_/g, '\\_');
 }
