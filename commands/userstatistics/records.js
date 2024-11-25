@@ -56,12 +56,15 @@ module.exports = {
             }
 
             records = await fetchAll(user);
-            tetrioID = response._id
+            tetrioID = stats.data._id
         } else if (interaction.options.getSubcommand() === 'discord') {
             const user = interaction.options.getUser('user');
 
             let response = await fetch(`https://ch.tetr.io/api/users/search/discord:${user.id}`);
             stats = await response.json();
+
+            response = await fetch(`https://ch.tetr.io/api/users/${stats.data.user.username}`);
+            stats = await response.json(); //oopsies :3
 
             if (stats.data === null) {
                 return await interaction.editReply({
@@ -77,7 +80,7 @@ module.exports = {
                 });
             }
 
-            tetrioID = stats.data.user._id
+            tetrioID = stats.data._id
             records = await fetchAll(tetrioID);
         }
 
@@ -92,6 +95,8 @@ module.exports = {
         let pages = {};
         let buttons = [];
 
+        console.log(stats)
+
         // loop through each category and what was fetched (see fetchAll)
         Object.entries(records).forEach(([category, fetched]) => {
 
@@ -99,8 +104,8 @@ module.exports = {
             const embed = new EmbedBuilder()
                 .setColor('#57b1ff')
                 .setThumbnail(`https://tetr.io/user-content/avatars/${tetrioID}.jpg`)
-                .setTitle(`${capitalizeFirstLetter(stats.data.user.username)}'s ${gametypeMapping[category]} Records:`)
-                .setURL(`https://ch.tetr.io/u/${stats.username}`)
+                .setTitle(`${capitalizeFirstLetter(stats.data.username)}'s ${gametypeMapping[category]} Records:`)
+                .setURL(`https://ch.tetr.io/u/${stats.data.username}`)
             const button = new ButtonBuilder()
                 .setCustomId(`recordspage_${category}_${buttons.length}`)
                 .setDisabled(buttons.length === 0)
