@@ -1,4 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
+const api = `https://ch.tetr.io/api/`
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -14,3 +15,7 @@ module.exports = {
         
 	},
 };
+
+function fetchData() {
+    
+}
