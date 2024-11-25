@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 import("node-fetch");
 
+//number of things on page (change if you wnat i dont care)
 const itemsPerPage = 15;
 const pageCount = 4;
 
@@ -13,6 +14,7 @@ module.exports = {
         const stats = await response.json(); // Use .json() to parse the response as JSON
 
         if (!stats.success) {
+            //tetrio servers are down :(
             return await interaction.reply({
                 content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
                 ephemeral: true
@@ -22,6 +24,7 @@ module.exports = {
         //get the news info more cleanly
         const data = stats.data.news;
 
+        //types of game
         const gametypeMapping = {
             '40l': '40 Lines',
             'blitz': "Blitz",
@@ -37,11 +40,11 @@ module.exports = {
 
         for (let i = 0; i < data.length; i++) {
             let message = "";  // Reset the message for each user
-            const user = data[i];
-            const userData = user.data;
+            const user = data[i]; //uhhhhh
+            const userData = user.data; //get data
 
 
-            // Handle different types of stuff
+            // Handle different types of stuff :3
             if (user.type === 'personalbest') {
                 message += `<:news_lblocal:1280356184640983122> [${capitalizeFirstLetter(userData.username)}](https://ch.tetr.io/u/${userData.username}) got a new PB in ${gametypeMapping[userData.gametype]}!`
 
@@ -150,6 +153,7 @@ function getEmojiOfRank(rank) {
         return;
     }
 
+    //emoji ids
     const rankEmojis = {
         "rank_xplus": "1277293685058310288",
         "rank_x": "1277293677873463368",
