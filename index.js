@@ -282,6 +282,8 @@ async function status () {
     const response = await fetch('https://ch.tetr.io/api/general/stats'); //get stats data
     let responseData = await response.json();
 
+    console.log(responseData);
+
     let anonAcc = responseData.data.anoncount;
     let rankedAcc = responseData.data.rankedcount;
 

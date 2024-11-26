@@ -4,65 +4,153 @@ const api = `https://ch.tetr.io/api`
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('performance')
-		.setDescription('Generates a detailed performance report for a TETR.IO player.')
-        .addStringOption(option => 
-            option.setName('username')
-                .setDescription('The TETR.IO username')
-                .setRequired(true)),
+		.setDescription('Provides a detailed breakdown of a player\'s advanced TETR.IO stats.')
+        .addStringOption((option) =>
+			option
+				.setName('user')
+				.setDescription('the username/ID to search for')
+				.setRequired(true),
+		),
 	async execute(interaction) {
-		let response;
-		
-		let userInfo;
-		let gamemodeInfo;
-		let leagueflowInfo;
-		let skillflowInfo40L;
-		let skillflowInfoBlitz;
+		const user = interaction.options.getString('user').toLowerCase();
 
-		//user variable
-		const user = interaction.options.getString('username').toLowerCase();
+        let response = await fetch(`https://ch.tetr.io/api/users/${user}`);
+        let userStats = await response.json();
 
-        //interaction.reply('tba (tetris battle advanced)') //this is truely one of the most battle advanced of all time
+        if (!userStats.success) {
+            if (userStats.error.msg === "No such user! | Either you mistyped something, or the account no longer exists.") {
+                return await interaction.reply({
+                    content: 'No such user! Either you mistyped something, or this user no longer exists.',
+                    ephemeral: true
+                });
+            } else {
+                return await interaction.reply({
+                    content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
+                    ephemeral: true
+                });
+            }
+        }
 
-		// get user info at /users/:user
-		response = await fetch(`${api}/users/${user}`);
-        userInfo = await response.json();
+		response = await fetch(`https://ch.tetr.io/api/users/${user}/summaries/league`);
+		let leagueStats = await response.json();
+		response = await fetch(`https://ch.tetr.io/api/labs/leagueflow/${user}`);
+		let matchProgressionStats = await response.json();
+		response = await fetch(`https://ch.tetr.io/api/general/stats`);
+		let generalStats = await response.json();
 
-		//check if the API call succeeded
-		if (!userInfo.success) {
-			//check if it failed, and if it did, check if it was the user's fault
-	                if (userInfo.error.msg === "No such user! | Either you mistyped something, or the account no longer exists.") {
-	                    return await interaction.reply({
-	                        content: 'No such user! Either you mistyped something, or this user no longer exists.',
-	                        ephemeral: true
-	                    });
-	                } else {
-			//API fault L
-	                    return await interaction.reply({
-	                        content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
-	                        ephemeral: true
-	                    });
-	                }
-	            }
-		//if it's all okay, then:
-		// get gamemode specific info at /users/:user/summaries
-		response = await fetch(`${api}/users/${user}/summaries`);
-        gamemodeInfo = await response.json(); 	
-		// get leagueflow info at /labs/leagueflow/:user (for Tetra League)
-		response = await fetch(`${api}/labs/leagueflow/${user}`);
-		leagueflowInfo = await response.json();
-		// get skillflow info at /labs/scoreflow/:user/:gamemode (for 40L and Blitz)
-		response = await fetch(`${api}/labs/scoreflow/${user}/40l`);
-		skillflowInfo40L = await response.json();
-		response = await fetch(`${api}/labs/scoreflow/${user}/blitz`);
-		skillflowInfoBlitz = await response.json();
+		userStats = userStats.data;
+		leagueStats = leagueStats.data;
+		matchProgressionStats = matchProgressionStats.data;
+		generalStats = generalStats.data;
 
-		//Ill finish this later but i have things to do
-		
+		const analysisData = {
+			username: userStats.username,
+			country: countryCodeToEmoji(userStats.country),
+			gamesPlayed: userStats.gamesplayed,
+			gamesWon: userStats.gameswon,
+			gameTime: userStats.gametime,
+			tr: leagueStats.tr,
+			glicko:  leagueStats.glicko,
+			rd:  leagueStats.rd,
+			apm:  leagueStats.apm,
+			pps: leagueStats.pps,
+			vs: leagueStats.vs,
+			linesCleared: matchProgressionStats.linescleared || 0,
+			piecesPlaced: matchProgressionStats.piecesplaced || 0,
+			inputs: generalStats.inputs || 0,
+			downstackLines: matchProgressionStats.downstack || 0,
+			winStreak: matchProgressionStats.currentwinstreak || 0,
+			bestStreak: matchProgressionStats.bestwinstreak || 0,
+			highestApm: matchProgressionStats.highestApm || 0,
+			highestPps: matchProgressionStats.highestPps || 0,
+			highestVs: matchProgressionStats.highestVs || 0
+		  };
 
-		
+		  console.log(generateAnalysis(analysisData))
+
+
 	},
 };
 
-function fetchData() {
-    
+
+//comedically large function
+function generateAnalysis({
+	username,
+	country,
+	gamesPlayed,
+	gamesWon,
+	gameTime, // in seconds
+	tr,
+	glicko,
+	rd,
+	apm,
+	pps,
+	vs,
+	linesCleared,
+	piecesPlaced,
+	inputs,
+	downstackLines,
+	winStreak,
+	bestStreak,
+	highestApm,
+	highestPps,
+	highestVs
+  }) {
+	// Derived Metrics
+	const winRate = ((gamesWon / gamesPlayed) * 100).toFixed(2);
+	const totalGameTime = `${Math.floor(gameTime / 3600)}h ${Math.floor((gameTime % 3600) / 60)}m`;
+	const app = (apm / (pps * 60)).toFixed(2);
+	const dsSecond = (vs / 100 - apm / 60).toFixed(2);
+	const dsPiece = (dsSecond / pps).toFixed(2);
+	const cheeseIndex = ((dsPiece * 150) + (((vs / apm) - 2) * 50) + ((0.6 - app) * 125)).toFixed(2);
+	const lineEfficiency = (linesCleared / piecesPlaced).toFixed(2);
+	const garbageEfficiency = (vs * downstackLines / Math.pow(piecesPlaced, 2)).toFixed(4);
+	const survivalEfficiency = (gameTime / linesCleared).toFixed(2);
+	const garbagePerSecond = (vs / gameTime).toFixed(2);
+	const attackEfficiency = (vs / linesCleared).toFixed(2);
+	const winLossRatio = (gamesWon / (gamesPlayed - gamesWon)).toFixed(2);
+  
+	// Formatting the Output
+	return `  
+  Analysis for Player: ${username}
+  --------------------------------
+  📋 Basic Info:
+  - TR: ${tr} | Glicko: ${glicko} ± ${rd}
+  - Country: ${country || "Unknown"}
+  - Games Played: ${gamesPlayed} | Games Won: ${gamesWon} (${winRate}% Win Rate)
+  - Total Game Time: ${totalGameTime}
+  
+  🎮 Core Stats:
+  - APM: ${apm} | PPS: ${pps} | VS: ${vs}
+  - Lines Cleared: ${linesCleared} | Pieces Placed: ${piecesPlaced}
+  
+  📊 Advanced Metrics:
+  - APP: ${app} | DS/Second: ${dsSecond} | DS/Piece: ${dsPiece}
+  - Cheese Index: ${cheeseIndex}
+  - Line Efficiency: ${lineEfficiency}
+  - Garbage Efficiency: ${garbageEfficiency}
+  
+  🛡️ Survival & Attack:
+  - Survival Efficiency: ${survivalEfficiency}s/line
+  - Garbage Per Second: ${garbagePerSecond}
+  - Attack Efficiency: ${attackEfficiency}
+  
+  📈 Win/Loss & Risk:
+  - Win/Loss Ratio: ${winLossRatio}
+  - Current Streak: ${winStreak} Wins | Best Streak: ${bestStreak} Wins
+  
+  🔥 Peak Stats:
+  - Highest APM: ${highestApm} | Highest PPS: ${highestPps} | Highest VS: ${highestVs}
+	`;
+  }
+  
+
+  // Convert country code to flag emoji
+function countryCodeToEmoji(countryCode) {
+    const codePoints = countryCode
+        .toUpperCase() // Make sure the code is uppercase
+        .split('')     // Split the letters
+        .map(char => 127397 + char.charCodeAt()); // Convert to regional indicator symbol
+
+    return String.fromCodePoint(...codePoints);
 }
