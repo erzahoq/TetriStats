@@ -18,11 +18,14 @@ module.exports = {
 		let skillflowInfo40L;
 		let skillflowInfoBlitz;
 
-        	//interaction.reply('tba (tetris battle advanced)') //this is truely one of the most battle advanced of all time
+		//user variable
+		const user = interaction.options.getString('username').toLowerCase();
+
+        //interaction.reply('tba (tetris battle advanced)') //this is truely one of the most battle advanced of all time
 
 		// get user info at /users/:user
 		response = await fetch(`${api}/users/${user}`);
-            	userInfo = await response.json();
+        userInfo = await response.json();
 
 		//check if the API call succeeded
 		if (!userInfo.success) {
@@ -43,7 +46,7 @@ module.exports = {
 		//if it's all okay, then:
 		// get gamemode specific info at /users/:user/summaries
 		response = await fetch(`${api}/users/${user}/summaries`);
-            	gamemodeInfo = await response.json(); 	
+        gamemodeInfo = await response.json(); 	
 		// get leagueflow info at /labs/leagueflow/:user (for Tetra League)
 		response = await fetch(`${api}/labs/leagueflow/${user}`);
 		leagueflowInfo = await response.json();
@@ -52,6 +55,8 @@ module.exports = {
 		skillflowInfo40L = await response.json();
 		response = await fetch(`${api}/labs/scoreflow/${user}/blitz`);
 		skillflowInfoBlitz = await response.json();
+
+		//Ill finish this later but i have things to do
 		
 
 		
