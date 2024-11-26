@@ -1,5 +1,5 @@
 // Require the necessary discord.js classes
-const { Client, Collection, Events, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { Client, Collection, Events, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, ActivityType } = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');
 const { token } = require('./config.json');
@@ -270,7 +270,27 @@ client.on(Events.InteractionCreate, async interaction => {
 // It makes some properties non-nullable.
 client.once(Events.ClientReady, readyClient => {
 	console.log(`Ready! Logged in as ${readyClient.user.tag}`);
+    status();
 });
 
 // Log in to Discord with your client's token
 client.login(token);
+
+
+async function status () {
+
+    const response = await fetch('https://ch.tetr.io/api/general/stats'); //get stats data
+    let responseData = await response.json();
+
+    let anonAcc = responseData.data.anoncount;
+    let rankedAcc = responseData.data.rankedcount;
+
+    client.user.setActivity(`${formatNumber(anonAcc + rankedAcc)} players`, { type: ActivityType.Watching });
+    setInterval(status, 300000); // 5 minutes
+}
+
+function formatNumber(num) {
+    const numStr = num.toString();
+    return numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
