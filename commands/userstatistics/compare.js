@@ -240,6 +240,7 @@ function calculateLevel(xp) {
 
 // Convert country code to flag emoji
 function countryCodeToEmoji(countryCode) {
+    if (countryCode === 'xm') return ("<:flag_xm:1310891739078328374>")
     const codePoints = countryCode
         .toUpperCase() // Make sure the code is uppercase
         .split('')     // Split the letters
