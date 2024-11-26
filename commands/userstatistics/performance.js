@@ -96,7 +96,8 @@ function generateAnalysis({
 	highestPps,
 	highestVs
   }) {
-	// Derived Metrics
+	// Derived Metrics (these numbers work and idk why but other bots use these so)
+//writing code on phone is awful maybe i shouldnt do that
 	const winRate = ((gamesWon / gamesPlayed) * 100).toFixed(2);
 	const totalGameTime = `${Math.floor(gameTime / 3600)}h ${Math.floor((gameTime % 3600) / 60)}m`;
 	const app = (apm / (pps * 60)).toFixed(2);
