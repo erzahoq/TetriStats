@@ -282,12 +282,9 @@ async function status () {
     const response = await fetch('https://ch.tetr.io/api/general/stats'); //get stats data
     let responseData = await response.json();
 
-    console.log(responseData);
+    const totalAccounts = responseData.data.usercount
 
-    let anonAcc = responseData.data.anoncount;
-    let rankedAcc = responseData.data.rankedcount;
-
-    client.user.setActivity(`${formatNumber(anonAcc + rankedAcc)} players`, { type: ActivityType.Watching });
+    client.user.setActivity(`${formatNumber(totalAccounts)} players`, { type: ActivityType.Watching });
     setInterval(status, 300000); // 5 minutes
 }
 
