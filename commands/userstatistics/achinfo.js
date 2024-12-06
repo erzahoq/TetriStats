@@ -260,22 +260,18 @@ function formatAchievementListText(achlist) {
         achText += `\n` + getEmojiOfAch(achievementMapping[ach['rank']])
 
         //check for attributes and format
-        let attCount = 0;
         if (ach.art === 0) {
             achText += "<:au:1278179023188398211>"
-            attCount++;
         } else if (ach.art === 2) {
             achText += "<:ac:1278179007468277770>"
-            attCount++;
         }
         if (ach.hidden) {
             achText += "<:ah:1278179015156432978>"
-            attCount++;
         }
-        while (attCount !== 2) {
-            attCount++;
-            achText += "<:na:1278856076955222027>"
+        if (ach.event) {
+            achText += "<ae:0000000000>" // upload the event emoji and change this
         }
+        // i didn't like this formatting it was ugly imo
 
         achText += ` **${ach['name']}** - **${displayVal}** ${ach['object']}` // show the main info
 
