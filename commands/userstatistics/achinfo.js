@@ -98,9 +98,10 @@ module.exports = {
             "general": "General",
             "league": "Tetra League",
             "solo": "Solo",
-            "zenith": "Quick Play"
+            "zenith": "Quick Play",
+            "event": "Event",
         }
-        let categories = ["general", "league", "solo", "zenith"];
+        let categories = ["general", "league", "solo", "zenith", "event"];
         let achList = {};
         let achDisplays = {};
         let pages = {};
@@ -164,15 +165,17 @@ module.exports = {
         })
 
         // Initial row of buttons
-        const row = new ActionRowBuilder();
-        buttons.forEach(but => {
-            row.addComponents(but);
-        })
+        const rows = [];
+        for (var i = 0; i < buttons.length; i++) {
+            var rowind = Math.floor(i/5)
+            rows[rowind] = i % 5 == 0 ? new ActionRowBuilder() : rows[rowind];
+            rows[rowind].addComponents(buttons[i])
+        }
 
         // Send the initial message with the first page and buttons
         await interaction.reply({
             embeds: [textPages[0]],
-            components: [row]
+            components: rows
         });
 
         // Attach pages to the interaction for future reference
@@ -269,7 +272,7 @@ function formatAchievementListText(achlist) {
             achText += "<:ah:1278179015156432978>"
         }
         if (ach.event) {
-            achText += "<ae:0000000000>" // upload the event emoji and change this
+            achText += "<:ae:1314829710550630501>"
         }
         // i didn't like this formatting it was ugly imo
 

@@ -151,16 +151,18 @@ client.on(Events.InteractionCreate, async interaction => {
                 buttons[i].setDisabled(newPageIndex === i);
             }
 
-            const row = new ActionRowBuilder();
-            buttons.forEach(but => {
-                row.addComponents(but);
-            })
+            const rows = [];
+            for (var i = 0; i < buttons.length; i++) {
+                var rowind = Math.floor(i/5)
+                rows[rowind] = i % 5 == 0 ? new ActionRowBuilder() : rows[rowind];
+                rows[rowind].addComponents(buttons[i])
+            }
 
 
             // Update interaction with the selected page
             await interaction.update({
                 embeds: [textPages[newPageIndex]],
-                components: [row]
+                components: rows
             });
 
             // Update current page index
