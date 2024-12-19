@@ -287,7 +287,7 @@ async function status () {
 
     try {
         totalAccounts = responseData.data.usercount;
-        console.log('successfully fetched playercount!')
+        console.log('successfully fetched player count!')
     } catch (error) {
         return console.log('couldn\'t fetch player count!')
     }
