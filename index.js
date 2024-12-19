@@ -283,8 +283,14 @@ async function status () {
 
     const response = await fetch('https://ch.tetr.io/api/general/stats'); //get stats data
     let responseData = await response.json();
+    let totalAccounts;
 
-    const totalAccounts = responseData.data.usercount
+    try {
+        totalAccounts = responseData.data.usercount;
+        console.log('successfully fetched playercount!')
+    } catch (error) {
+        return console.log('couldn\'t fetch player count!')
+    }
 
     client.user.setActivity(`${formatNumber(totalAccounts)} players`, { type: ActivityType.Watching });
     setInterval(status, 300000); // 5 minutes
