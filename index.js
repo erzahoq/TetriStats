@@ -281,6 +281,7 @@ client.login(token);
 
 async function status () {
 
+    return;
     const response = await fetch('https://ch.tetr.io/api/general/stats'); //get stats data
     let responseData = await response.json();
     let totalAccounts;
@@ -289,7 +290,7 @@ async function status () {
         totalAccounts = responseData.data.usercount;
         console.log('successfully fetched player count!')
     } catch (error) {
-        return console.log('couldn\'t fetch player count!')
+        return console.log(`couldn\'t fetch player count!`)
     }
 
     client.user.setActivity(`${formatNumber(totalAccounts)} players`, { type: ActivityType.Watching });
