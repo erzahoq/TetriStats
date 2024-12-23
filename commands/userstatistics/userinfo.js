@@ -385,7 +385,7 @@ function format40Lines(statistics, country) {
         let flStatistics = statistics['40l'];
         return `\n### <:40lines:1277298516380614786> 40 Lines:
 - PB: ${convertToTimeFormat(flStatistics.record.results.stats.finaltime)}s (${Math.round(flStatistics.record.results.aggregatestats.pps * 100) / 100} PPS)
-- Rank: #${formatNumber(flStatistics.rank)} (#${formatNumber(flStatistics.rank_local)} ${country})`
+- Rank: #${formatNumber(flStatistics.rank)} ${formatCountry(flStatistics.rank_local, country)}`
     } else {
         return ""
     }
@@ -396,7 +396,7 @@ function formatBlitz(statistics, country) {
         let blStatistics = statistics['blitz'];
         return `\n### <:blitz:1277298507920838718> Blitz:
 - PB: ${formatNumber(blStatistics.record.results.stats.score)} (${Math.round(blStatistics.record.results.aggregatestats.pps * 100) / 100} PPS)
-- Rank: #${formatNumber(blStatistics.rank)} (#${formatNumber(blStatistics.rank_local)} ${country})`
+- Rank: #${formatNumber(blStatistics.rank)} ${formatCountry(blStatistics.rank_local, country)}`
     } else {
         return ""
     }
@@ -408,7 +408,7 @@ function formatZenith(statistics, country) {
 
     if (statistics['zenith'].record) {
         zenithText += `\n- PB: ${formatNumber(Math.round(zStatistics.record.results.stats.zenith.altitude * 100) / 100)}m
-- #${formatNumber(zStatistics.rank)} (#${formatNumber(zStatistics.rank_local)} ${country})`
+- Rank: #${formatNumber(zStatistics.rank)} ${formatCountry(zStatistics.rank_local, country)}`
     }
     if (statistics['zenith'].best.record) {
         zenithText += `\n- All-Time Best: ${formatNumber(Math.round(zStatistics.best.record.results.stats.zenith.altitude * 100) / 100)}m (#${formatNumber(zStatistics.best.rank)})`
@@ -428,7 +428,7 @@ function formatZenithExpert(statistics, country) {
 
     if (statistics['zenithex'].record) {
         zenithText += `\n- PB: ${formatNumber(Math.round(zStatistics.record.results.stats.zenith.altitude * 100) / 100)}m
-- #${formatNumber(zStatistics.rank)} (#${formatNumber(zStatistics.rank_local)} ${country})`
+- Rank: #${formatNumber(zStatistics.rank)} ${formatCountry(zStatistics.rank_local, country)}`
     }
     if (statistics['zenithex'].best.record) {
         zenithText += `\n- All-Time Best: ${formatNumber(Math.round(zStatistics.best.record.results.stats.zenith.altitude * 100) / 100)}m (#${formatNumber(zStatistics.best.rank)})`
@@ -632,3 +632,10 @@ function displayedAchesConvert(displayed, all) {
 function escapeUnderscores(input) {
     return input.replace(/_/g, '\\_');
 }
+
+function formatCountry(localRank, country) {
+    if (localRank > 0) return `(#${formatNumber(localRank)} ${country})`
+    else return "" 
+}
+
+    
