@@ -252,6 +252,7 @@ function getModEmoji(emoji) {
         "invisible": "1284286644328988734",
         "allspin": "1284286652759412899",
         "duo": "1284286660800020620",
+        "snowman": "1321711057034543175",
     };
     return `<:mod_${emoji}:${mapping[emoji]}>`;
 }
