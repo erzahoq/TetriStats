@@ -589,7 +589,7 @@ function formatLeague(statistics, country) {
 
     standing += `
 - Played ${gamesPlayed} games
-  - Won ${gamesWon} of them (${(Math.round(gamesWon/gamesPlayed)*100).toFixed(2)}%)
+  - Won ${gamesWon} of them (${((gamesWon/gamesPlayed)*100).toFixed(2)}%)
   - ${leagueStats.apm || "N/A"} APM
   - ${leagueStats.pps || "N/A"} PPS
   - ${leagueStats.vs || "N/A"} VS score`
