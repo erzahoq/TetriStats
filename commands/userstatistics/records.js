@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 import("node-fetch");
 
-const maxItems = 10;
+const maxItems = 5;
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -95,8 +95,6 @@ module.exports = {
         let pages = {};
         let buttons = [];
 
-        console.log(stats)
-
         // loop through each category and what was fetched (see fetchAll)
         Object.entries(records).forEach(([category, fetched]) => {
 
@@ -115,7 +113,8 @@ module.exports = {
             // do the description
             let desc = "";
             if (fetched['top']) {
-                desc += `<:news_lblocal:1280356184640983122> ${formatRecord(fetched['top'])}\n\n`
+                desc += `- <:news_lblocal:1280356184640983122> Personal best
+  ${formatRecord(fetched['top'])}\n\n`
             }
             fetched['all'].forEach((rec) => {
                 desc += `${formatRecord(rec)}\n`;
@@ -178,7 +177,7 @@ async function fetchAll(user) {
 }
 
 function formatRecord(record) {
-    let formatted = `<t:${reformatTimestamp(record.ts)}:d> <t:${reformatTimestamp(record.ts)}:t> - `
+    let formatted = `- `
     let stats = record.results.stats
 
     // checks for each gamemode
@@ -227,11 +226,14 @@ function formatRecord(record) {
 
     // add some extra stats
     if (['zenith', 'zenithex', 'league'].indexOf(record.gamemode) != -1)
-        formatted += ` | ${formatNumber(Math.round(stats.apm * 100) / 100)} APM, ${formatNumber(Math.round(stats.pps * 100) / 100)} PPS, ${formatNumber(Math.round(stats.vsscore * 100) / 100)} VS`;
+        formatted += `
+  - ${formatNumber(Math.round(stats.apm * 100) / 100)} APM, ${formatNumber(Math.round(stats.pps * 100) / 100)} PPS, ${formatNumber(Math.round(stats.vsscore * 100) / 100)} VS`;
     else
-        formatted += ` | ${formatNumber(Math.round(record.results.aggregatestats.pps * 100) / 100)} PPS, ${Math.round(stats.finesse.perfectpieces / stats.piecesplaced * 10000) / 100}% (${stats.finesse.faults}F) Finesse`;
+        formatted += `
+  - ${formatNumber(Math.round(record.results.aggregatestats.pps * 100) / 100)} PPS, ${Math.round(stats.finesse.perfectpieces / stats.piecesplaced * 10000) / 100}% (${stats.finesse.faults}F) Finesse`;
 
-    formatted += ` [[Replay]](https://tetr.io/#R:${record.replayid})`;
+    formatted += `
+  - Done [<t:${reformatTimestamp(record.ts)}:d> <t:${reformatTimestamp(record.ts)}:t>](https://tetr.io/#R:${record.replayid})`;
 
     return formatted;
 }

@@ -27,30 +27,27 @@ module.exports = {
         const serverEmbed = new EmbedBuilder()
             .setColor(0x0099FF)
             .setColor("#81ff7d")
-            .setTitle('TETR.IO Server Statistics')
-            .setDescription(`   
-### Total Accounts: ${formatNumber(data.totalaccounts)}
-- Number of Ranked Accounts: ${formatNumber(data.rankedcount)} (${Math.round(10000 * (data.rankedcount / data.totalaccounts)) / 100}%) 
-### Online Players: ${formatNumber(data.usercount)}
-- Online Registered Players: ${formatNumber(data.usercount - data.anoncount)} (${Math.round(10000 * ((data.usercount - data.anoncount) / data.usercount)) / 100}%)
-- Online Anonymous Players: ${formatNumber(data.anoncount)} (${Math.round(10000 * (data.anoncount / data.usercount)) / 100}%)
-### Games Played: ${formatNumber(data.gamesplayed)}
-- Of Which Finished: ${formatNumber(data.gamesfinished)} (${Math.round(10000 * (data.gamesfinished / data.gamesplayed)) / 100}%)
-- Game Frequency:
- - Per Second: ${Math.round(data.gamesplayed_delta * 10) / 10}
- - Per Minute: ${formatNumber(Math.round(data.gamesplayed_delta * 60 * 10) / 10)}
- - Per Hour: ${formatNumber(Math.round(gamesPlayedOverTime * 60 * 60 * 100) / 100)}
- - Per Day: ${formatNumber(Math.round(gamesPlayedOverTime * 60 * 60 * 24 * 100) / 100)}
- - Per Year: ${formatNumber(Math.round(gamesPlayedOverTime * 60 * 60 * 24 * 365.25 * 100) / 100)}
-- **Total Time Played**: 
- - ${formatNumber(Math.round(data.gametime))} seconds
- - ${formatNumber(Math.round(secondsToDays(data.gametime) * 10) / 10)} days
- - ${formatNumber(Math.round(secondsToYears(data.gametime) * 10) / 10)} years
-### Pieces Placed: ${formatNumber(data.piecesplaced)}
-- Average PPS: ${Math.round(data.piecesplaced / data.gametime * 100) / 100}
-- Inputs: ${formatNumber(data.inputs)}
-- Inputs Per Second: ${Math.round(data.inputs / data.gametime * 100) / 100}
-            `)
+            .setDescription(`
+### __Overall Server Statistics__
+- Total players: ${formatNumber(data.usercount)}
+  - ${formatNumber(data.usercount - data.anoncount)} of those are registered (${Math.round(10000 * ((data.usercount - data.anoncount) / data.usercount)) / 100}%)
+  - ${formatNumber(data.rankedcount)} of those are ranked (${Math.round(10000 * (data.rankedcount / data.totalaccounts)) / 100}% of total, ${Math.round(10000 * (data.rankedcount / (data.usercount - data.anoncount))) / 100}% of registered)
+  - ${formatNumber(data.anoncount)} of those are anonymous (${Math.round(10000 * (data.anoncount / data.usercount)) / 100}%)
+  
+- Total games played: ${formatNumber(data.gamesplayed)}
+  - ${formatNumber(data.gamesfinished)} were finished (${Math.round(10000 * (data.gamesfinished / data.gamesplayed)) / 100}%)
+  - ${formatNumber(data.recordcount)} were saved (${Math.round(10000 * (data.recordcount / data.gamesplayed)) / 100}%)
+- That's ${Math.round(data.gamesplayed_delta * 10) / 10} games per second!
+  - Or ${formatNumber(Math.round(gamesPlayedOverTime * 60 * 60 * 100) / 100)} per hour.
+  
+- Total time spent: ${formatNumber(Math.round(secondsToDays(data.gametime) * 10) / 10)} days
+  - Or ${formatNumber(Math.round(data.gametime))} seconds.
+  - Or ${formatNumber(Math.round(secondsToYears(data.gametime) * 10) / 10)} years.
+  
+- Total pieces placed: ${formatNumber(data.piecesplaced)}
+  - ${Math.round(data.piecesplaced / data.gametime * 100) / 100}/second on average
+- Total inputs: ${formatNumber(data.inputs)}
+  - ${Math.round(data.inputs / data.gametime * 100) / 100}/second on average`)
             .setTimestamp();
 
         await interaction.reply({ embeds: [serverEmbed] })

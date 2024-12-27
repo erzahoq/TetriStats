@@ -51,9 +51,9 @@ module.exports = {
             if (user.type === 'leaderboard') {
                 let rank = userData.rank;
                 if (rank > 4) rank = 4;
-                message += `<:news_lb${rank}:${leaderboardEmojiMapping[rank]}> [${capitalizeFirstLetter(userData.username)}](https://ch.tetr.io/u/${userData.username}) reached #${userData.rank} in ${gametypeMapping[userData.gametype]}`;
+                message += `- <:news_lb${rank}:${leaderboardEmojiMapping[rank]}> [${capitalizeFirstLetter(userData.username)}](https://ch.tetr.io/u/${userData.username}) reached #${userData.rank} in ${gametypeMapping[userData.gametype]}`;
             } else if (user.type === 'badge') {
-                message += `<:news_badge:1280338130989482004> [${capitalizeFirstLetter(userData.username)}](https://ch.tetr.io/u/${userData.username}) received the "${userData.label}" badge`;
+                message += `- <:news_badge:1280338130989482004> [${capitalizeFirstLetter(userData.username)}](https://ch.tetr.io/u/${userData.username}) received the "${userData.label}" badge`;
             }
             message += ` (${reformatTimestamp(user.ts)})`;
 
@@ -65,20 +65,16 @@ module.exports = {
         const pages = [
             new EmbedBuilder()
                 .setColor("#ffc619")
-                .setTitle(`Top News (1)`)
-                .setDescription(pageData[0].join('\n')),
+                .setDescription("### __Recent news (top)__\n" + pageData[0].join('\n')),
             new EmbedBuilder()
                 .setColor("#ffc619")
-                .setTitle(`Top News (2)`)
-                .setDescription(pageData[1].join('\n')),
+                .setDescription("### __Recent news (top)__\n" + pageData[1].join('\n')),
             new EmbedBuilder()
                 .setColor("#ffc619")
-                .setTitle(`Top News (3)`)
-                .setDescription(pageData[2].join('\n')),
+                .setDescription("### __Recent news (top)__\n" + pageData[2].join('\n')),
             new EmbedBuilder()
                 .setColor("#ffc619")
-                .setTitle(`Top News (4)`)
-                .setDescription(pageData[3].join('\n')),
+                .setDescription("### __Recent news (top)__\n" + pageData[3].join('\n')),
         ];
 
         // Realize this is just the same as allnews.js

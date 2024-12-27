@@ -145,9 +145,7 @@ module.exports = {
             textPages.push(new EmbedBuilder()
                 .setColor("#6dc971")
                 .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
-                .setTitle(`${capitalizeFirstLetter(username)}'s ${catMap[trimmedCat]} Achievements:`)
-                .setURL(`https://ch.tetr.io/u/${username}`)
-                .setDescription(text)
+                .setDescription(`### __[${capitalizeFirstLetter(username)}](https://ch.tetr.io/u/${username}) -> Achievements -> ${catMap[trimmedCat]}__\n` + text)
             )
 
             let button = new ButtonBuilder()
@@ -260,7 +258,7 @@ function formatAchievementListText(achlist) {
         else if (ach.vt === 5) displayVal = `Obtained ${reformatTimestamp(-ach.v)}`
         else if (ach.vt === 6) displayVal = formatNumber(-Math.round(ach.v))
 
-        achText += `\n` + getEmojiOfAch(achievementMapping[ach['rank']])
+        achText += `\n- ` + getEmojiOfAch(achievementMapping[ach['rank']])
 
         //check for attributes and format
         if (ach.art === 0) {
@@ -282,8 +280,12 @@ function formatAchievementListText(achlist) {
             achText += ` (Issue ${ach['pos']}/${ach['total']})` 
         } else {
             if (ach['pos'] < 100) { // if you're in the top 100 players
-                achText += ` (__#${ach['pos'] + 1}__)`
-            } else { // everything else
+                achText += ` (**#${ach['pos'] + 1}**)`
+            }
+            else if (ach['pos'] / ach['total'] < 0.01) { // if you're in the top 1%
+                achText += ` (Top ${Math.round(ach['pos'] / ach['total'] * 100000) / 1000}%)` // literally just one extra point of precision
+            } 
+            else { // everything else
                 achText += ` (Top ${Math.round(ach['pos'] / ach['total'] * 10000) / 100}%)`
             }
         }

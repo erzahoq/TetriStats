@@ -46,7 +46,7 @@ module.exports = {
 
             // Handle different types of stuff :3
             if (user.type === 'personalbest') {
-                message += `<:news_lblocal:1280356184640983122> [${capitalizeFirstLetter(userData.username)}](https://ch.tetr.io/u/${userData.username}) got a new PB in ${gametypeMapping[userData.gametype]}!`
+                message += `- <:news_lblocal:1280356184640983122> [${capitalizeFirstLetter(userData.username)}](https://ch.tetr.io/u/${userData.username}) got a new PB in ${gametypeMapping[userData.gametype]}!`
 
                 if (userData.gametype === 'zenith' || userData.gametype === 'zenithex') {
                     message += ` (${Math.round(userData.result * 10) / 10}m)`
@@ -54,9 +54,9 @@ module.exports = {
                     message += ` (${convertToTimeFormat(userData.result)})`
                 }
             } else if (user.type === 'supporter') {
-                message += `<:supporter_star:1277300953111855231> [${userData.username}](https://ch.tetr.io/u/${userData.username}) has become a **TETR.IO Supporter!**`
+                message += `- <:supporter_star:1277300953111855231> [${userData.username}](https://ch.tetr.io/u/${userData.username}) has become a Supporter!`
             } else if (user.type === 'rankup') {
-                message += `${getEmojiOfRank(userData.rank)} [${userData.username}](https://ch.tetr.io/u/${userData.username}) achieved ${capitalizeFirstLetter(userData.rank) /*me when i reuse code :3*/} rank!`
+                message += `- ${getEmojiOfRank(userData.rank)} [${userData.username}](https://ch.tetr.io/u/${userData.username}) achieved ${capitalizeFirstLetter(userData.rank) /*me when i reuse code :3*/} rank!`
             } else {
                 message += user.type;
             }
@@ -70,20 +70,16 @@ module.exports = {
         const pages = [
             new EmbedBuilder()
                 .setColor("#d384f5")
-                .setTitle(`All News (1)`)
-                .setDescription(pageData[0].join('\n')),
+                .setDescription("### __Recent news (global)__\n" + pageData[0].join('\n')),
             new EmbedBuilder()
                 .setColor("#d384f5")
-                .setTitle(`All News (2)`)
-                .setDescription(pageData[1].join('\n')),
+                .setDescription("### __Recent news (global)__\n" + pageData[1].join('\n')),
             new EmbedBuilder()
                 .setColor("#d384f5")
-                .setTitle(`All News (3)`)
-                .setDescription(pageData[2].join('\n')),
+                .setDescription("### __Recent news (global)__\n" + pageData[2].join('\n')),
             new EmbedBuilder()
                 .setColor("#d384f5")
-                .setTitle(`All News (4)`)
-                .setDescription(pageData[3].join('\n')),
+                .setDescription("### __Recent news (global)__\n" + pageData[3].join('\n')),
         ];
 
         // Initial row of buttons
