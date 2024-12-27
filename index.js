@@ -289,7 +289,7 @@ client.on(Events.InteractionCreate, async interaction => {
                     .setDisabled(newPageIndex === 0),
                 new ButtonBuilder()
                     .setCustomId('replaypage_1')
-                    .setLabel('Records')
+                    .setLabel('Stats')
                     .setStyle(ButtonStyle.Primary)
                     .setDisabled(newPageIndex === 1),
                 new ButtonBuilder()

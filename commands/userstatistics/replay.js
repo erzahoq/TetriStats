@@ -33,19 +33,33 @@ module.exports = {
             //initially define list of pages 
             let pages = [];
 
+            console.log(replayData.replay.results.stats);
+
             //=== For each gamemode, create a list of pages ===
             // Zenith gamemode :3
-            if (replayData.gamemode === "zenith") {
-                console.log(replayData/*.replay.results.stats*/);
+            // expert and normal are together because their stats are extremely similar
+            if (replayData.gamemode === "zenith" || replayData.gamemode === "zenithex") {
+
+                //check the gamemode
+                let gamemode = "Quick Play"
+                if (replayData.gamemode === 'zenithex') gamemode = "Expert Quick Play"
+                
 
                 pages = [
-                    new EmbedBuilder().setTitle('Replay Analysis')
+                    new EmbedBuilder().setTitle('Replay Analysis - General')
                         .setColor('#ff9747')
                         .setDescription(`**Here\'s the summary of your replay:**
-Gamemode: Quick Play
+Gamemode: ${gamemode}
 Player: ${replayData.users?.[0]?.username} (${countryCodeToEmoji(replayData.users?.[0]?.country)})
-Playtime: ${framesToTime(replayData.replay?.frames)} (${(replayData.replay?.frames / 60).toFixed(2)}s)`),
-                    new EmbedBuilder().setTitle('page2'), new EmbedBuilder().setTitle('page3'), new EmbedBuilder().setTitle('page4')
+Playtime: ${framesToTime(replayData.replay?.frames)} (${(replayData.replay?.frames / 60).toFixed(2)}s)
+Mods Used: ${formatModList(replayData.replay.options.zenith_mods)}
+
+-# i can probably add more here but`),
+                    new EmbedBuilder()
+                        .setTitle('Replay Analysis - Statistics')
+                        .setColor('#ff9747').setDescription(`**Here are some statistics of your replay:**
+APM: ${(replayData.replay.results.aggregatestats.apm).toFixed(2)} | PPS: ${(replayData.replay.results.aggregatestats.pps).toFixed(2)} | VS: ${(replayData.replay.results.aggregatestats.vsscore).toFixed(2)}`),
+                    new EmbedBuilder().setTitle('page3'), new EmbedBuilder().setTitle('page4')
                 ]
                 
             } else {
@@ -61,7 +75,7 @@ Playtime: ${framesToTime(replayData.replay?.frames)} (${(replayData.replay?.fram
                     .setDisabled(true), // Disable the first button initially
                 new ButtonBuilder()
                     .setCustomId('replaypage_1')
-                    .setLabel('Records')
+                    .setLabel('Stats')
                     .setStyle(ButtonStyle.Primary),
                 new ButtonBuilder()
                     .setCustomId('replaypage_2')
@@ -117,4 +131,38 @@ function framesToTime(frames) {
     // Format as MM:SS.MSMS
     const formattedTime = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(milliseconds).padStart(3, '0')}`;
     return formattedTime;
+}
+
+function formatModList(mods) {
+    if (mods.length === 0) {
+        return "None";
+    }
+
+    //special combos of mods check
+    //A Modern Classic
+    if (JSON.stringify(mods.map(mod => mod.toLowerCase())) === JSON.stringify(["gravity", "nohold"])) {
+        return "A Modern Classic (No Hold, Gravity)"; // Return a specific message
+    }
+    //Deadlock
+    else if (JSON.stringify(mods.map(mod => mod.toLowerCase())) === JSON.stringify(["doublehole", "messy", "nohold"])) {
+        return "Deadlock (No Hold, Double Hole Garbage, Messier Garbage)"; // Return a specific message
+    }
+
+    //TODO ADD THE REST OF THE SPECIAL MODS
+    //VERY IMPORTANT !!!
+
+
+    const formattedWords = mods
+    .map(mod => {
+        if (mod.toLowerCase() === 'doublehole') return "Double Hole"
+        else if (mod.toLowerCase() === 'nohold') return "No Hold"
+        else if (mod.toLowerCase() === 'messy') return "Messier Garbage"
+ 
+        return mod.charAt(0).toUpperCase() + mod.slice(1).toLowerCase(); //capitals (of cities)
+    })
+    .reverse(); // reverse the list :thubm_up:
+
+
+    // Join the formatted mods
+    return formattedWords.join(", ");
 }
