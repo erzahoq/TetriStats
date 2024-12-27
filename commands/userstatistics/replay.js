@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder, Embed } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -30,26 +30,62 @@ module.exports = {
             // Parse the file as JSON
             const replayData = JSON.parse(replayDataBuffer.toString());
 
+            //initially define list of pages 
+            let pages = [];
+
+            //=== For each gamemode, create a list of pages ===
             // Zenith gamemode :3
             if (replayData.gamemode === "zenith") {
-                console.log(replayData.replay.results.stats);
+                console.log(replayData/*.replay.results.stats*/);
 
-                const embed = new EmbedBuilder().setTitle('Replay Analysis')
-                    .setColor('#ff9747')
-                    .setDescription(`**Here\'s the summary of your replay:**
+                pages = [
+                    new EmbedBuilder().setTitle('Replay Analysis')
+                        .setColor('#ff9747')
+                        .setDescription(`**Here\'s the summary of your replay:**
 Gamemode: Quick Play
 Player: ${replayData.users?.[0]?.username} (${countryCodeToEmoji(replayData.users?.[0]?.country)})
-Playtime: ${framesToTime(replayData.replay?.frames)} (${(replayData.replay?.frames / 60).toFixed(2)}s)`)
-
-
-            //console.log(embed)
+Playtime: ${framesToTime(replayData.replay?.frames)} (${(replayData.replay?.frames / 60).toFixed(2)}s)`),
+                    new EmbedBuilder().setTitle('page2'), new EmbedBuilder().setTitle('page3'), new EmbedBuilder().setTitle('page4')
+                ]
                 
-
-
-                interaction.reply({embeds: [embed]})
             } else {
-                interaction.reply({content: 'This type of replay file has not been accounted for yet, please contact the developers if you believe this is a mistake.', ephemeral: true})
+                return interaction.reply({content: 'This type of replay file has not been accounted for yet, please contact the developers if you believe this is a mistake.', ephemeral: true})
             }
+
+            // Initial row of buttons
+            const row = new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                    .setCustomId('replaypage_0')
+                    .setLabel('General')
+                    .setStyle(ButtonStyle.Primary)
+                    .setDisabled(true), // Disable the first button initially
+                new ButtonBuilder()
+                    .setCustomId('replaypage_1')
+                    .setLabel('Records')
+                    .setStyle(ButtonStyle.Primary),
+                new ButtonBuilder()
+                    .setCustomId('replaypage_2')
+                    .setLabel('Tetra League')
+                    .setStyle(ButtonStyle.Primary),
+                new ButtonBuilder()
+                    .setCustomId('replaypage_3')
+                    .setLabel('4')
+                    .setStyle(ButtonStyle.Primary)
+            );
+
+            // Send the initial message with the first page and buttons
+            await interaction.reply({
+                embeds: [pages[0]],
+                components: [row]
+            });
+
+            // Attach pages to the interaction for future reference
+            interaction.client.pageData = {
+                [interaction.id]: {
+                    pages,
+                    currentPage: 0
+                }
+            };
             
         } catch (error) {
             console.error('Error analyzing replay:', error);

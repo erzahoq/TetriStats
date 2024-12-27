@@ -56,6 +56,7 @@ client.on(Events.InteractionCreate, async interaction => {
         let allNewsRegex = new RegExp('allnewspage_[0-3]');
         let achPageRegex = new RegExp('achpage_[0-9]'); //good job morky
         let recordsPageRegex = new RegExp('recordspage_*.');
+        let replayPageRegex = new RegExp('replaypage_[0-9]')
         //handle "userinfo.js" buttons
         if (profilePageRegex.test(buttonId)) {
             if (interaction.user.id !== interaction.message.interaction.user.id) {
@@ -98,6 +99,7 @@ client.on(Events.InteractionCreate, async interaction => {
             interaction.client.pageData[interactionId].currentPage = newPageIndex;
         }
 
+        //handles "records.js" buttons
         if (recordsPageRegex.test(buttonId)) {
             if (interaction.user.id !== interaction.message.interaction.user.id) {
                 return await interaction.reply({content: 'You cannot interact with this!', ephemeral: true});
@@ -253,6 +255,53 @@ client.on(Events.InteractionCreate, async interaction => {
                     .setStyle(ButtonStyle.Primary)
                     .setDisabled(newPageIndex === 3)
                 
+            );
+
+            // Update interaction with the selected page
+            await interaction.update({
+                embeds: [pages[newPageIndex]],
+                components: [row]
+            });
+
+            // Update current page index
+            interaction.client.pageData[interactionId].currentPage = newPageIndex;
+        }
+
+        //handle "replay.js" buttons
+        if (replayPageRegex.test(buttonId)) {
+            if (interaction.user.id !== interaction.message.interaction.user.id) {
+                return await interaction.reply({content: 'You cannot interact with this!', ephemeral: true});
+            }
+
+            // Retrieve stored page data
+            const pageData = interaction.client.pageData?.[interactionId];
+            if (!pageData) return; // Exit if no page data is found
+
+            const { pages, currentPage } = pageData;
+            const newPageIndex = parseInt(buttonId.split('_')[1]);
+
+            // Create updated buttons with the correct page disabled
+            const row = new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                    .setCustomId('replaypage_0')
+                    .setLabel('General')
+                    .setStyle(ButtonStyle.Primary)
+                    .setDisabled(newPageIndex === 0),
+                new ButtonBuilder()
+                    .setCustomId('replaypage_1')
+                    .setLabel('Records')
+                    .setStyle(ButtonStyle.Primary)
+                    .setDisabled(newPageIndex === 1),
+                new ButtonBuilder()
+                    .setCustomId('replaypage_2')
+                    .setLabel('Tetra League')
+                    .setStyle(ButtonStyle.Primary)
+                    .setDisabled(newPageIndex === 2),
+                    new ButtonBuilder()
+                    .setCustomId('replaypage_3')
+                    .setLabel('4')
+                    .setStyle(ButtonStyle.Primary)
+                    .setDisabled(newPageIndex === 3),
             );
 
             // Update interaction with the selected page
