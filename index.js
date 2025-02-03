@@ -327,6 +327,15 @@ client.once(Events.ClientReady, readyClient => {
 // Log in to Discord with your client's token
 client.login(token);
 
+setInterval(async() => {
+    // loop thru each registered user
+    // if estimated alert time has passed
+        // query API for latest TL matches
+        // update estimated alert time
+        // if alert time over 1w
+            // alert user
+}, 1800000) // every half hour
+
 
 async function status () {
 
