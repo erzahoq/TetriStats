@@ -1,8 +1,9 @@
 // Require the necessary discord.js classes
-const { Client, Collection, Events, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, ActivityType } = require('discord.js');
+const { Client, Collection, Events, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, ActivityType, EmbedBuilder } = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');
 const { token } = require('./config.json');
+const { database } = require('./database.js');
 
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
@@ -328,12 +329,21 @@ client.once(Events.ClientReady, readyClient => {
 client.login(token);
 
 setInterval(async() => {
-    // loop thru each registered user
-    // if estimated alert time has passed
-        // query API for latest TL matches
-        // update estimated alert time
-        // if alert time over 1w
-            // alert user
+    const userList = await database.User.findAll();
+    let resp;
+    for (const user of userList) {
+        resp = await user.checkAlert(); // check if alert is needed
+        if (!resp instanceof Error && resp) { // make sure it doesn't error, and also is true
+            const userToMessage = await client.users.fetch(user.userId);
+            userToMessage.send({
+                embeds: [
+                    new EmbedBuilder()
+                    .setColor('ffdd22')
+                    .setDescription('Your Tetra League RD has begun rising!')
+                    .setTitle('RD Alert')
+            ]}).catch() // means we can't DM user, cope
+        }
+    }
 }, 1800000) // every half hour
 
 
@@ -353,7 +363,12 @@ async function status () {
 
     client.user.setActivity(`${formatNumber(totalAccounts)} players`, { type: ActivityType.Watching });
     setInterval(status, 300000); // 5 minutes
-}
+} 
+/* 
+hey btw the reason this was spamming requests is that it was retriggering
+itself every 5 minutes every 5 minutes, so basically we just need to move the 
+setInterval outside the function if we want to reenable this 
+*/
 
 function formatNumber(num) {
     const numStr = num.toString();

@@ -53,4 +53,6 @@ Reflect.defineProperty(list['User'].prototype, 'checkAlert', {
 	}
 })
 
-module.exports = { list }
+const database = list;
+
+module.exports = { database }

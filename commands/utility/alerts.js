@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { database } = require('./../../dbObjects')
+const { database } = require('./../../dbObjects.js')
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -17,11 +17,15 @@ module.exports = {
         const enabled = interaction.options.getBoolean("enabled") ?? (user.ratingAlert == -1);
 
         if (enabled) {
-            await user.checkAlert(true);
+            const resp = await user.checkAlert(true);
+            if (resp instanceof Error) {
+                return await interaction.reply(`Something went wrong! ${resp.message}`)
+            }
         } else {
             user.ratingAlert = -1;
         }
 
+        await user.save()
         await interaction.reply(`${enabled ? "Enabled" : "Disabled"} RD increase alerts!`)
 	},
 };
