@@ -2,7 +2,7 @@ module.exports = (sequelize, DataTypes) => {
     return sequelize.define('users', {
         userId: {
             type: DataTypes.STRING,
-            primarykey: true,
+            primaryKey: true,
         },
         tetrioId: {
             type: DataTypes.STRING,
