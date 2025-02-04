@@ -4,6 +4,9 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
             primarykey: true,
         },
+        tetrioId: {
+            type: DataTypes.STRING,
+        },
 
         ratingAlert: { // next rating alert time
             type: DataTypes.DATE,
