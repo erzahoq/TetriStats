@@ -328,26 +328,27 @@ client.once(Events.ClientReady, readyClient => {
 client.login(token);
 
 
-async function status () {
-
-    return;
-    const response = await fetch('https://ch.tetr.io/api/general/stats'); //get stats data
-    let responseData = await response.json();
-    let totalAccounts;
-
-    try {
-        totalAccounts = responseData.data.usercount;
-        console.log('successfully fetched player count!')
-    } catch (error) {
-        return console.log(`couldn\'t fetch player count!`)
-    }
-
-    client.user.setActivity(`${formatNumber(totalAccounts)} players`, { type: ActivityType.Watching });
-    setInterval(status, 300000); // 5 minutes
-}
 
 function formatNumber(num) {
     const numStr = num.toString();
     return numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
+async function status() {
+    try {
+        const response = await fetch('https://ch.tetr.io/api/general/stats'); // Get stats data
+        let responseData = await response.json();
+        let totalAccounts = responseData.data.usercount;
+
+        console.log('Successfully fetched player count!');
+        client.user.setActivity(`${formatNumber(totalAccounts)} players`, { type: ActivityType.Watching });
+    } catch (error) {
+        console.log(`Couldn't fetch player count!`);
+    }
+}
+
+// Run the function once immediately
+status();
+
+// Then set the interval to repeat every 5 minutes
+setInterval(status, 300000);
