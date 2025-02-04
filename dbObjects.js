@@ -42,7 +42,7 @@ Reflect.defineProperty(list['User'].prototype, 'checkAlert', {
 		}
 
 		// alert the user
-		if (this.ratingAlert > Date.now()) {
+		if (this.ratingAlert > Date.now() && !this.ratingAlerted) {
 			this.ratingAlerted = true;
 			await this.save();
 			return true;
