@@ -17,7 +17,6 @@ module.exports = {
         const enabled = interaction.options.getBoolean("enabled") ?? (user.ratingAlert === null);
 
         if (enabled) {
-            console.log(user.toJSON())
             const resp = await user.checkAlert(true);
             if (resp instanceof Error) {
                 return await interaction.reply(`Something went wrong! ${resp.message}`)
