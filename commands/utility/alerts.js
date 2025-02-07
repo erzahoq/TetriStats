@@ -12,17 +12,18 @@ module.exports = {
 	async execute(interaction) {
         let user = await database.User.findOne({ where: { userId: interaction.user.id } })
         if (!user) {
-            await database.User.create({ userId: interaction.user.id })
+            user = await database.User.create({ userId: interaction.user.id })
         }
-        const enabled = interaction.options.getBoolean("enabled") ?? (user.ratingAlert == -1);
+        const enabled = interaction.options.getBoolean("enabled") ?? (user.ratingAlert === null);
 
         if (enabled) {
+            console.log(user.toJSON())
             const resp = await user.checkAlert(true);
             if (resp instanceof Error) {
                 return await interaction.reply(`Something went wrong! ${resp.message}`)
             }
         } else {
-            user.ratingAlert = -1;
+            user.ratingAlert = null;    
         }
 
         await user.save()

@@ -25,7 +25,7 @@ Reflect.defineProperty(list['User'].prototype, 'checkAlert', {
 
 		// if the user doesn't have a TETR.IO id linked to them yet
 		if (!this.tetrioId) {
-			const discordSearch = (await fetch(`https://ch.tetr.io/api/users/search/discord:${this.userId}`)).json();
+			const discordSearch = await (await fetch(`https://ch.tetr.io/api/users/search/discord:${this.userId}`)).json();
 			if (!discordSearch.success) return new Error("Unable to access TETR.IO servers!"); // wuh oh
 			if (!discordSearch.data) return new Error("User doesn't have their account linked!") // ok that's not our fault
 
