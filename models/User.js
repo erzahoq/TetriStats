@@ -13,7 +13,7 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: true,
         },
         ratingAlerted: { // if rating alert has already triggered
-            type:DataTypes.BOOL,
+            type: DataTypes.BOOLEAN,
             allowNull: true,
         }
 

@@ -1,4 +1,6 @@
 const { Sequelize } = require('sequelize');
+const path = require('node:path');
+const fs = require('node:fs');
 
 const sequelize = new Sequelize('database', 'user', 'password', {
 	host: 'localhost',
@@ -14,7 +16,7 @@ var list = {}; // list of all models
 
 for (const file of modelFiles) {
 	const filePath = path.join(modelsPath, file);
-	list[file] = require(filePath)(sequelize,Sequelize.DataTypes);
+	list[file.replace('.js','')] = require(filePath)(sequelize,Sequelize.DataTypes);
 }
 
 Reflect.defineProperty(list['User'].prototype, 'checkAlert', {
