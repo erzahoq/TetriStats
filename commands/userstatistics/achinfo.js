@@ -100,6 +100,7 @@ module.exports = {
             "solo": "Solo",
             "zenith": "Quick Play",
             "event": "Event",
+            "legacy": "Legacy",
         }
         let categories = ["general", "league", "solo", "zenith", "event"];
         let achList = {};
@@ -276,7 +277,7 @@ function formatAchievementListText(achlist) {
 
         achText += ` **${ach['name']}** - **${displayVal}** ${ach['object']}` // show the main info
 
-        if (ach['rank'] === 100) { // if it's issued
+        if (ach.nolb) { // if it's issued
             achText += ` (Issue ${ach['pos']}/${ach['total']})` 
         } else {
             if (ach['pos'] < 100) { // if you're in the top 100 players
