@@ -726,7 +726,14 @@ function displayedAchesConvert(displayed, all) {
 }
 
 function escapeUnderscores(input) {
-    return input.replace(/_/g, '\\_');
+    const underscoreCount = (input.match(/_/g) || []).length;
+    
+    // Only escape if the count is a multiple of 2
+    if (underscoreCount % 2 === 0 && underscoreCount > 0) {
+        return input.replace(/_/g, '\\_');
+    }
+    
+    return input;
 }
 
 function formatCountry(localRank, country) {
