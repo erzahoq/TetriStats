@@ -1,9 +1,11 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder} = require('@discordjs/builders');
+const { EmbedBuilder, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('league')
+        .setContexts(InteractionContextType.BotDM, InteractionContextType.Guild, InteractionContextType.PrivateChannel)
+        .setIntegrationTypes(ApplicationIntegrationType.UserInstall)
         .setDescription('Displays Tetra League information about a user.')
         .addStringOption(option => 
             option.setName('username')

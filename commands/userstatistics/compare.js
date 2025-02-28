@@ -1,8 +1,10 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('compare')
+        .setContexts(InteractionContextType.BotDM, InteractionContextType.Guild, InteractionContextType.PrivateChannel)
+        .setIntegrationTypes(ApplicationIntegrationType.UserInstall)
 		.setDescription('Compare two users\' statistics on TETR.IO.')
         .addStringOption((option) =>
             option

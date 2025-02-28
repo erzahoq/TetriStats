@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
 import("node-fetch");
 
 const maxItems = 5;
@@ -6,6 +6,8 @@ const maxItems = 5;
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('records')
+        .setContexts(InteractionContextType.BotDM, InteractionContextType.Guild, InteractionContextType.PrivateChannel)
+        .setIntegrationTypes(ApplicationIntegrationType.UserInstall)
         .setDescription('Get a user\'s latest and top records via their TETR.IO (or Discord) username/ID.')
         .addSubcommand(subcommand =>
             subcommand

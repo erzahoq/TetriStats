@@ -1,9 +1,11 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('analyzereplay')
+        .setContexts(InteractionContextType.BotDM, InteractionContextType.Guild, InteractionContextType.PrivateChannel)
+        .setIntegrationTypes(ApplicationIntegrationType.UserInstall)
         .setDescription('Analyzes a Tetr.io replay file uploaded by the user.')
         .addAttachmentOption(option =>
             option.setName('replay')

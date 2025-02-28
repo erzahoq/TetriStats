@@ -1,9 +1,11 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
 import('node-fetch'); // Ensure 'node-fetch' is imported properly
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('user')
+        .setContexts(InteractionContextType.BotDM, InteractionContextType.Guild, InteractionContextType.PrivateChannel)
+        .setIntegrationTypes(ApplicationIntegrationType.UserInstall)
         .setDescription('Get detailed information about a specific user via their TETR.IO (or Discord) username/ID.')
         .addSubcommand(subcommand =>
             subcommand
