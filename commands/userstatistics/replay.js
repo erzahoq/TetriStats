@@ -6,7 +6,7 @@ module.exports = {
         .setName('analyzereplay')
         .setContexts(InteractionContextType.BotDM, InteractionContextType.Guild, InteractionContextType.PrivateChannel)
         .setIntegrationTypes(ApplicationIntegrationType.UserInstall)
-        .setDescription('Analyzes a Tetr.io replay file uploaded by the user.')
+        .setDescription('(WIP) Analyzes a Tetr.io replay file uploaded by the user.')
         .addAttachmentOption(option =>
             option.setName('replay')
                 .setDescription('The replay file to analyze (.ttr format).')

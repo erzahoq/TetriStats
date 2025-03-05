@@ -101,10 +101,9 @@ module.exports = {
             "league": "Tetra League",
             "solo": "Solo",
             "zenith": "Quick Play",
-            "event": "Event",
             "legacy": "Legacy",
         }
-        let categories = ["general", "league", "solo", "zenith", "event"];
+        let categories = ["general", "league", "solo", "zenith", "legacy"];
         let achList = {};
         let achDisplays = {};
         let pages = {};
@@ -291,6 +290,11 @@ function formatAchievementListText(achlist) {
             else { // everything else
                 achText += ` (Top ${Math.round(ach['pos'] / ach['total'] * 10000) / 100}%)`
             }
+        }
+
+        //duo achievement
+        if (ach.x.ally) {
+            achText += ` (With [${ach.x.ally.username}](https://ch.tetr.io/u/${ach.x.ally.username}))`;
         }
 
         // in case it's undefined, define as ""
