@@ -332,7 +332,7 @@ client.login(token);
 
 async function checkRdAlerts() {
     console.log('Checking RD alerts...');
-    const userList = await database.User.findAll({ where: { ratingAlert: { [Op.gt]: Date.now() } } }); // get all users with alerts
+    const userList = await database.User.findAll();
     let resp;
     for (const user of userList) {
         console.log('Checking RD alert for ' + user.userId);
@@ -349,6 +349,9 @@ async function checkRdAlerts() {
             ]}).catch(
                 (err) => console.log(`Couldn't alert user ${user.userId}! ${err.message}`) // means we can't DM user, cope
             )
+        }
+        if (resp instanceof Error) {
+            console.log(`RD alert check errored for ${user.userId}! ${resp.message}`);
         }
     }
     console.log('Finished checking RD alerts!');
