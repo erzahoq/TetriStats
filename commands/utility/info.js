@@ -25,7 +25,7 @@ module.exports = {
 			.addFields(
 				{ name: '📌 Features', value: '- Player statistics tracking\n- Tetra League rankings\n- TETR.IO server statistics\n- Detailed user information', inline: false },
 				{ name: '📊 Bot Stats', value: `**Servers:** ${totalServers}\n**Users:** ${totalUsers}`, inline: false },
-				{ name: '⛓️ Links', value: '[GitHub Repository](https://github.com/erzahoq/TetriStats) • [Tetra Channel](https://ch.tetr.io/)', inline: false }
+				{ name: '⛓️ Links', value: '[GitHub Repository](https://github.com/erzahoq/TetriStats) • [Tetra Channel](https://ch.tetr.io/) • [Invite TetriStats!](https://discord.com/oauth2/authorize?client_id=1277041428274479124)', inline: false }
 			)
 			.setFooter({ text: 'Made with ❤ for TETR.IO fans', iconURL: client.user.displayAvatarURL() });
 
