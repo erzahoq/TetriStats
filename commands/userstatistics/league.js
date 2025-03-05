@@ -49,7 +49,7 @@ module.exports = {
                 .setColor('#0099ff')
                 .setDescription(`Here is detailed Tetra League information along with extra calculated stats.`)
                 .addFields(
-                    { name: 'TR (Tetra Rating)', value: tr.toString(), inline: true },
+                    { name: 'TR (Tetra Rating)', value: tr.toFixed(2).toString(), inline: true },
                     { name: 'Glicko Rating', value: glicko.toFixed(2), inline: true },
                     { name: 'RD (Rating Deviation)', value: rd.toFixed(2), inline: true },
                     { name: 'Games Played', value: gamesPlayed.toString(), inline: true },
@@ -66,7 +66,6 @@ module.exports = {
                     { name: 'VS/APM Ratio', value: vsapm.toFixed(4), inline: true },
                     { name: 'Garbage Efficiency (GE)', value: ge.toFixed(4), inline: true }
                 )
-                .setFooter({ text: 'Data fetched from Tetr.io API', iconURL: 'https://tetr.io/res/favicon.png' });
 
             // Send the embed
             await interaction.reply({ embeds: [embed] });
