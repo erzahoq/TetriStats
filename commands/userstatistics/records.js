@@ -256,6 +256,14 @@ function getModEmoji(emoji) {
         "invisible": "1284286644328988734",
         "allspin": "1284286652759412899",
         "duo": "1284286660800020620",
+        "expert_reversed": "1346671043883962492",
+        "nohold_reversed": "1346670935729770496",
+        "messy_reversed": "1346671003975290880",
+        "gravity_reversed": "1346670986648621139",
+        "volatile_reversed": "1346670955627282442",
+        "doublehole_reversed": "1346671018483253278",
+        "invisible_reversed": "1346671057586753536",
+        "allspin_reversed": "1346670971209121872",
         "snowman": "1321711057034543175",
     };
     return `<:mod_${emoji}:${mapping[emoji]}>`;
