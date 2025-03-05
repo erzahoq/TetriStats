@@ -16,7 +16,7 @@ module.exports = (sequelize) => {
             }
 
             const lastGameData = await (await fetch(`https://ch.tetr.io/api/users/${this.tetrioId}/records/league/recent?limit=1`)).json();
-            console.log(lastGameData)
+            console.log(`Fetched most recent league for ${this.userId}, got `,lastGameData.data.entries)
             if (!lastGameData.success) return new Error("Unable to access TETR.IO servers!"); // i love copy/pasting code
             const gameTime = new Date(lastGameData.data.entries[0].ts);
             const alertTime = gameTime + 604800000 // one week

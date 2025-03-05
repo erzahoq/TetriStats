@@ -4,6 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { token } = require('./config.json');
 const { database } = require('./database.js');
+const { Op } = require('sequelize');
 
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
@@ -323,17 +324,21 @@ client.on(Events.InteractionCreate, async interaction => {
 client.once(Events.ClientReady, readyClient => {
 	console.log(`Ready! Logged in as ${readyClient.user.tag}`);
     status();
+    checkRdAlerts();
 });
 
 // Log in to Discord with your client's token
 client.login(token);
 
-setInterval(async() => {
-    const userList = await database.User.findAll();
+async function checkRdAlerts() {
+    console.log('Checking RD alerts...');
+    const userList = await database.User.findAll({ where: { ratingAlert: { [Op.gt]: Date.now() } } }); // get all users with alerts
     let resp;
     for (const user of userList) {
+        console.log('Checking RD alert for ' + user.userId);
         resp = await user.checkAlert(); // check if alert is needed
         if (!resp instanceof Error && resp) { // make sure it doesn't error, and also is true
+            console.log('Alerting ' + user.userId);
             const userToMessage = await client.users.fetch(user.userId);
             userToMessage.send({
                 embeds: [
@@ -341,10 +346,15 @@ setInterval(async() => {
                     .setColor('ffdd22')
                     .setDescription('Your Tetra League RD has begun rising!')
                     .setTitle('RD Alert')
-            ]}).catch() // means we can't DM user, cope
+            ]}).catch(
+                (err) => console.log(`Couldn't alert user ${user.userId}! ${err.message}`) // means we can't DM user, cope
+            )
         }
     }
-}, 1800000) // every half hour
+    console.log('Finished checking RD alerts!');
+}
+
+setInterval(checkRdAlerts, 1800000) // every half hour
 
 
 
@@ -359,15 +369,12 @@ async function status() {
         let responseData = await response.json();
         let totalAccounts = responseData.data.usercount;
 
-        console.log('Successfully fetched player count!');
+        // console.log('Successfully fetched player count!');
         client.user.setActivity(`${formatNumber(totalAccounts)} players`, { type: ActivityType.Watching });
     } catch (error) {
-        console.log(`Couldn't fetch player count!`);
+        console.log(`Couldn't fetch player count! ${error.message}`);
     }
 }
-
-// Run the function once immediately
-status();
 
 // Then set the interval to repeat every 5 minutes
 setInterval(status, 300000);
