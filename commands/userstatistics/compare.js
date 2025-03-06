@@ -52,12 +52,8 @@ module.exports = {
                 });
             }
 
-            console.log(user)
-
             response = await fetch(`https://ch.tetr.io/api/users/search/discord:${user.id}`);
             let stats = await response.json();
-
-            console.log(stats)
 
             if (!stats.data) {
                 return await interaction.editReply({
@@ -173,39 +169,57 @@ module.exports = {
         userSummary2 = await userSummary2.json();
         userSummary1 = userSummary1.data;
         userSummary2 = userSummary2.data;
-
-        console.log(userSummary1)
         
         // Create the embed
+        // thanks chatgpt 4.5 very cool
         const comparisonEmbed = new EmbedBuilder()
-            .setColor('#ff9159') // Set embed color
-            .setTitle(`${userStats1.username} vs. ${userStats2.username}`)
+            .setColor('#5865F2') // Discord blurple is visually pleasing
+            .setTitle(`📊 ${userStats1.username} vs ${userStats2.username}`)
+            .setDescription(`Comparison of TETR.IO statistics between **${userStats1.username}** ${getEmojiOfRank(userSummary1.league.rank)} and **${userStats2.username}** ${getEmojiOfRank(userSummary2.league.rank)}.`)
+            .setThumbnail('https://tetr.io/res/logo/logo-light.svg') // Add TETR.IO logo
             .addFields(
-            { name: 'Stat', value: 'Games Played\nWins\nPlaytime\nLevel\nAR\nLeague Rank\nTR\nPieces Per Second\nAttack Per Minute', inline: true },
-            { name: `${userStats1.username}`, value: `${userStats1.gamesplayed}
-            ${userStats1.gameswon} (${Math.round(userStats1.gameswon/userStats1.gamesplayed*10000)/100}%)
-            ${playtimeConvert(userStats1.gametime)}
-            ${formatNumber(Math.floor(calculateLevel(userStats1.xp)))}
-            ${userStats1.ar}
-            ${getEmojiOfRank(userSummary1.league.rank)}
-            ${calculateTR(userSummary1.league.tr)}
-            ${userSummary1.league.pps || 0}
-            ${userSummary1.league.apm || 0}
-            `, inline: true},
-            { name: `${userStats2.username}`, value: `${userStats2.gamesplayed}
-            ${userStats2.gameswon} (${Math.round(userStats2.gameswon/userStats2.gamesplayed*10000)/100}%)
-            ${playtimeConvert(userStats2.gametime)}
-            ${formatNumber(Math.floor(calculateLevel(userStats2.xp)))}
-            ${userStats2.ar}
-            ${getEmojiOfRank(userSummary2.league.rank)}
-            ${calculateTR(userSummary2.league.tr)}
-            ${userSummary2.league.pps || 0}
-            ${userSummary2.league.apm || 0}
-            `, inline: true}
+                { name: 'Statistic', value: `
+                🌐 **Country**
+                🎮 **Games Played**
+                🏆 **Wins (Win Rate)**
+                ⏰ **Playtime**
+                ⭐ **Level**
+                🎖️ **Achievement Rating**
+                📈 **Tetra League Rank**
+                🔢 **Tetra Rating**
+                ⚡ **Pieces Per Second**
+                🔥 **Attack Per Minute**`, inline: true },
+
+                { name: `${userStats1.username}`, value: `
+                ${countryCodeToEmoji(userStats1.country) || '🌐'}
+                ${formatNumber(userStats1.gamesplayed)}
+                ${formatNumber(userStats1.gameswon)} (${(userStats1.gameswon / userStats1.gamesplayed * 100).toFixed(2)}%)
+                ${playtimeConvert(userStats1.gametime)}
+                ${formatNumber(Math.floor(calculateLevel(userStats1.xp)))}
+                ${formatNumber(userStats1.ar)} AR
+                ${getEmojiOfRank(userSummary1.league.rank)}
+                ${calculateTR(userSummary1.league.tr)} TR
+                ${(userSummary1.league.pps || 0).toFixed(2)} PPS
+                ${(userSummary1.league.apm || 0).toFixed(2)} APM`, inline: true },
+
+                { name: `${userStats2.username}`, value: `
+                ${countryCodeToEmoji(userStats2.country) || '🌐'}
+                ${formatNumber(userStats2.gamesplayed)}
+                ${formatNumber(userStats2.gameswon)} (${(userStats2.gameswon / userStats2.gamesplayed * 100).toFixed(2)}%)
+                ${playtimeConvert(userStats2.gametime)}
+                ${formatNumber(Math.floor(calculateLevel(userStats2.xp)))}
+                ${formatNumber(userStats2.ar)} AR
+                ${getEmojiOfRank(userSummary2.league.rank)}
+                ${calculateTR(userSummary2.league.tr)} TR
+                ${(userSummary2.league.pps || 0).toFixed(2)} PPS
+                ${(userSummary2.league.apm || 0).toFixed(2)} APM`, inline: true }
             )
-            .setTimestamp();
-        
-        interaction.editReply({ embeds: [comparisonEmbed] });
+            .setTimestamp()
+            .setFooter({ text: 'TetriStats • Data from TETR.IO' });
+
+
+interaction.editReply({ embeds: [comparisonEmbed] });
+
 	},
 };
  
@@ -213,7 +227,7 @@ function calculateTR(tr) {
     if (tr === -1) {
         return "N/A";
     } else {
-        return formatNumber((Math.round(tr * 100)) / 100);
+        return formatNumber(Math.round(tr));
     }
 }
 
