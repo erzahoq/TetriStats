@@ -43,31 +43,55 @@ module.exports = {
             const vsapm = vs / apm;
             const ge = ((app * dss) / pps) * 2;
 
-            // Create embed
+            // Create embed with a sleek look
+            //i loooove chat gpt
             const embed = new EmbedBuilder()
-                .setTitle(`Tetra League Stats for ${username}`)
-                .setColor('#0099ff')
-                .setDescription(`Here is detailed Tetra League information along with extra calculated stats.`)
+                .setTitle(`📊 Tetra League Stats: **${username.toUpperCase()}**`)
+                .setColor('#ffd230')
+                .setDescription(`Here is detailed Tetra League information, including extra calculated stats.\n`)
+
+                // Ranking Section
                 .addFields(
-                    { name: 'TR (Tetra Rating)', value: tr.toFixed(2).toString(), inline: true },
-                    { name: 'Glicko Rating', value: glicko.toFixed(2), inline: true },
-                    { name: 'RD (Rating Deviation)', value: rd.toFixed(2), inline: true },
-                    { name: 'Games Played', value: gamesPlayed.toString(), inline: true },
-                    { name: 'Games Won', value: gamesWon.toString(), inline: true },
-                    { name: 'Win Rate', value: `${winRate}%`, inline: true },
-                    { name: 'APM (Actions Per Minute)', value: apm.toFixed(2), inline: true },
-                    { name: 'PPS (Pieces Per Second)', value: pps.toFixed(2), inline: true },
-                    { name: 'VS (Versus Score)', value: vs.toFixed(2), inline: true },
-                    { name: 'Calculated Stats', value: '\u200B' },
-                    { name: 'APP (Actions Per Piece)', value: app.toFixed(4), inline: true },
-                    { name: 'DSS (Diff. in Speed & Skill)', value: dss.toFixed(4), inline: true },
-                    { name: 'DSP (Diff. in Speed & Precision)', value: dsp.toFixed(4), inline: true },
-                    { name: 'DSAPP (Combined Metric)', value: dsapp.toFixed(4), inline: true },
-                    { name: 'VS/APM Ratio', value: vsapm.toFixed(4), inline: true },
-                    { name: 'Garbage Efficiency (GE)', value: ge.toFixed(4), inline: true }
+                    { name: '🏆 ─── Ranking ───', value: ' ', inline: false }, 
+                    { name: '🎖️ **Tetra Rating (TR)**', value: `${tr.toFixed(2)}`, inline: true },
+                    { name: '📊 **Glicko Rating**', value: `${glicko.toFixed(2)}`, inline: true },
+                    { name: '📉 **Rating Deviation (RD)**', value: `${rd.toFixed(2)}`, inline: true },
+                    { name: '\u200B', value: '\u200B', inline: false } // Adds spacing between sections
                 )
 
-            // Send the embed
+                // Match Stats Section
+                .addFields(
+                    { name: '🎮 ─── Match Stats ───', value: ' ', inline: false },
+                    { name: '🕹️ **Games Played**', value: `${gamesPlayed} games`, inline: true },
+                    { name: '🏅 **Games Won**', value: `${gamesWon} games`, inline: true },
+                    { name: '📈 **Win Rate**', value: `${winRate}%`, inline: true },
+                    { name: '\u200B', value: '\u200B', inline: false } // Adds spacing between sections
+                )
+
+                // Performance Stats Section
+                .addFields(
+                    { name: '⚡ ─── Performance Stats ───', value: ' ', inline: false },
+                    { name: '🔥 **APM (Actions Per Minute)**', value: `${apm.toFixed(2)} APM`, inline: true },
+                    { name: '🧩 **PPS (Pieces Per Second)**', value: `${pps.toFixed(2)} PPS`, inline: true },
+                    { name: '⚔️ **VS (Versus Score)**', value: `${vs.toFixed(2)} points`, inline: true },
+                    { name: '\u200B', value: '\u200B', inline: false } // Adds spacing between sections
+                )
+
+                // Advanced Metrics Section
+                .addFields(
+                    { name: '🔍 ─── Advanced Metrics ───', value: ' ', inline: false },
+                    { name: '📌 **APP (Actions Per Piece)**', value: `${app.toFixed(4)} actions/piece`, inline: true },
+                    { name: '⚖️ **DSS (Skill-Speed Difference)**', value: `${dss.toFixed(4)} blocks/sec`, inline: true },
+                    { name: '🎯 **DSP (Precision Difference)**', value: `${dsp.toFixed(4)} blocks/sec/piece`, inline: true },
+                    { name: '🧮 **DSAPP (Combined Metric)**', value: `${dsapp.toFixed(4)}`, inline: true },
+                    { name: '⚔️ **VS/APM Ratio**', value: `${vsapm.toFixed(4)} VS per APM`, inline: true },
+                    { name: '♻️ **Garbage Efficiency (GE)**', value: `${ge.toFixed(4)} garbage blocks efficiency`, inline: true }
+                )
+
+                .setFooter({ text: 'Data provided by TETR.IO API • TetriStats' })
+                .setTimestamp();
+
+            // Send the formatted embed
             await interaction.reply({ embeds: [embed] });
         } catch (error) {
             console.error(error);

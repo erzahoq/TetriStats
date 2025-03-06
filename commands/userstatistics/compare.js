@@ -174,7 +174,7 @@ module.exports = {
         // thanks chatgpt 4.5 very cool
         const comparisonEmbed = new EmbedBuilder()
             .setColor('#5865F2') // Discord blurple is visually pleasing
-            .setTitle(`📊 ${userStats1.username} vs ${userStats2.username}`)
+            .setTitle(`📊 ${userStats1.username.toUpperCase()} vs ${userStats2.username.toUpperCase()}`)
             .setDescription(`Comparison of TETR.IO statistics between **${userStats1.username}** ${getEmojiOfRank(userSummary1.league.rank)} and **${userStats2.username}** ${getEmojiOfRank(userSummary2.league.rank)}.`)
             .setThumbnail('https://tetr.io/res/logo/logo-light.svg') // Add TETR.IO logo
             .addFields(
