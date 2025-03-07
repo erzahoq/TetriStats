@@ -93,8 +93,6 @@ module.exports = {
 
         achs = achs.data;
 
-        username = capitalizeFirstLetter(username);
-
         // create a bunch of vars
         const catMap = {
             "general": "General",
@@ -147,7 +145,7 @@ module.exports = {
             textPages.push(new EmbedBuilder()
                 .setColor("#6dc971")
                 .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
-                .setDescription(`### __[${capitalizeFirstLetter(username)}](https://ch.tetr.io/u/${username}) -> Achievements -> ${catMap[trimmedCat]}__\n` + text)
+                .setDescription(`### __[${escapeUnderscores(username.toUpperCase())}](https://ch.tetr.io/u/${username}) -> Achievements -> ${catMap[trimmedCat]}__\n` + text)
             )
 
             let button = new ButtonBuilder()
@@ -189,10 +187,6 @@ module.exports = {
     }
 };
 
-function capitalizeFirstLetter(string) {
-    return string.charAt(0).toUpperCase() + string.slice(1);
-}
-
 function getEmojiOfAch(name) {
     //mapping of emoji names to their IDs
     const achEmojis = {
@@ -215,6 +209,17 @@ function getEmojiOfAch(name) {
 function formatNumber(num) {
     const numStr = num.toString();
     return numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+function escapeUnderscores(input) {
+    const underscoreCount = (input.match(/_/g) || []).length;
+    
+    // Only escape if the count is a multiple of 2
+    if (underscoreCount % 2 === 0 && underscoreCount > 0) {
+        return input.replace(/_/g, '\\_');
+    }
+    
+    return input;
 }
 
 

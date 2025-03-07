@@ -46,7 +46,7 @@ module.exports = {
             // Create embed with a sleek look
             //i loooove chat gpt
             const embed = new EmbedBuilder()
-                .setTitle(`📊 Tetra League Stats: **${username.toUpperCase()}**`)
+                .setTitle(`📊 Tetra League Stats: **${escapeUnderscores(username.toUpperCase())}**`)
                 .setColor('#ffd230')
                 .setDescription(`Here is detailed Tetra League information, including extra calculated stats.\n`)
 
@@ -99,3 +99,14 @@ module.exports = {
         }
     }
 };
+
+function escapeUnderscores(input) {
+    const underscoreCount = (input.match(/_/g) || []).length;
+    
+    // Only escape if the count is a multiple of 2
+    if (underscoreCount % 2 === 0 && underscoreCount > 0) {
+        return input.replace(/_/g, '\\_');
+    }
+    
+    return input;
+}

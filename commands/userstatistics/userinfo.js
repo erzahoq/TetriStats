@@ -142,7 +142,7 @@ ${statData.gamesplayed >= 0 ? `- Played ${statData.gamesplayed} games${statData.
                 .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
                 .setFooter({ text: `User ID: ${statData._id} | Role: ${statData.role}` })
                 .setDescription(`
-### __[${capitalizeFirstLetter(escapeUnderscores(statData.username))}](https://ch.tetr.io/u/${statData.username}) -> Quick Look -> Records__
+### __[${escapeUnderscores(statData.username.toUpperCase())}](https://ch.tetr.io/u/${statData.username}) -> Quick Look -> Records__
 ${formatZenith(summaryData, country)} ${formatZenithExpert(summaryData, country)} ${format40Lines(summaryData, country)} ${formatBlitz(summaryData, country)} ${formatZen(summaryData)}
 `)
 //                 .setDescription(`
@@ -156,7 +156,7 @@ ${formatZenith(summaryData, country)} ${formatZenithExpert(summaryData, country)
                 .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
                 .setFooter({ text: `User ID: ${statData._id} | Role: ${statData.role}` })
                 .setDescription(`
-### __[${capitalizeFirstLetter(escapeUnderscores(statData.username))}](https://ch.tetr.io/u/${statData.username}) -> Quick Look -> Tetra League__
+### __[${escapeUnderscores(statData.username.toUpperCase())}](https://ch.tetr.io/u/${statData.username}) -> Quick Look -> Tetra League__
 ${formatLeague(summaryData, country)}`)
         ];
 

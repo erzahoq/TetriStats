@@ -174,8 +174,8 @@ module.exports = {
         // thanks chatgpt 4.5 very cool
         const comparisonEmbed = new EmbedBuilder()
             .setColor('#5865F2') // Discord blurple is visually pleasing
-            .setTitle(`📊 ${userStats1.username.toUpperCase()} vs ${userStats2.username.toUpperCase()}`)
-            .setDescription(`Comparison of TETR.IO statistics between **${userStats1.username}** ${getEmojiOfRank(userSummary1.league.rank)} and **${userStats2.username}** ${getEmojiOfRank(userSummary2.league.rank)}.`)
+            .setTitle(`📊 ${escapeUnderscores(userStats1.username.toUpperCase())} vs ${escapeUnderscores(userStats2.username.toUpperCase())}`)
+            .setDescription(`Comparison of TETR.IO statistics between **${userStats1.username.toUpperCase()}** ${getEmojiOfRank(userSummary1.league.rank)} and **${userStats2.username.toUpperCase()}** ${getEmojiOfRank(userSummary2.league.rank)}.`)
             .setThumbnail('https://tetr.io/res/logo/logo-light.svg') // Add TETR.IO logo
             .addFields(
                 { name: 'Statistic', value: `
@@ -190,7 +190,7 @@ module.exports = {
                 ⚡ **Pieces Per Second**
                 🔥 **Attack Per Minute**`, inline: true },
 
-                { name: `${userStats1.username}`, value: `
+                { name: `${escapeUnderscores(userStats1.username.toUpperCase())}`, value: `
                 ${countryCodeToEmoji(userStats1.country) || '🌐'}
                 ${formatNumber(userStats1.gamesplayed)}
                 ${formatNumber(userStats1.gameswon)} (${(userStats1.gameswon / userStats1.gamesplayed * 100).toFixed(2)}%)
@@ -202,7 +202,7 @@ module.exports = {
                 ${(userSummary1.league.pps || 0).toFixed(2)} PPS
                 ${(userSummary1.league.apm || 0).toFixed(2)} APM`, inline: true },
 
-                { name: `${userStats2.username}`, value: `
+                { name: `${escapeUnderscores(userStats2.username.toUpperCase())}`, value: `
                 ${countryCodeToEmoji(userStats2.country) || '🌐'}
                 ${formatNumber(userStats2.gamesplayed)}
                 ${formatNumber(userStats2.gameswon)} (${(userStats2.gameswon / userStats2.gamesplayed * 100).toFixed(2)}%)
@@ -222,6 +222,17 @@ interaction.editReply({ embeds: [comparisonEmbed] });
 
 	},
 };
+
+function escapeUnderscores(input) {
+    const underscoreCount = (input.match(/_/g) || []).length;
+    
+    // Only escape if the count is a multiple of 2
+    if (underscoreCount % 2 === 0 && underscoreCount > 0) {
+        return input.replace(/_/g, '\\_');
+    }
+    
+    return input;
+}
  
 function calculateTR(tr) {
     if (tr === -1) {

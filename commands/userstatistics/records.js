@@ -104,7 +104,7 @@ module.exports = {
             const embed = new EmbedBuilder()
                 .setColor('#57b1ff')
                 .setThumbnail(`https://tetr.io/user-content/avatars/${tetrioID}.jpg`)
-                .setTitle(`${capitalizeFirstLetter(stats.data.username)}'s ${gametypeMapping[category]} Records:`)
+                .setTitle(`${escapeUnderscores(stats.data.username.toUpperCase())}'s ${gametypeMapping[category]} Records:`)
                 .setURL(`https://ch.tetr.io/u/${stats.data.username}`)
             const button = new ButtonBuilder()
                 .setCustomId(`recordspage_${category}_${buttons.length}`)
@@ -269,10 +269,6 @@ function getModEmoji(emoji) {
     return `<:mod_${emoji}:${mapping[emoji]}>`;
 }
 
-function capitalizeFirstLetter(string) {
-    return string.charAt(0).toUpperCase() + string.slice(1);
-}
-
 function reformatTimestamp(isoString) {
     if (!isoString) {
         return "Before account creation was tracked"
@@ -300,4 +296,15 @@ function convertToTimeFormat(inputSeconds) {
 function escapeUnderscores(inputString) {
     // replace _ with \_ :3
     return inputString.replace(/_/g, '\\_');
+}
+
+function escapeUnderscores(input) {
+    const underscoreCount = (input.match(/_/g) || []).length;
+    
+    // Only escape if the count is a multiple of 2
+    if (underscoreCount % 2 === 0 && underscoreCount > 0) {
+        return input.replace(/_/g, '\\_');
+    }
+    
+    return input;
 }

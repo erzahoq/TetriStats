@@ -52,7 +52,7 @@ module.exports = {
                         .setColor('#ff9747')
                         .setDescription(`**Here\'s the summary of your replay:**
 Gamemode: ${gamemode}
-Player: ${replayData.users?.[0]?.username} (${countryCodeToEmoji(replayData.users?.[0]?.country)})
+Player: ${escapeUnderscores(replayData.users?.[0]?.username.toUpperCase())} (${countryCodeToEmoji(replayData.users?.[0]?.country)})
 Playtime: ${framesToTime(replayData.replay?.frames)} (${(replayData.replay?.frames / 60).toFixed(2)}s)
 Mods Used: ${formatModList(replayData.replay.options.zenith_mods)}
 
@@ -167,4 +167,15 @@ function formatModList(mods) {
 
     // Join the formatted mods
     return formattedWords.join(", ");
+}
+
+function escapeUnderscores(input) {
+    const underscoreCount = (input.match(/_/g) || []).length;
+    
+    // Only escape if the count is a multiple of 2
+    if (underscoreCount % 2 === 0 && underscoreCount > 0) {
+        return input.replace(/_/g, '\\_');
+    }
+    
+    return input;
 }
