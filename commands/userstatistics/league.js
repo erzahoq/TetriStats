@@ -1,4 +1,4 @@
-const { SlashCommandBuilder} = require('@discordjs/builders');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 const { EmbedBuilder, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
 
 module.exports = {
@@ -27,72 +27,67 @@ module.exports = {
 
             const leagueData = data.data;
 
-            //thanks cahgtpt
-            //thats how you spell that yep
-            // Extract basic stats
+            // Extract Basic Stats
             const { apm, pps, vs, tr, glicko, rd } = leagueData;
             const gamesPlayed = leagueData.gamesplayed || 0;
             const gamesWon = leagueData.gameswon || 0;
             const winRate = gamesPlayed > 0 ? ((gamesWon / gamesPlayed) * 100).toFixed(2) : 'N/A';
 
-            // Calculate extra stats
-            const app = apm / (60 * pps);
-            const dss = vs / 100 - apm / 60;
-            const dsp = dss / pps;
-            const dsapp = dsp + app;
-            const vsapm = vs / apm;
-            const ge = ((app * dss) / pps) * 2;
+            // ✅ Updated Calculations
+            const actionsPerPieceEfficiency = apm / (pps * 60); // APP
+            const downstackSpeed = vs / (100 * pps) - (apm / 60); // DSS
+            const downstackPrecision = downstackSpeed / pps; // DSP
+            const combinedEfficiencyScore = (downstackPrecision + actionsPerPieceEfficiency) / 2; // DSAPP
+            const attackPerActionRatio = vs / apm; // VS/APM
+            const garbageConversionRate = vs / apm; // GE (Attack per action)
+            const cheeseIndex = (downstackPrecision * 150) + (((attackPerActionRatio - 2) * 50) + (0.6 - actionsPerPieceEfficiency) * 125);
+            const weightedAPP = actionsPerPieceEfficiency - 5 * Math.tan((cheeseIndex / -30) + 1);
+            const estimatedTR = 25000 / (1 + 10 ** (((1500 - (0.000013 * (((pps * (150 + ((attackPerActionRatio - 1.66) * 35)) + actionsPerPieceEfficiency * 290 + downstackPrecision * 700)) ** 3) - 0.0196 * (((pps * (150 + ((attackPerActionRatio - 1.66) * 35)) + actionsPerPieceEfficiency * 290 + downstackPrecision * 700)) ** 2) + (12.645 * ((pps * (150 + ((attackPerActionRatio - 1.66) * 35)) + actionsPerPieceEfficiency * 290 + downstackPrecision * 700))) - 1005.4)) * Math.PI) / (Math.sqrt(((3 * Math.log(10) ** 2) * 60 ** 2) + (2500 * ((64 * Math.PI ** 2) + (147 * Math.log(10) ** 2)))))));
+            const areaScore = apm + (pps * 45) + (vs * 0.444) + (actionsPerPieceEfficiency * 185) + (downstackSpeed * 175) + (downstackPrecision * 450) + (garbageConversionRate * 315);
 
-            // Create embed with a sleek look
-            //i loooove chat gpt
+            // Create embed with improved descriptions
             const embed = new EmbedBuilder()
                 .setTitle(`📊 Tetra League Stats: **${escapeUnderscores(username.toUpperCase())}**`)
                 .setColor('#ffd230')
-                .setDescription(`Here is detailed Tetra League information, including extra calculated stats.\n`)
+                .setDescription(`Here is detailed Tetra League information, including advanced calculated metrics.`)
 
-                // Ranking Section
                 .addFields(
-                    { name: '🏆 ─── Ranking ───', value: ' ', inline: false }, 
+                    { name: '🏆 **────────── Ranking ──────────**', value: ' ', inline: false }, 
                     { name: '🎖️ **Tetra Rating (TR)**', value: `${tr.toFixed(2)}`, inline: true },
                     { name: '📊 **Glicko Rating**', value: `${glicko.toFixed(2)}`, inline: true },
                     { name: '📉 **Rating Deviation (RD)**', value: `${rd.toFixed(2)}`, inline: true },
-                    { name: '\u200B', value: '\u200B', inline: false } // Adds spacing between sections
+                    { name: '📌 **Estimated TR (Projected)**', value: `${estimatedTR.toFixed(2)}`, inline: true }
                 )
 
-                // Match Stats Section
                 .addFields(
-                    { name: '🎮 ─── Match Stats ───', value: ' ', inline: false },
-                    { name: '🕹️ **Games Played**', value: `${gamesPlayed} games`, inline: true },
+                    { name: '🎮 **────────── Match Stats ──────────**', value: ' ', inline: false },
+                    { name: '🕹️ **Total Games Played**', value: `${gamesPlayed} games`, inline: true },
                     { name: '🏅 **Games Won**', value: `${gamesWon} games`, inline: true },
-                    { name: '📈 **Win Rate**', value: `${winRate}%`, inline: true },
-                    { name: '\u200B', value: '\u200B', inline: false } // Adds spacing between sections
+                    { name: '📈 **Win Rate**', value: `${winRate}%`, inline: true }
                 )
 
-                // Performance Stats Section
                 .addFields(
-                    { name: '⚡ ─── Performance Stats ───', value: ' ', inline: false },
-                    { name: '🔥 **APM (Actions Per Minute)**', value: `${apm.toFixed(2)} APM`, inline: true },
-                    { name: '🧩 **PPS (Pieces Per Second)**', value: `${pps.toFixed(2)} PPS`, inline: true },
-                    { name: '⚔️ **VS (Versus Score)**', value: `${vs.toFixed(2)} points`, inline: true },
-                    { name: '\u200B', value: '\u200B', inline: false } // Adds spacing between sections
+                    { name: '⚡ **────────── Gameplay Performance ──────────**', value: ' ', inline: false },
+                    { name: '🔥 **Actions Per Minute (APM)**', value: `${apm.toFixed(2)} APM`, inline: true },
+                    { name: '🧩 **Pieces Per Second (PPS)**', value: `${pps.toFixed(2)} PPS`, inline: true },
+                    { name: '⚔️ **Attack Power (VS Score)**', value: `${vs.toFixed(2)} points`, inline: true }
                 )
 
-                // Advanced Metrics Section
                 .addFields(
-                    { name: '🔍 ─── Advanced Metrics ───', value: ' ', inline: false },
-                    { name: '📌 **APP (Actions Per Piece)**', value: `${app.toFixed(4)} actions/piece`, inline: true },
-                    { name: '⚖️ **DSS (Skill-Speed Difference)**', value: `${dss.toFixed(4)} blocks/sec`, inline: true },
-                    { name: '🎯 **DSP (Precision Difference)**', value: `${dsp.toFixed(4)} blocks/sec/piece`, inline: true },
-                    { name: '🧮 **DSAPP (Combined Metric)**', value: `${dsapp.toFixed(4)}`, inline: true },
-                    { name: '⚔️ **VS/APM Ratio**', value: `${vsapm.toFixed(4)} VS per APM`, inline: true },
-                    { name: '♻️ **Garbage Efficiency (GE)**', value: `${ge.toFixed(4)} garbage blocks efficiency`, inline: true }
+                    { name: '🔍 **────────── Advanced Analysis ──────────**', value: ' ', inline: false },
+                    { name: '📌 **Overall Efficiency Score (DSAPP)**', value: `${combinedEfficiencyScore.toFixed(3)}`, inline: true },
+                    { name: '⚖️ **Attack per Action (VS/APM Ratio)**', value: `${attackPerActionRatio.toFixed(3)} VS per APM`, inline: true },
+                    { name: '♻️ **Garbage Efficiency (Conversion Rate)**', value: `${garbageConversionRate.toFixed(3)} VS per action`, inline: true },
+                    { name: '🧮 **Cheese Index (Survival Factor)**', value: `${cheeseIndex.toFixed(2)}`, inline: true },
+                    { name: '📊 **Weighted APP (Skill Adjusted)**', value: `${weightedAPP.toFixed(3)}`, inline: true },
+                    { name: '🏆 **Overall Area Score**', value: `${areaScore.toFixed(2)}`, inline: true }
                 )
 
                 .setFooter({ text: 'Data provided by TETR.IO API • TetriStats' })
                 .setTimestamp();
 
-            // Send the formatted embed
             await interaction.reply({ embeds: [embed] });
+
         } catch (error) {
             console.error(error);
             interaction.reply({ content: 'An error occurred while fetching data. Please try again later.', ephemeral: true });
@@ -101,12 +96,5 @@ module.exports = {
 };
 
 function escapeUnderscores(input) {
-    const underscoreCount = (input.match(/_/g) || []).length;
-    
-    // Only escape if the count is a multiple of 2
-    if (underscoreCount % 2 === 0 && underscoreCount > 0) {
-        return input.replace(/_/g, '\\_');
-    }
-    
-    return input;
+    return input.replace(/_/g, '\\_');
 }
