@@ -35,6 +35,9 @@ module.exports = {
 
             // Calculate extra stats
             const app = apm / (60 * pps);
+            const agpp = (apm / pps) * (vs / 100); //agression per piece
+            const dsr = ((vs / 100) - (apm / 60)) / pps;
+            const cpr = (vs / pps) * 10;
             
             // Create the improved embed
             const embed = new EmbedBuilder()
@@ -63,7 +66,7 @@ module.exports = {
                 // Performance Stats Section
                 .addFields(
                     { name: '⚡ ─── Performance Stats ───', value: ' ', inline: false },
-                    { name: '🔥 **APM (Actions Per Minute)**', value: `${apm.toFixed(2)} APM`, inline: true },
+                    { name: '🔥 **APM (Attack Per Minute)**', value: `${apm.toFixed(2)} APM`, inline: true },
                     { name: '🧩 **PPS (Pieces Per Second)**', value: `${pps.toFixed(2)} PPS`, inline: true },
                     { name: '⚔️ **VS (Versus Score)**', value: `${vs.toFixed(2)} points`, inline: true },
                     { name: '\u200B', value: '\u200B', inline: false } // Section spacer
@@ -72,7 +75,10 @@ module.exports = {
                 // Advanced Metrics Section
                 .addFields(
                     { name: '🔍 ─── Advanced Metrics ───', value: ' ', inline: false },
-                    { name: '📌 **APP (Actions Per Piece)**', value: `${app.toFixed(4)} actions/piece`, inline: true },
+                    { name: '📌 **Attack Per Piece**', value: `${app.toFixed(2)} attack/piece`, inline: true },
+                    { name: '🔥 **Aggression Per Piece**', value: `${agpp.toFixed(2)} attack level`, inline: true },
+                    { name: '🛡️ **Defense-to-Speed Ratio**', value: `${dsr.toFixed(2)} defense score`, inline: true },
+                    { name: '🔁 **Consistent Pressure Rating**', value: `${cpr.toFixed(2)} pressure units`, inline: true },
                 )
 
                 .setFooter({ text: 'Data provided by TETR.IO API • TetriStats' })
