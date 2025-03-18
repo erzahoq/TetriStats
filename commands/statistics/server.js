@@ -25,32 +25,43 @@ module.exports = {
 
         // massive wall of embed but luckily everything is just a number
         const serverEmbed = new EmbedBuilder()
-            .setColor(0x0099FF)
-            .setColor("#81ff7d")
-            .setDescription(`
-### __Overall Server Statistics__
-- Total players: ${formatNumber(data.usercount)}
-  - ${formatNumber(data.usercount - data.anoncount)} of those are registered (${Math.round(10000 * ((data.usercount - data.anoncount) / data.usercount)) / 100}%)
-  - ${formatNumber(data.rankedcount)} of those are ranked (${Math.round(10000 * (data.rankedcount / data.totalaccounts)) / 100}% of total, ${Math.round(10000 * (data.rankedcount / (data.usercount - data.anoncount))) / 100}% of registered)
-  - ${formatNumber(data.anoncount)} of those are anonymous (${Math.round(10000 * (data.anoncount / data.usercount)) / 100}%)
-  
-- Total games played: ${formatNumber(data.gamesplayed)}
-  - ${formatNumber(data.gamesfinished)} were finished (${Math.round(10000 * (data.gamesfinished / data.gamesplayed)) / 100}%)
-  - ${formatNumber(data.recordcount)} were saved (${Math.round(10000 * (data.recordcount / data.gamesplayed)) / 100}%)
-- That's ${Math.round(data.gamesplayed_delta * 10) / 10} games per second!
-  - Or ${formatNumber(Math.round(gamesPlayedOverTime * 60 * 60 * 100) / 100)} per hour.
-  
-- Total time spent: ${formatNumber(Math.round(secondsToDays(data.gametime) * 10) / 10)} days
-  - Or ${formatNumber(Math.round(data.gametime))} seconds.
-  - Or ${formatNumber(Math.round(secondsToYears(data.gametime) * 10) / 10)} years.
-  
-- Total pieces placed: ${formatNumber(data.piecesplaced)}
-  - ${Math.round(data.piecesplaced / data.gametime * 100) / 100}/second on average
-- Total inputs: ${formatNumber(data.inputs)}
-  - ${Math.round(data.inputs / data.gametime * 100) / 100}/second on average`)
-            .setTimestamp();
+        .setColor("#81ff7d")
+        .setTitle("📊 **TETR.IO Server Statistics**")
+        .setDescription("Here are some detailed statistics on the overall TETR.IO server activity.")
+        .addFields(
+            { name: '👥 __Total Players__', value: `
+            **${formatNumber(data.usercount)}** players in total
+            **${formatNumber(data.usercount - data.anoncount)}** registered players (*${Math.round(10000 * ((data.usercount - data.anoncount) / data.usercount)) / 100}%*)
+            **${formatNumber(data.rankedcount)}** ranked players (*${Math.round(10000 * (data.rankedcount / data.totalaccounts)) / 100}% of total, ${Math.round(10000 * (data.rankedcount / (data.usercount - data.anoncount))) / 100}% of registered*)
+            **${formatNumber(data.anoncount)}** anonymous players (*${Math.round(10000 * (data.anoncount / data.usercount)) / 100}%*)
+            `, inline: false },
 
-        await interaction.reply({ embeds: [serverEmbed] })
+            { name: '🎮 __Games Played__', value: `
+            **${formatNumber(data.gamesplayed)}** total games played
+            **${formatNumber(data.gamesfinished)}** finished games (*${Math.round(10000 * (data.gamesfinished / data.gamesplayed)) / 100}%*)
+            **${formatNumber(data.recordcount)}** replays saved (*${Math.round(10000 * (data.recordcount / data.gamesplayed)) / 100}%*)
+            🕹️ *${Math.round(data.gamesplayed_delta * 10) / 10} games per second!*
+            ⏳ *${formatNumber(Math.round(gamesPlayedOverTime * 60 * 60 * 100) / 100)} games per hour!*
+            `, inline: false },
+
+            { name: '⏱️ __Total Time Spent__', value: `
+            **${formatNumber(Math.round(secondsToDays(data.gametime) * 10) / 10)}** days of playtime
+            ⏳ *(${formatNumber(Math.round(data.gametime))} seconds)*
+            🗓️ *(${formatNumber(Math.round(secondsToYears(data.gametime) * 10) / 10)} years)*
+            `, inline: false },
+
+            { name: '🧩 __Total Pieces & Inputs__', value: `
+            **${formatNumber(data.piecesplaced)}** pieces placed
+            🔢 *(${Math.round(data.piecesplaced / data.gametime * 100) / 100} pieces per second on average)*
+            **${formatNumber(data.inputs)}** total inputs
+            ⌨️ *(${Math.round(data.inputs / data.gametime * 100) / 100} inputs per second on average)*
+            `, inline: false }
+        )
+        .setFooter({ text: "TETR.IO Server Data • TetriStats" })
+        .setTimestamp();
+
+      await interaction.reply({ embeds: [serverEmbed] });
+
     },
 };
 
