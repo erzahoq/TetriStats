@@ -611,7 +611,7 @@ ${glixaireDisplay}
 Attack Per Minute: ${leagueStats.apm || 0}
 Pieces Per Second: ${leagueStats.pps || 0}
 Versus Score: ${leagueStats.vs || 0}${generateProgressBar(rankBoolean, progressToNextRank, prevRank, nextRank)}`
-}
+} //why is this still here? its unreachable because of the return above it lol
 
 function getEmojiOfRank(rank) {
     if (!rank) {

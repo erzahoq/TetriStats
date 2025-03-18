@@ -48,10 +48,10 @@ module.exports = {
                 // Ranking Section
                 .addFields(
                     { name: '🏆 ─── Ranking ───', value: ' ', inline: false }, 
-                    { name: '🎖️ **Tetra Rating (TR)**', value: `${tr.toFixed(2)}`, inline: true },
-                    { name: '📊 **Glicko Rating**', value: `${glicko.toFixed(2)}`, inline: true },
-                    { name: '📉 **Rating Deviation (RD)**', value: `${rd.toFixed(2)}`, inline: true },
-                    { name: '\u200B', value: '\u200B', inline: false } // Section spacer
+                    { name: '🎖️ **Tetra Rating**', value: `${tr.toFixed(1)} TR`, inline: true },
+                    { name: '📊 **Glicko Rating**', value: `${glicko.toFixed(1)}`, inline: true },
+                    { name: '📉 **Rating Deviation**', value: `${rd.toFixed(1)}`, inline: true },
+                    { name: '🥇 **Rank**', value: `${getEmojiOfRank(leagueData.rank)}`, inline: true },
                 )
 
                 // Match Stats Section
@@ -60,16 +60,14 @@ module.exports = {
                     { name: '🕹️ **Games Played**', value: `${gamesPlayed} games`, inline: true },
                     { name: '🏅 **Games Won**', value: `${gamesWon} games`, inline: true },
                     { name: '📈 **Win Rate**', value: `${winRate}%`, inline: true },
-                    { name: '\u200B', value: '\u200B', inline: false } // Section spacer
                 )
 
                 // Performance Stats Section
                 .addFields(
                     { name: '⚡ ─── Performance Stats ───', value: ' ', inline: false },
-                    { name: '🔥 **APM (Attack Per Minute)**', value: `${apm.toFixed(2)} APM`, inline: true },
-                    { name: '🧩 **PPS (Pieces Per Second)**', value: `${pps.toFixed(2)} PPS`, inline: true },
-                    { name: '⚔️ **VS (Versus Score)**', value: `${vs.toFixed(2)} points`, inline: true },
-                    { name: '\u200B', value: '\u200B', inline: false } // Section spacer
+                    { name: '🔥 **Attack Per Minute**', value: `${apm.toFixed(2)} APM`, inline: true },
+                    { name: '🧩 **Pieces Per Second**', value: `${pps.toFixed(2)} PPS`, inline: true },
+                    { name: '⚔️ **Versus Score**', value: `${vs.toFixed(2)} VS`, inline: true },
                 )
 
                 // Advanced Metrics Section
@@ -79,6 +77,10 @@ module.exports = {
                     { name: '🔥 **Aggression Per Piece**', value: `${agpp.toFixed(2)} attack level`, inline: true },
                     { name: '🛡️ **Defense-to-Speed Ratio**', value: `${dsr.toFixed(2)} defense score`, inline: true },
                     { name: '🔁 **Consistent Pressure Rating**', value: `${cpr.toFixed(2)} pressure units`, inline: true },
+                )
+                
+                .addFields(
+                    { name: '🔮 ─── Predicted TR (Estimation) ─── ', value: `-# Coming soon...`, inline: false },
                 )
 
                 .setFooter({ text: 'Data provided by TETR.IO API • TetriStats' })
@@ -93,3 +95,34 @@ module.exports = {
         }
     }
 };
+
+function getEmojiOfRank(rank) {
+    if (!rank) {
+        return "N/A";
+    }
+
+    const rankEmojis = {
+        "rank_xplus": "1277293685058310288",
+        "rank_x": "1277293677873463368",
+        "rank_u": "1277293667891286046",
+        "rank_ss": "1277293658403770388",
+        "rank_splus": "1277293647225819196",
+        "rank_s": "1277293636928933888",
+        "rank_sminus": "1277293624157278228",
+        "rank_aplus": "1277293615114358997",
+        "rank_a": "1277293607648231527",
+        "rank_aminus": "1277293600438227106",
+        "rank_bplus": "1277293592511250553",
+        "rank_b": "1277293576895856751",
+        "rank_bminus": "1277293566284267581",
+        "rank_cplus": "1277293553147449505",
+        "rank_c": "1277293540547756115",
+        "rank_cminus": "1277293530095685745",
+        "rank_dplus": "1277293513616265216",
+        "rank_d": "1277293312696516690",
+        "rank_z": "1277382169538461746",
+        "rank_top": "1278185429656670269"
+    }
+    let formattedRank = 'rank_' + rank.toLowerCase().replace("+", "plus").replace("-", "minus");
+    return `<:${formattedRank}:${rankEmojis[formattedRank]}>`
+}

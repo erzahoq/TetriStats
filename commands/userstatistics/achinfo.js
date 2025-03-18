@@ -256,12 +256,12 @@ function formatAchievementListText(achlist) {
     achlist.forEach(ach => {
         var achText = ""
         achCount++;
-        //format thing because fuck your API OSK
+        //format thing because fuck your API OSK (OSK if you're reading this please change it)
         let displayVal = formatNumber(Math.round(ach.v));
         if (ach.vt === 2) displayVal = `${formatNumber(Math.round((ach.v) / 100) / 10)}s`
         else if (ach.vt === 3) displayVal = `${formatNumber(-Math.round((ach.v) / 100) / 10)}s`
         else if (ach.vt === 4) displayVal = `${formatNumber(Math.round((ach.v) * 100) / 100)}m (Floor ${Math.floor(ach.a)})`
-        else if (ach.name === "Guardian Angel") displayVal = `${formatNumber(Math.round((ach.v) * 100) / 100)}m` //fuck you OSK you bitch
+        else if (ach.name === "Guardian Angel") displayVal = `${formatNumber(Math.round((ach.v) * 100) / 100)}m` //fuck you OSK you bitch (jk we love you)
         else if (ach.vt === 5) displayVal = `Obtained ${reformatTimestamp(-ach.v)}`
         else if (ach.vt === 6) displayVal = formatNumber(-Math.round(ach.v))
 
@@ -299,7 +299,8 @@ function formatAchievementListText(achlist) {
 
         //duo achievement
         if (ach.x.ally) {
-            achText += ` (With [${ach.x.ally.username}](https://ch.tetr.io/u/${ach.x.ally.username}))`;
+            let allyUsername = ach.x.ally.username;
+            achText += ` (With [${allyUsername.toUpperCase()}](https://ch.tetr.io/u/${allyUsername}))`;
         }
 
         // in case it's undefined, define as ""
