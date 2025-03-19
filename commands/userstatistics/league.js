@@ -34,10 +34,18 @@ module.exports = {
             const winRate = gamesPlayed > 0 ? ((gamesWon / gamesPlayed) * 100).toFixed(2) : 'N/A';
 
             // Calculate extra stats
-            const app = apm / (60 * pps);
-            const agpp = (apm / pps) * (vs / 100); //agression per piece
-            const dsr = ((vs / 100) - (apm / 60)) / pps;
-            const cpr = (vs / pps) * 10;
+
+            // assuming that VS = ((LinesSent + GarbageCleared) / Pieces) * PPS * 100
+            // which also simplifies to VS =  (LinesSent + GarbageCleared) * 100 / Sec
+            const attackPerPiece = apm / (60 * pps); // formula simplifies to `Attack / PiecesDropped`
+            // const vsPieceEfficiency = (vs / pps); // formula simplifies to `(LinesSent + GarbageCleared) * 100 / PiecesDropped`
+            const garbageAcceptanceRatio = ((vs / 100) - (apm / 60)) / pps; // formula simplifies to `(GarbageCleared - LinesCancelled) / PiecesDropped`
+            const efficiencySpeedRelianceRatio = (3 * attackPerPiece) / (pps) // this one doesn't simplify into something understandable, but it makes sense
+            // const generalPieceEfficiency = vs / (100 * apm) // formula simplifies to `60(LinesSent + GarbageCleared) / Attack`
+
+            // const agpp = (apm / pps) * (vs / 100); //agression per piece
+            // const dsr = ((vs / 100) - (apm / 60)) / pps;
+            // const cpr = (vs / pps) * 10;
             
             // Create the improved embed
             const embed = new EmbedBuilder()
@@ -73,10 +81,10 @@ module.exports = {
                 // Advanced Metrics Section
                 .addFields(
                     { name: '🔍 ─── Advanced Metrics ───', value: ' ', inline: false },
-                    { name: '📌 **Attack Per Piece**', value: `${app.toFixed(2)} attack/piece`, inline: true },
-                    { name: '🔥 **Aggression Per Piece**', value: `${agpp.toFixed(2)} attack level`, inline: true },
-                    { name: '🛡️ **Defense-to-Speed Ratio**', value: `${dsr.toFixed(2)} defense score`, inline: true },
-                    { name: '🔁 **Consistent Pressure Rating**', value: `${cpr.toFixed(2)} pressure units`, inline: true },
+                    { name: '📌 **Attack Per Piece**', value: `${attackPerPiece.toFixed(2)} attack/piece`, inline: true },
+                    // { name: '🔥 **Aggression Per Piece**', value: `${agpp.toFixed(2)} attack level`, inline: true },
+                    // { name: '🛡️ **Defense-to-Speed Ratio**', value: `${dsr.toFixed(2)} defense score`, inline: true },
+                    // { name: '🔁 **Consistent Pressure Rating**', value: `${cpr.toFixed(2)} pressure units`, inline: true },
                 )
                 
                 .addFields(
