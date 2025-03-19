@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
+const { EmbedBuilder, InteractionContextType, ApplicationIntegrationType, Embed } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -28,7 +28,7 @@ module.exports = {
             const leagueData = data.data;
 
             // Extract basic stats
-            const { apm, pps, vs, tr, glicko, rd } = leagueData;
+            const { apm, pps, vs, tr, glicko, rd, prev_rank, next_rank, rank, standing, standing_local, country, decaying, bestrank } = leagueData;
             const gamesPlayed = leagueData.gamesplayed || 0;
             const gamesWon = leagueData.gameswon || 0;
             const winRate = gamesPlayed > 0 ? ((gamesWon / gamesPlayed) * 100).toFixed(2) : 'N/A';
@@ -46,52 +46,60 @@ module.exports = {
             // const agpp = (apm / pps) * (vs / 100); //agression per piece
             // const dsr = ((vs / 100) - (apm / 60)) / pps;
             // const cpr = (vs / pps) * 10;
+
+            let rankBar;
+
+            if (!next_rank && prev_rank === 'x') {
+                next_rank = 'top'
+            }
+            if (!prev_rank && next_rank === 'd+') {
+                prev_rank = "d"
+            }
+
+            let description = `### __${username.toUpperCase()} -> Tetra League__\n`
             
-            // Create the improved embed
-            const embed = new EmbedBuilder()
-                .setTitle(`Tetra League Stats: **${username.toUpperCase()}**`)
-                .setColor('#ffd230')
-                .setDescription(`Here is detailed Tetra League information, including extra calculated stats.\n`)
+            if (tr < 0) {
+                description += `\n- Currently unranked ${getEmojiOfRank('z')}\n  - ${gamesPlayed}/10 rating games played`
+                rankBar = `${generateProgressBar("Unranked", gamesPlayed / 10, 10)} ${getEmojiOfRank('z')}`;
+            } 
+            else {
+                if (rd > 100) {
+                    description += `\n- Currently unranked ${getEmojiOfRank(rank)}\n  - Probably around ${getEmojiOfRank(leagueData.estRank)}`
+                    rankBar = false;
+                } else {
+                    description += `\n- Currently ranked ${getEmojiOfRank(rank)}\n  - Ranked #${standing} in the world\n  - Locally ranked #${standing_local} (${countryCodeToEmoji(country)})`
+                    rankBar = `${getEmojiOfRank(prev_rank)} ${generateProgressBar("Ranked", (leagueData.prev_at - standing) / (leagueData.prev_at - leagueData.next_at), 15)} ${getEmojiOfRank(next_rank)}`;
+                }
 
-                // Ranking Section
-                .addFields(
-                    { name: '─── Ranking ───', value: ' ', inline: false }, 
-                    { name: '**Tetra Rating**', value: `${formatNumber(tr.toFixed(1))}±${rd.toFixed(1)} TR`, inline: true },
-                    { name: '**Glicko Rating**', value: `${formatNumber(glicko.toFixed(1))}`, inline: true },
-                    { name: '**Rank**', value: `${getEmojiOfRank(leagueData.rank)}`, inline: true },
-                )
+                if ((rank != bestrank && rd <= 100) || (leagueData.estRank != bestrank && rd > 100)) {
+                    description += `\n  - Has reached ${getEmojiOfRank(bestrank)}`
+                }
 
-                // Match Stats Section
-                .addFields(
-                    { name: '─── Match Stats ───', value: ' ', inline: false },
-                    { name: '**Games Played**', value: `${gamesPlayed} games`, inline: true },
-                    { name: '**Games Won**', value: `${gamesWon} games`, inline: true },
-                    { name: '**Win Rate**', value: `${winRate}%`, inline: true },
-                )
-
-                // Performance Stats Section
-                .addFields(
-                    { name: '─── Performance Stats ───', value: ' ', inline: false },
-                    { name: '**Attack Per Minute**', value: `${apm.toFixed(2)} APM`, inline: true },
-                    { name: '**Pieces Per Second**', value: `${pps.toFixed(2)} PPS`, inline: true },
-                    { name: '**Versus Score**', value: `${vs.toFixed(2)} VS`, inline: true },
-                )
-
-                // Advanced Metrics Section
-                .addFields(
-                    { name: '─── Advanced Metrics ───', value: ' ', inline: false },
-                    { name: '**Attack Per Piece**', value: `${attackPerPiece.toFixed(2)} attack/piece`, inline: true },
-                    // { name: '🔥 **Aggression Per Piece**', value: `${agpp.toFixed(2)} attack level`, inline: true },
-                    // { name: '🛡️ **Defense-to-Speed Ratio**', value: `${dsr.toFixed(2)} defense score`, inline: true },
-                    // { name: '🔁 **Consistent Pressure Rating**', value: `${cpr.toFixed(2)} pressure units`, inline: true },
-                )
+                description += `\n  - Has ${formatNumber(tr.toFixed(1))} TR\n  - Has ${glicko.toFixed(2)} ± ${rd.toFixed(1)} Glicko`
                 
-                .addFields(
-                    { name: '─── Predicted TR (Estimation) ─── ', value: `-# Coming soon...`, inline: false },
-                )
+                if (decaying) {
+                    description += `\n  - Hasn't played in a week; rating deviation is increasing`
+                }
+            }
 
-                .setFooter({ text: 'Data provided by TETR.IO API • TetriStats' })
-                .setTimestamp();
+            description += `\n- Has played ${gamesPlayed} game${gamesPlayed === 1 ? '' : 's'}`
+
+            if (gamesPlayed > 0) {
+                description += `
+  - Won ${gamesWon} of them (${winRate}%)
+  - ${apm.toFixed(2)} APM
+  - ${pps.toFixed(2)} PPS
+  - ${vs.toFixed(2)} VS score
+                `
+            }
+            
+            if (rankBar) {
+                description += `\n\n${rankBar}`
+            }
+
+            const embed = new EmbedBuilder()
+                .setDescription(description)
+                .setColor('#ffd230')
 
             // Send the formatted embed
             await interaction.reply({ embeds: [embed] });
@@ -102,6 +110,41 @@ module.exports = {
         }
     }
 };
+
+function generateProgressBar(barType, progress, length = 14) {
+    let startSymbol = "<:bar_start:1277463580513669160>"
+    let endSymbol = "<:bar_end:1277463565036683264>"
+
+    if (barType === "Unranked") { // this is when there's no rank
+        startSymbol = "<:bar_start_rankless:1277779429199712317>"
+    }
+
+    // Ensure the progress is within the 0-1 range
+    progress = Math.max(0, Math.min(progress, 1));
+    if (progress === 1) { // this is for when the player is #1 in the world (wow)
+        endSymbol = "<:bar_end_full:1278896013502976000>"
+    }
+
+    // Calculate the position of the "!" marker
+    const position = Math.round(progress * length);
+
+    // Generate the progress bar
+    const bar = Array.from({ length: length }, (_, i) => (i === position ? "<:bar_half:1277463557016916010>" : (i < position ? "<:bar_full:1277463587249586269>" : "<:bar_empty:1277463572863254589>"))).join("");
+
+    // Return the complete progress bar with symbols
+    return `${startSymbol}${bar}${endSymbol}`;
+}
+
+function countryCodeToEmoji(countryCode) {
+    if (countryCode === 'XM') return ("<:flag_xm:1310891739078328374>");
+    if (!countryCode) return ("❔"); //if a country isn't set i guess
+    const codePoints = countryCode
+        .toUpperCase() // Make sure the code is uppercase
+        .split('')     // Split the letters
+        .map(char => 127397 + char.charCodeAt()); // Convert to regional indicator symbol
+
+    return String.fromCodePoint(...codePoints);
+}
 
 function getEmojiOfRank(rank) {
     if (!rank) {
