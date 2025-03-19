@@ -152,7 +152,7 @@ ${statData.gamesplayed >= 0 ? `- Played ${statData.gamesplayed} games${statData.
                 .setFooter({ text: `User ID: ${statData._id} | Role: ${statData.role}` })
                 .setDescription(`
 ### __[${escapeUnderscores(statData.username.toUpperCase())}](https://ch.tetr.io/u/${statData.username}) -> Quick Look -> Records__
-${formatZenith(summaryData, country)} ${formatZenithExpert(summaryData, country)} ${format40Lines(summaryData, country)} ${formatBlitz(summaryData, country)} ${formatZen(summaryData)}
+${formatLeaguePreview(summaryData, country)} ${formatZenith(summaryData, country)} ${formatZenithExpert(summaryData, country)} ${format40Lines(summaryData, country)} ${formatBlitz(summaryData, country)} ${formatZen(summaryData)}
 `)
 //                 .setDescription(`
 // ## Records:
@@ -414,6 +414,85 @@ function calculateLevel(xp) {
     return ((xp / 500) ** 0.6) + (xp / (5000 + ((Math.max(0, xp - (4 * 10 ** 6))) / 5000))) + 1
 }
 
+//small league 
+function formatLeaguePreview(statistics, country) {
+    const leagueStats = statistics['league']
+
+    // lots of vars
+    let gamesPlayed = leagueStats.gamesplayed;
+    let gamesWon = leagueStats.gameswon;
+    let glicko = leagueStats.glicko;
+    let ratingDeviation = leagueStats.rd;
+    let rating = leagueStats.tr;
+    let glixaire = leagueStats.gxe;
+    let rank = leagueStats.rank;
+    let estRank = leagueStats.percentile_rank;
+
+    let rankBoolean = true;
+
+    let progressToNextRank = (leagueStats.prev_at - leagueStats.standing) / (leagueStats.prev_at - leagueStats.next_at)
+
+    let prevRank = leagueStats.prev_rank;
+    let nextRank = leagueStats.next_rank;
+
+    if (!nextRank && prevRank === 'x') {
+        prevRank = 'x+'
+        nextRank = 'top'
+    }
+
+    if (!prevRank && nextRank === 'd+') {
+        prevRank = "d"
+    }
+
+    prevRank = getEmojiOfRank(prevRank);
+    nextRank = getEmojiOfRank(nextRank);
+
+    let recordDisplay = Math.round(10000 * (gamesWon / gamesPlayed)) / 100;
+
+    // TR display stuff
+    if (rating < 0) {
+        if (leagueStats.gamesplayed === 0) {
+            recordDisplay = 0;
+        }
+        rating = `${leagueStats.gamesplayed}/10 rating games`
+        progressToNextRank = leagueStats.gamesplayed / 10
+        prevRank = '';
+        nextRank = '<:rank_z:1277382169538461746>';
+
+        rankBoolean = "yesnt"; // so true
+    }
+    else {
+        rating = `${formatNumber(Math.round(rating * 100) / 100)} TR`
+    }
+
+    if (ratingDeviation > 100 && rankBoolean != "yesnt") {
+        rankBoolean = false;
+    } 
+
+    let standing = ""
+
+    if (rank != leagueStats.bestrank) {
+        standing += `
+  - Has reached ${getEmojiOfRank(leagueStats.bestrank)}`
+    }
+
+    if (ratingDeviation > 100) {
+        standing += `
+  - Probably around ${getEmojiOfRank(estRank)}`
+    }
+    if (leagueStats.standing > 0) {
+        standing += `
+  - Ranked #${leagueStats.standing} ${formatCountry(leagueStats.standing_local, country)}`
+    }
+
+    standing += `
+  - Won ${gamesWon}/${gamesPlayed} games (${((gamesWon/gamesPlayed)*100).toFixed(2)}%)
+  - ${leagueStats.vs || "N/A"} VS score`
+
+    return `
+- <:league:1352045247512842251> ${rating}, ${getEmojiOfRank(rank)} ${standing}`
+}
+
 function format40Lines(statistics, country) {
     if (statistics['40l'].record) {
         let flStatistics = statistics['40l'];
@@ -423,7 +502,7 @@ function format40Lines(statistics, country) {
   - Ranked #${formatNumber(flStatistics.rank)} ${formatCountry(flStatistics.rank_local, country)}
   - [Submitted ${reformatTimestamp(flStatistics.record.ts)}](https://tetr.io/#R:${flStatistics.record.replayid})
   - ${Math.round(results.aggregatestats.pps * 100) / 100} PPS
-  - ${formatNumber(results.stats.finesse.faults)} finesse faults (${100-Math.round(results.stats.finesse.faults/results.stats.piecesplaced*10000)/100}%)`
+  - ${formatNumber(results.stats.finesse.faults)} finesse faults`
     } else {
         return ""
     }
@@ -646,7 +725,7 @@ function getEmojiOfRank(rank) {
     return `<:${formattedRank}:${rankEmojis[formattedRank]}>`
 }
 
-/*
+
 function formatLeagueStanding(bestRank, standing, localStanding, glicko, ratingDeviation, country) {
     //what does this even mean lmao, i frogor
     if (standing > 0) {
@@ -684,7 +763,7 @@ function generateProgressBar(generateBar, progress, symbolA, symbolB, length = 1
     // Return the complete progress bar with symbols
     return `\n\n${symbolA} ${startSymbol}${bar}${endSymbol} ${symbolB}`;
 }
-*/
+
 function displayedAchesConvert(displayed, all) {
     const achievementMapping = {
         100: 'issued',
@@ -741,7 +820,7 @@ function escapeUnderscores(input) {
 }
 
 function formatCountry(localRank, country) {
-    if (localRank > 0) return `\n  - Locally ranked #${localRank} (${country})`
+    if (localRank > 0) return `(#${formatNumber(localRank)} ${country})`
     else return "" 
 }
 
