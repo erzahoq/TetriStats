@@ -30,7 +30,7 @@ module.exports = {
             console.log(leagueData)
 
             // Extract basic stats
-            const { apm, pps, vs, tr, glicko, rd, prev_rank, next_rank, rank, standing, standing_local, country, decaying, bestrank } = leagueData;
+            let { apm, pps, vs, tr, glicko, rd, prev_rank, next_rank, rank, standing, standing_local, country, decaying, bestrank } = leagueData;
             const gamesPlayed = leagueData.gamesplayed || 0;
             const gamesWon = leagueData.gameswon || 0;
             const winRate = gamesPlayed > 0 ? ((gamesWon / gamesPlayed) * 100).toFixed(2) : 'N/A';
