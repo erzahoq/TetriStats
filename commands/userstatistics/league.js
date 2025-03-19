@@ -41,42 +41,40 @@ module.exports = {
             
             // Create the improved embed
             const embed = new EmbedBuilder()
-                .setTitle(`📊 Tetra League Stats: **${username.toUpperCase()}**`)
+                .setTitle(`Tetra League Stats: **${username.toUpperCase()}**`)
                 .setColor('#ffd230')
                 .setDescription(`Here is detailed Tetra League information, including extra calculated stats.\n`)
 
                 // Ranking Section
                 .addFields(
-                    { name: '🏆 ─── Ranking ───', value: ' ', inline: false }, 
-                    { name: '🎖️ **Tetra Rating**', value: `${tr.toFixed(1)} TR`, inline: true },
-                    { name: '📊 **Glicko Rating**', value: `${glicko.toFixed(1)}`, inline: true },
-                    { name: '📉 **Rating Deviation**', value: `${rd.toFixed(1)}`, inline: true },
-                    { name: '🥇 **Rank**', value: `${getEmojiOfRank(leagueData.rank)}`, inline: true },
+                    { name: '─── Ranking ───', value: ' ', inline: false }, 
+                    { name: '**Tetra Rating**', value: `${tr.toFixed(1)} TR`, inline: true },
+                    { name: '**Glicko Rating**', value: `${glicko.toFixed(1)}`, inline: true },
+                    { name: '**Rating Deviation**', value: `${rd.toFixed(1)}`, inline: true },
+                    { name: '**Rank**', value: `${getEmojiOfRank(leagueData.rank)}`, inline: true },
                 )
 
                 // Match Stats Section
                 .addFields(
-                    { name: '🎮 ─── Match Stats ───', value: ' ', inline: false },
-                    { name: '🕹️ **Games Played**', value: `${gamesPlayed} games`, inline: true },
-                    { name: '🏅 **Games Won**', value: `${gamesWon} games`, inline: true },
-                    { name: '📈 **Win Rate**', value: `${winRate}%`, inline: true },
+                    { name: '─── Match Stats ───', value: ' ', inline: false },
+                    { name: '**Games Played**', value: `${gamesPlayed} games`, inline: true },
+                    { name: '**Games Won**', value: `${gamesWon} games`, inline: true },
+                    { name: '**Win Rate**', value: `${winRate}%`, inline: true },
                 )
 
                 // Performance Stats Section
                 .addFields(
-                    { name: '⚡ ─── Performance Stats ───', value: ' ', inline: false },
-                    { name: '🔥 **Attack Per Minute**', value: `${apm.toFixed(2)} APM`, inline: true },
-                    { name: '🧩 **Pieces Per Second**', value: `${pps.toFixed(2)} PPS`, inline: true },
-                    { name: '⚔️ **Versus Score**', value: `${vs.toFixed(2)} VS`, inline: true },
+                    { name: '─── Performance Stats ───', value: ' ', inline: false },
+                    { name: '**Attack Per Minute**', value: `${apm.toFixed(2)} APM`, inline: true },
+                    { name: '**Pieces Per Second**', value: `${pps.toFixed(2)} PPS`, inline: true },
+                    { name: '**Versus Score**', value: `${vs.toFixed(2)} VS`, inline: true },
                 )
 
                 // Advanced Metrics Section
                 .addFields(
-                    { name: '🔍 ─── Advanced Metrics ───', value: ' ', inline: false },
-                    { name: '📌 **Attack Per Piece**', value: `${app.toFixed(2)} attack/piece`, inline: true },
-                    { name: '🔥 **Aggression Per Piece**', value: `${agpp.toFixed(2)} attack level`, inline: true },
-                    { name: '🛡️ **Defense-to-Speed Ratio**', value: `${dsr.toFixed(2)} defense score`, inline: true },
-                    { name: '🔁 **Consistent Pressure Rating**', value: `${cpr.toFixed(2)} pressure units`, inline: true },
+                    { name: '─── Advanced Metrics ───', value: ' ', inline: false },
+                    { name: '**Attack Per Piece**', value: `${app.toFixed(2)} attack/piece`, inline: true },
+                    { name: '**Garbage Acceptance Ratio**', value: `${dsr.toFixed(2)} defense score`, inline: true },
                 )
                 
                 .addFields(

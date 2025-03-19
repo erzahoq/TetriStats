@@ -40,21 +40,21 @@ module.exports = {
             **${formatNumber(data.gamesplayed)}** total games played
             **${formatNumber(data.gamesfinished)}** finished games (*${Math.round(10000 * (data.gamesfinished / data.gamesplayed)) / 100}%*)
             **${formatNumber(data.recordcount)}** replays saved (*${Math.round(10000 * (data.recordcount / data.gamesplayed)) / 100}%*)
-            🕹️ *${Math.round(data.gamesplayed_delta * 10) / 10} games per second!*
-            ⏳ *${formatNumber(Math.round(gamesPlayedOverTime * 60 * 60 * 100) / 100)} games per hour!*
+            *${Math.round(data.gamesplayed_delta * 10) / 10} games per second!*
+            *${formatNumber(Math.round(gamesPlayedOverTime * 60 * 60 * 100) / 100)} games per hour!*
             `, inline: false },
 
             { name: '⏱️ __Total Time Spent__', value: `
             **${formatNumber(Math.round(secondsToDays(data.gametime) * 10) / 10)}** days of playtime
-            ⏳ *(${formatNumber(Math.round(data.gametime))} seconds)*
-            🗓️ *(${formatNumber(Math.round(secondsToYears(data.gametime) * 10) / 10)} years)*
+            *(${formatNumber(Math.round(data.gametime))} seconds)*
+            *(${formatNumber(Math.round(secondsToYears(data.gametime) * 10) / 10)} years)*
             `, inline: false },
 
             { name: '🧩 __Total Pieces & Inputs__', value: `
             **${formatNumber(data.piecesplaced)}** pieces placed
-            🔢 *(${Math.round(data.piecesplaced / data.gametime * 100) / 100} pieces per second on average)*
+            *(${Math.round(data.piecesplaced / data.gametime * 100) / 100} pieces per second on average)*
             **${formatNumber(data.inputs)}** total inputs
-            ⌨️ *(${Math.round(data.inputs / data.gametime * 100) / 100} inputs per second on average)*
+            *(${Math.round(data.inputs / data.gametime * 100) / 100} inputs per second on average)*
             `, inline: false }
         )
         .setFooter({ text: "TETR.IO Server Data • TetriStats" })

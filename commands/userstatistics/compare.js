@@ -179,16 +179,16 @@ module.exports = {
             .setThumbnail('https://tetr.io/res/logo/logo-light.svg') // Add TETR.IO logo
             .addFields(
                 { name: 'Statistic', value: `
-                🌐 **Country**
-                🎮 **Games Played**
-                🏆 **Wins (Win Rate)**
-                ⏰ **Playtime**
-                ⭐ **Level**
-                🎖️ **Achievement Rating**
-                📈 **Tetra League Rank**
-                🔢 **Tetra Rating**
-                ⚡ **Pieces Per Second**
-                🔥 **Attack Per Minute**`, inline: true },
+                **Country**
+                **Games Played**
+                **Wins (Win Rate)**
+                **Playtime**
+                **Level**
+                **Achievement Rating**
+                **Tetra League Rank**
+                **Tetra Rating**
+                **Pieces Per Second**
+                **Attack Per Minute**`, inline: true },
 
                 { name: `${escapeUnderscores(userStats1.username.toUpperCase())}`, value: `
                 ${countryCodeToEmoji(userStats1.country) || '🌐'}

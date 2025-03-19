@@ -179,10 +179,10 @@ async function fetchAll(user) {
 }
 
 function formatRecord(record) {
-    let formatted = `- `
-    let stats = record.results.stats
+    let formatted = `- `; 
+    let stats = record.results.stats;
 
-    // checks for each gamemode
+    // Determine the type of record and format accordingly
     if (record.gamemode === '40l') {
         formatted += `**${convertToTimeFormat(stats.finaltime)}**`;
     } 
@@ -191,54 +191,62 @@ function formatRecord(record) {
     } 
     else if (record.gamemode === 'zenithex' || record.gamemode === 'zenith') {
         formatted += `**${formatNumber(Math.round(stats.zenith.altitude * 10) / 10)}m**`;
-        stats = record.results.aggregatestats; // for some reason pps and vs score are in aggregate
+        stats = record.results.aggregatestats; // PPS and VS Score are in aggregate
 
-        // add mod emojis
+        // Add any active mod emojis
         if (record.extras.zenith.mods) {
             formatted += ' ';
             record.extras.zenith.mods.forEach(mod => {
                 formatted += getModEmoji(mod);
-            })
+            });
         }
     } 
     else if (record.gamemode === 'league') {
-        const players = record.results.leaderboard
-        stats = players[0].stats
+        const players = record.results.leaderboard;
+        stats = players[0].stats;
 
-        // switch statement wow!! (checks the result)
+        // Determine result type and format accordingly
         switch (record.extras.result) {
             case ('victory'):
-                formatted += `**VICTORY ${players[0].wins}-${players[1].wins}**`;
+                formatted += `**🏆 VICTORY** (${players[0].wins}-${players[1].wins})`;
                 break;
             case ('dqvictory'):
-                formatted += `**VICTORY by DQ**`;
+                formatted += `**🏆 VICTORY** (by Disqualification)`;
                 break;
             case ('defeat'):
-                formatted += `**DEFEAT ${players[1].wins}-${players[0].wins}**`;
-                stats = players[1].stats // the user is only in the first slot if they win apparently
+                formatted += `**❌ DEFEAT** (${players[1].wins}-${players[0].wins})`;
+                stats = players[1].stats; // The user is only in the first slot if they win
                 break;
             case ('dqdefeat'):
-                stats = players[1].stats
-                formatted += `**DEFEAT by DQ**`;
+                formatted += `**❌ DEFEAT** (by Disqualification)`;
+                stats = players[1].stats;
         }
-        formatted += ` vs ${escapeUnderscores(record.otherusers[0].username)}`;
-    } else {
-        formatted += `[Invalid gamemode.]` // this shouldn't be possible
+        formatted += ` vs **${escapeUnderscores(record.otherusers[0].username)}**`;
+    } 
+    else {
+        formatted += `[Invalid gamemode.]`; // Should never happen
     }
 
-    // add some extra stats
-    if (['zenith', 'zenithex', 'league'].indexOf(record.gamemode) != -1)
+    // Add general performance stats (APM, PPS, VS Score)
+    if (['zenith', 'zenithex', 'league'].includes(record.gamemode)) {
         formatted += `
-  - ${formatNumber(Math.round(stats.apm * 100) / 100)} APM, ${formatNumber(Math.round(stats.pps * 100) / 100)} PPS, ${formatNumber(Math.round(stats.vsscore * 100) / 100)} VS`;
-    else
+  - **APM:** ${formatNumber(Math.round(stats.apm * 100) / 100)}
+  - **PPS:** ${formatNumber(Math.round(stats.pps * 100) / 100)}
+  - **VS Score:** ${formatNumber(Math.round(stats.vsscore * 100) / 100)}`;
+    } 
+    else {
         formatted += `
-  - ${formatNumber(Math.round(record.results.aggregatestats.pps * 100) / 100)} PPS, ${Math.round(stats.finesse.perfectpieces / stats.piecesplaced * 10000) / 100}% (${stats.finesse.faults}F) Finesse`;
+  - **PPS:** ${formatNumber(Math.round(record.results.aggregatestats.pps * 100) / 100)}
+  - **Finesse:** ${Math.round(stats.finesse.perfectpieces / stats.piecesplaced * 10000) / 100}% (${stats.finesse.faults} faults)`;
+    }
 
+    // Add timestamp and replay link
     formatted += `
-  - Done [<t:${reformatTimestamp(record.ts)}:d> <t:${reformatTimestamp(record.ts)}:t>](https://tetr.io/#R:${record.replayid})`;
+  - **Date:** [<t:${reformatTimestamp(record.ts)}:d> <t:${reformatTimestamp(record.ts)}:t>](https://tetr.io/#R:${record.replayid})`;
 
     return formatted;
 }
+
 
 function formatNumber(num) {
     const numStr = num.toString();
