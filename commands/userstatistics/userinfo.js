@@ -133,6 +133,19 @@ This user is a **BOT**, owned by ${statData.botmaster.toLowerCase()}. Their reco
   `)
                 .setTimestamp(),
 
+                new EmbedBuilder()
+                .setColor("#ff9d7d")
+                .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
+                .setFooter({ text: `User ID: ${statData._id} | Role: ${statData.role}` })
+                .setDescription(`
+### __[${capitalizeFirstLetter(escapeUnderscores(statData.username))}](https://ch.tetr.io/u/${statData.username}) -> Quick Look -> Gameplay__
+
+- Has ${countAchievements(statData.ar_counts)} achievements ${achievementCountsConvert(statData.ar_counts)} ${statData.ar > 0 ? `\n  - Totalling ${statData.ar} Achievement Rating` : ""} ${badgesConvert(badgeArray)} ${displayedAchesConvert(statData.achievements, summaryData.achievements)}
+
+${statData.gamesplayed >= 0 ? `- Played ${statData.gamesplayed} games${statData.gameswon >= 0 ? `\n  - Won ${statData.gameswon} of them (${Math.round(10000 * (statData.gameswon / statData.gamesplayed)) / 100}%)` : ""}${statData.gametime >= 0 ? `\n  - Has ${Math.round(secondsToHours(statData.gametime) * 10) / 10} hours of playtime` : ""}` : "- Has hidden games played"}
+  `)
+                .setTimestamp(),
+
             new EmbedBuilder()
                 .setColor("#ff7dc0")
                 .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
@@ -145,19 +158,6 @@ ${formatZenith(summaryData, country)} ${formatZenithExpert(summaryData, country)
 // ## Records:
 // ${formatZenith(summaryData, country)}${formatZenithExpert(summaryData, country)}${format40Lines(summaryData, country)}${formatBlitz(summaryData, country)}${formatZen(summaryData)}
 //                     `)
-                .setTimestamp(),
-
-            new EmbedBuilder()
-                .setColor("#ff9d7d")
-                .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
-                .setFooter({ text: `User ID: ${statData._id} | Role: ${statData.role}` })
-                .setDescription(`
-### __[${capitalizeFirstLetter(escapeUnderscores(statData.username))}](https://ch.tetr.io/u/${statData.username}) -> Quick Look -> Gameplay__
-
-- Has ${countAchievements(statData.ar_counts)} achievements ${achievementCountsConvert(statData.ar_counts)} ${statData.ar > 0 ? `\n  - Totalling ${statData.ar} Achievement Rating` : ""} ${badgesConvert(badgeArray)} ${displayedAchesConvert(statData.achievements, summaryData.achievements)}
-
-${statData.gamesplayed >= 0 ? `- Played ${statData.gamesplayed} games${statData.gameswon >= 0 ? `\n  - Won ${statData.gameswon} of them (${Math.round(10000 * (statData.gameswon / statData.gamesplayed)) / 100}%)` : ""}${statData.gametime >= 0 ? `\n  - Has ${Math.round(secondsToHours(statData.gametime) * 10) / 10} hours of playtime` : ""}` : "- Has hidden games played"}
-  `)
                 .setTimestamp()
         ];
 
