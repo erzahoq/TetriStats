@@ -27,6 +27,8 @@ module.exports = {
 
             const leagueData = data.data;
 
+            console.log(leagueData)
+
             // Extract basic stats
             const { apm, pps, vs, tr, glicko, rd, prev_rank, next_rank, rank, standing, standing_local, country, decaying, bestrank } = leagueData;
             const gamesPlayed = leagueData.gamesplayed || 0;
@@ -64,10 +66,10 @@ module.exports = {
             } 
             else {
                 if (rd > 100) {
-                    description += `\n- Currently unranked ${getEmojiOfRank(rank)}\n  - Probably around ${getEmojiOfRank(leagueData.estRank)}`
+                    description += `\n- Currently unranked ${getEmojiOfRank(rank)}\n  - Probably around ${getEmojiOfRank(leagueData.percentile_rank)}`
                     rankBar = false;
                 } else {
-                    description += `\n- Currently ranked ${getEmojiOfRank(rank)}\n  - Ranked #${standing} in the world\n  - Locally ranked #${standing_local} (${countryCodeToEmoji(country)})`
+                    description += `\n- Currently ranked ${getEmojiOfRank(rank)}\n  - Ranked #${standing} in the world\n  - Locally ranked #${standing_local}`
                     rankBar = `${getEmojiOfRank(prev_rank)} ${generateProgressBar("Ranked", (leagueData.prev_at - standing) / (leagueData.prev_at - leagueData.next_at), 15)} ${getEmojiOfRank(next_rank)}`;
                 }
 
