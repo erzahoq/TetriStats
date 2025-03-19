@@ -129,11 +129,20 @@ This user is a **BOT**, owned by ${statData.botmaster.toLowerCase()}. Their reco
   - Level ${formatNumber(Math.floor(calculateLevel(statData.xp)))} (${formatNumber(Math.floor(statData.xp))} XP)
   - ${country}
   - Has ${statData.friend_count} friends
-  - ${statData.supporter ? `Has supporter${starConvert(statData.supporter_tier)}${statData.bio ? `\n> -  ${statData.bio}` : ""}` : ""}
+  - ${statData.supporter ? `Has supporter${starConvert(statData.supporter_tier)}${statData.bio ? `\n> -  ${statData.bio}` : ""}` : ""}${connectionsConvert(statData.connections)}
+  `)
+                .setTimestamp(),
+
+                new EmbedBuilder()
+                .setColor("#ff9d7d")
+                .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
+                .setFooter({ text: `User ID: ${statData._id} | Role: ${statData.role}` })
+                .setDescription(`
+### __[${capitalizeFirstLetter(escapeUnderscores(statData.username))}](https://ch.tetr.io/u/${statData.username}) -> Quick Look -> Gameplay__
 
 - Has ${countAchievements(statData.ar_counts)} achievements ${achievementCountsConvert(statData.ar_counts)} ${statData.ar > 0 ? `\n  - Totalling ${statData.ar} Achievement Rating` : ""} ${badgesConvert(badgeArray)} ${displayedAchesConvert(statData.achievements, summaryData.achievements)}
 
-${statData.gamesplayed >= 0 ? `- Played ${statData.gamesplayed} games${statData.gameswon >= 0 ? `\n  - Won ${statData.gameswon} of them (${Math.round(10000 * (statData.gameswon / statData.gamesplayed)) / 100}%)` : ""}${statData.gametime >= 0 ? `\n  - Has ${Math.round(secondsToHours(statData.gametime) * 10) / 10} hours of playtime` : ""}` : "- Has hidden games played"}${connectionsConvert(statData.connections)}
+${statData.gamesplayed >= 0 ? `- Played ${statData.gamesplayed} games${statData.gameswon >= 0 ? `\n  - Won ${statData.gameswon} of them (${Math.round(10000 * (statData.gameswon / statData.gamesplayed)) / 100}%)` : ""}${statData.gametime >= 0 ? `\n  - Has ${Math.round(secondsToHours(statData.gametime) * 10) / 10} hours of playtime` : ""}` : "- Has hidden games played"}
   `)
                 .setTimestamp(),
 
@@ -143,37 +152,29 @@ ${statData.gamesplayed >= 0 ? `- Played ${statData.gamesplayed} games${statData.
                 .setFooter({ text: `User ID: ${statData._id} | Role: ${statData.role}` })
                 .setDescription(`
 ### __[${escapeUnderscores(statData.username.toUpperCase())}](https://ch.tetr.io/u/${statData.username}) -> Quick Look -> Records__
-${formatZenith(summaryData, country)} ${formatZenithExpert(summaryData, country)} ${format40Lines(summaryData, country)} ${formatBlitz(summaryData, country)} ${formatZen(summaryData)}
+${formatLeaguePreview(summaryData, country)} ${formatZenith(summaryData, country)} ${formatZenithExpert(summaryData, country)} ${format40Lines(summaryData, country)} ${formatBlitz(summaryData, country)} ${formatZen(summaryData)}
 `)
 //                 .setDescription(`
 // ## Records:
 // ${formatZenith(summaryData, country)}${formatZenithExpert(summaryData, country)}${format40Lines(summaryData, country)}${formatBlitz(summaryData, country)}${formatZen(summaryData)}
 //                     `)
-                .setTimestamp(),
-
-            new EmbedBuilder()
-                .setColor("#ff9d7d")
-                .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
-                .setFooter({ text: `User ID: ${statData._id} | Role: ${statData.role}` })
-                .setDescription(`
-### __[${escapeUnderscores(statData.username.toUpperCase())}](https://ch.tetr.io/u/${statData.username}) -> Quick Look -> Tetra League__
-${formatLeague(summaryData, country)}`)
+                .setTimestamp()
         ];
 
         // Initial row of buttons
         const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
                 .setCustomId('profilepage_0')
-                .setLabel('General')
+                .setLabel('Profile')
                 .setStyle(ButtonStyle.Primary)
                 .setDisabled(true), // Disable the first button initially
             new ButtonBuilder()
                 .setCustomId('profilepage_1')
-                .setLabel('Records')
+                .setLabel('General')
                 .setStyle(ButtonStyle.Primary),
             new ButtonBuilder()
                 .setCustomId('profilepage_2')
-                .setLabel('Tetra League')
+                .setLabel('Gameplay')
                 .setStyle(ButtonStyle.Primary)
         );
 
@@ -413,6 +414,85 @@ function calculateLevel(xp) {
     return ((xp / 500) ** 0.6) + (xp / (5000 + ((Math.max(0, xp - (4 * 10 ** 6))) / 5000))) + 1
 }
 
+//small league 
+function formatLeaguePreview(statistics, country) {
+    const leagueStats = statistics['league']
+
+    // lots of vars
+    let gamesPlayed = leagueStats.gamesplayed;
+    let gamesWon = leagueStats.gameswon;
+    let glicko = leagueStats.glicko;
+    let ratingDeviation = leagueStats.rd;
+    let rating = leagueStats.tr;
+    let glixaire = leagueStats.gxe;
+    let rank = leagueStats.rank;
+    let estRank = leagueStats.percentile_rank;
+
+    let rankBoolean = true;
+
+    let progressToNextRank = (leagueStats.prev_at - leagueStats.standing) / (leagueStats.prev_at - leagueStats.next_at)
+
+    let prevRank = leagueStats.prev_rank;
+    let nextRank = leagueStats.next_rank;
+
+    if (!nextRank && prevRank === 'x') {
+        prevRank = 'x+'
+        nextRank = 'top'
+    }
+
+    if (!prevRank && nextRank === 'd+') {
+        prevRank = "d"
+    }
+
+    prevRank = getEmojiOfRank(prevRank);
+    nextRank = getEmojiOfRank(nextRank);
+
+    let recordDisplay = Math.round(10000 * (gamesWon / gamesPlayed)) / 100;
+
+    // TR display stuff
+    if (rating < 0) {
+        if (leagueStats.gamesplayed === 0) {
+            recordDisplay = 0;
+        }
+        rating = `${leagueStats.gamesplayed}/10 rating games`
+        progressToNextRank = leagueStats.gamesplayed / 10
+        prevRank = '';
+        nextRank = '<:rank_z:1277382169538461746>';
+
+        rankBoolean = "yesnt"; // so true
+    }
+    else {
+        rating = `${formatNumber(Math.round(rating * 100) / 100)} TR`
+    }
+
+    if (ratingDeviation > 100 && rankBoolean != "yesnt") {
+        rankBoolean = false;
+    } 
+
+    let standing = ""
+
+    if (rank != leagueStats.bestrank) {
+        standing += `
+  - Has reached ${getEmojiOfRank(leagueStats.bestrank)}`
+    }
+
+    if (ratingDeviation > 100) {
+        standing += `
+  - Probably around ${getEmojiOfRank(estRank)}`
+    }
+    if (leagueStats.standing > 0) {
+        standing += `
+  - Ranked #${leagueStats.standing} ${formatCountry(leagueStats.standing_local, country)}`
+    }
+
+    standing += `
+  - Won ${gamesWon}/${gamesPlayed} games (${((gamesWon/gamesPlayed)*100).toFixed(2)}%)
+  - ${leagueStats.vs || "N/A"} VS score`
+
+    return `
+- <:league:1352045247512842251> ${rating}, ${getEmojiOfRank(rank)} ${standing}`
+}
+
 function format40Lines(statistics, country) {
     if (statistics['40l'].record) {
         let flStatistics = statistics['40l'];
@@ -422,7 +502,7 @@ function format40Lines(statistics, country) {
   - Ranked #${formatNumber(flStatistics.rank)} ${formatCountry(flStatistics.rank_local, country)}
   - [Submitted ${reformatTimestamp(flStatistics.record.ts)}](https://tetr.io/#R:${flStatistics.record.replayid})
   - ${Math.round(results.aggregatestats.pps * 100) / 100} PPS
-  - ${formatNumber(results.stats.finesse.faults)} finesse faults (${100-Math.round(results.stats.finesse.faults/results.stats.piecesplaced*10000)/100}%)`
+  - ${formatNumber(results.stats.finesse.faults)} finesse faults`
     } else {
         return ""
     }
@@ -514,6 +594,7 @@ function formatZen(statistics) {
     }
 }
 
+/*
 function formatLeague(statistics, country) {
     const leagueStats = statistics['league']
 
@@ -612,7 +693,7 @@ Attack Per Minute: ${leagueStats.apm || 0}
 Pieces Per Second: ${leagueStats.pps || 0}
 Versus Score: ${leagueStats.vs || 0}${generateProgressBar(rankBoolean, progressToNextRank, prevRank, nextRank)}`
 } //why is this still here? its unreachable because of the return above it lol
-
+*/
 function getEmojiOfRank(rank) {
     if (!rank) {
         return;
@@ -739,7 +820,7 @@ function escapeUnderscores(input) {
 }
 
 function formatCountry(localRank, country) {
-    if (localRank > 0) return `\n  - Locally ranked #${localRank} (${country})`
+    if (localRank > 0) return `(#${formatNumber(localRank)} ${country})`
     else return "" 
 }
 
