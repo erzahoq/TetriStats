@@ -76,17 +76,17 @@ client.on(Events.InteractionCreate, async interaction => {
             const row = new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
                     .setCustomId('profilepage_0')
-                    .setLabel('General')
+                    .setLabel('Profile')
                     .setStyle(ButtonStyle.Primary)
                     .setDisabled(newPageIndex === 0),
                 new ButtonBuilder()
                     .setCustomId('profilepage_1')
-                    .setLabel('Records')
+                    .setLabel('General')
                     .setStyle(ButtonStyle.Primary)
                     .setDisabled(newPageIndex === 1),
                 new ButtonBuilder()
                     .setCustomId('profilepage_2')
-                    .setLabel('Tetra League')
+                    .setLabel('Gameplay')
                     .setStyle(ButtonStyle.Primary)
                     .setDisabled(newPageIndex === 2)
             );

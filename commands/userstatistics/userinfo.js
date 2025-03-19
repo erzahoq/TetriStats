@@ -129,11 +129,7 @@ This user is a **BOT**, owned by ${statData.botmaster.toLowerCase()}. Their reco
   - Level ${formatNumber(Math.floor(calculateLevel(statData.xp)))} (${formatNumber(Math.floor(statData.xp))} XP)
   - ${country}
   - Has ${statData.friend_count} friends
-  - ${statData.supporter ? `Has supporter${starConvert(statData.supporter_tier)}${statData.bio ? `\n> -  ${statData.bio}` : ""}` : ""}
-
-- Has ${countAchievements(statData.ar_counts)} achievements ${achievementCountsConvert(statData.ar_counts)} ${statData.ar > 0 ? `\n  - Totalling ${statData.ar} Achievement Rating` : ""} ${badgesConvert(badgeArray)} ${displayedAchesConvert(statData.achievements, summaryData.achievements)}
-
-${statData.gamesplayed >= 0 ? `- Played ${statData.gamesplayed} games${statData.gameswon >= 0 ? `\n  - Won ${statData.gameswon} of them (${Math.round(10000 * (statData.gameswon / statData.gamesplayed)) / 100}%)` : ""}${statData.gametime >= 0 ? `\n  - Has ${Math.round(secondsToHours(statData.gametime) * 10) / 10} hours of playtime` : ""}` : "- Has hidden games played"}${connectionsConvert(statData.connections)}
+  - ${statData.supporter ? `Has supporter${starConvert(statData.supporter_tier)}${statData.bio ? `\n> -  ${statData.bio}` : ""}` : ""}${connectionsConvert(statData.connections)}
   `)
                 .setTimestamp(),
 
@@ -156,24 +152,29 @@ ${formatZenith(summaryData, country)} ${formatZenithExpert(summaryData, country)
                 .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
                 .setFooter({ text: `User ID: ${statData._id} | Role: ${statData.role}` })
                 .setDescription(`
-### __[${escapeUnderscores(statData.username.toUpperCase())}](https://ch.tetr.io/u/${statData.username}) -> Quick Look -> Tetra League__
-${formatLeague(summaryData, country)}`)
+### __[${capitalizeFirstLetter(escapeUnderscores(statData.username))}](https://ch.tetr.io/u/${statData.username}) -> Quick Look -> Gameplay__
+
+- Has ${countAchievements(statData.ar_counts)} achievements ${achievementCountsConvert(statData.ar_counts)} ${statData.ar > 0 ? `\n  - Totalling ${statData.ar} Achievement Rating` : ""} ${badgesConvert(badgeArray)} ${displayedAchesConvert(statData.achievements, summaryData.achievements)}
+
+${statData.gamesplayed >= 0 ? `- Played ${statData.gamesplayed} games${statData.gameswon >= 0 ? `\n  - Won ${statData.gameswon} of them (${Math.round(10000 * (statData.gameswon / statData.gamesplayed)) / 100}%)` : ""}${statData.gametime >= 0 ? `\n  - Has ${Math.round(secondsToHours(statData.gametime) * 10) / 10} hours of playtime` : ""}` : "- Has hidden games played"}
+  `)
+                .setTimestamp()
         ];
 
         // Initial row of buttons
         const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
                 .setCustomId('profilepage_0')
-                .setLabel('General')
+                .setLabel('Profile')
                 .setStyle(ButtonStyle.Primary)
                 .setDisabled(true), // Disable the first button initially
             new ButtonBuilder()
                 .setCustomId('profilepage_1')
-                .setLabel('Records')
+                .setLabel('General')
                 .setStyle(ButtonStyle.Primary),
             new ButtonBuilder()
                 .setCustomId('profilepage_2')
-                .setLabel('Tetra League')
+                .setLabel('Gameplay')
                 .setStyle(ButtonStyle.Primary)
         );
 
@@ -514,6 +515,7 @@ function formatZen(statistics) {
     }
 }
 
+/*
 function formatLeague(statistics, country) {
     const leagueStats = statistics['league']
 
@@ -612,7 +614,7 @@ Attack Per Minute: ${leagueStats.apm || 0}
 Pieces Per Second: ${leagueStats.pps || 0}
 Versus Score: ${leagueStats.vs || 0}${generateProgressBar(rankBoolean, progressToNextRank, prevRank, nextRank)}`
 } //why is this still here? its unreachable because of the return above it lol
-
+*/
 function getEmojiOfRank(rank) {
     if (!rank) {
         return;
@@ -644,7 +646,7 @@ function getEmojiOfRank(rank) {
     return `<:${formattedRank}:${rankEmojis[formattedRank]}>`
 }
 
-
+/*
 function formatLeagueStanding(bestRank, standing, localStanding, glicko, ratingDeviation, country) {
     //what does this even mean lmao, i frogor
     if (standing > 0) {
@@ -682,7 +684,7 @@ function generateProgressBar(generateBar, progress, symbolA, symbolB, length = 1
     // Return the complete progress bar with symbols
     return `\n\n${symbolA} ${startSymbol}${bar}${endSymbol} ${symbolB}`;
 }
-
+*/
 function displayedAchesConvert(displayed, all) {
     const achievementMapping = {
         100: 'issued',
