@@ -56,9 +56,8 @@ module.exports = {
                 // Ranking Section
                 .addFields(
                     { name: '─── Ranking ───', value: ' ', inline: false }, 
-                    { name: '**Tetra Rating**', value: `${tr.toFixed(1)} TR`, inline: true },
-                    { name: '**Glicko Rating**', value: `${glicko.toFixed(1)}`, inline: true },
-                    { name: '**Rating Deviation**', value: `${rd.toFixed(1)}`, inline: true },
+                    { name: '**Tetra Rating**', value: `${formatNumber(tr.toFixed(1))}±${rd.toFixed(1)} TR`, inline: true },
+                    { name: '**Glicko Rating**', value: `${formatNumber(glicko.toFixed(1))}`, inline: true },
                     { name: '**Rank**', value: `${getEmojiOfRank(leagueData.rank)}`, inline: true },
                 )
 
@@ -133,4 +132,9 @@ function getEmojiOfRank(rank) {
     }
     let formattedRank = 'rank_' + rank.toLowerCase().replace("+", "plus").replace("-", "minus");
     return `<:${formattedRank}:${rankEmojis[formattedRank]}>`
+}
+
+function formatNumber(num) {
+    const numStr = num.toString();
+    return numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
