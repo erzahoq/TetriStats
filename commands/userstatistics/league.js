@@ -80,15 +80,15 @@ module.exports = {
 
                 // Advanced Metrics Section
                 .addFields(
-                    { name: '🔍 ─── Advanced Metrics ───', value: ' ', inline: false },
-                    { name: '📌 **Attack Per Piece**', value: `${attackPerPiece.toFixed(2)} attack/piece`, inline: true },
+                    { name: '─── Advanced Metrics ───', value: ' ', inline: false },
+                    { name: '**Attack Per Piece**', value: `${attackPerPiece.toFixed(2)} attack/piece`, inline: true },
                     // { name: '🔥 **Aggression Per Piece**', value: `${agpp.toFixed(2)} attack level`, inline: true },
                     // { name: '🛡️ **Defense-to-Speed Ratio**', value: `${dsr.toFixed(2)} defense score`, inline: true },
                     // { name: '🔁 **Consistent Pressure Rating**', value: `${cpr.toFixed(2)} pressure units`, inline: true },
                 )
                 
                 .addFields(
-                    { name: '🔮 ─── Predicted TR (Estimation) ─── ', value: `-# Coming soon...`, inline: false },
+                    { name: '─── Predicted TR (Estimation) ─── ', value: `-# Coming soon...`, inline: false },
                 )
 
                 .setFooter({ text: 'Data provided by TETR.IO API • TetriStats' })
