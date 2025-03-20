@@ -13,6 +13,8 @@ module.exports = {
                 .setRequired(true)),
 
     async execute(interaction) {
+        return interaction.reply({content: 'This command is still under construction! Thanks for your patience.', ephemeral: true})
+
         const replayAttachment = interaction.options.getAttachment('replay');
 
         if (!replayAttachment.name.endsWith('.ttr')) {
