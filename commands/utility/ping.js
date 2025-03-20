@@ -110,7 +110,6 @@ module.exports = {
             "You close your eyes in resignation to your fate as your house is obliterated in a massive 50 spike.",
             "reading this message fills you with determination",
             `there are ${stats.usercount} players online!`,
-            `there are ${stats.usercount - stats.anoncount} registered players online!`,
             `there have been ${stats.gamesplayed} total games played on TETR.IO!`,
             `${data.piecesplaced} pieces have been placed!`,
             `${data.inputs} inputs have been made!`,
