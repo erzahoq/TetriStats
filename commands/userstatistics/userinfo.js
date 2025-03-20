@@ -490,7 +490,7 @@ function formatLeaguePreview(statistics, country) {
   - ${leagueStats.vs || "N/A"} VS score`
 
     return `
-- <:league:1352045247512842251> ${rating}, ${getEmojiOfRank(rank)} ${standing}`
+- <:league:1352045247512842251> **${rating}**, ${getEmojiOfRank(rank)} ${standing}`
 }
 
 function format40Lines(statistics, country) {
@@ -498,11 +498,10 @@ function format40Lines(statistics, country) {
         let flStatistics = statistics['40l'];
         let results = flStatistics.record.results;
         return `
-- <:40lines:1277298516380614786> 40 Lines in ${convertToTimeFormat(results.stats.finaltime)}
+- <:40lines:1277298516380614786> **40 Lines in ${convertToTimeFormat(results.stats.finaltime)}**
   - Ranked #${formatNumber(flStatistics.rank)} ${formatCountry(flStatistics.rank_local, country)}
   - [Submitted ${reformatTimestamp(flStatistics.record.ts)}](https://tetr.io/#R:${flStatistics.record.replayid})
-  - ${Math.round(results.aggregatestats.pps * 100) / 100} PPS
-  - ${formatNumber(results.stats.finesse.faults)} finesse faults`
+  - ${Math.round(results.aggregatestats.pps * 100) / 100} PPS | ${formatNumber(results.stats.finesse.faults)} finesse faults`
     } else {
         return ""
     }
@@ -512,11 +511,10 @@ function formatBlitz(statistics, country) {
     if (statistics['blitz'].record) {
         let blStatistics = statistics['blitz'];
         return `
-- <:blitz:1277298507920838718> ${formatNumber(blStatistics.record.results.stats.score)} points in Blitz
+- <:blitz:1277298507920838718> **${formatNumber(blStatistics.record.results.stats.score)} points in Blitz**
   - Ranked #${formatNumber(blStatistics.rank)} ${formatCountry(blStatistics.rank_local, country)}
   - [Submitted ${reformatTimestamp(blStatistics.record.ts)}](https://tetr.io/#R:${blStatistics.record.replayid})
-  - ${Math.round(blStatistics.record.results.aggregatestats.pps * 100) / 100} PPS
-  - ${formatNumber(Math.round(blStatistics.record.results.stats.score/blStatistics.record.results.stats.piecesplaced*100)/100)} Points/Piece`
+  - ${Math.round(blStatistics.record.results.aggregatestats.pps * 100) / 100} PPS | ${formatNumber(Math.round(blStatistics.record.results.stats.score/blStatistics.record.results.stats.piecesplaced*100)/100)} Points/Piece`
     } else {
         return ""
     }
@@ -528,13 +526,11 @@ function formatZenith(statistics, country) {
 
     if (statistics['zenith'].record) {
         zenithText = `
-- <:quickplay:1277296551428886588> ${formatNumber(Math.round(zStatistics.record.results.stats.zenith.altitude * 100) / 100)}m in Quick Play
+- <:quickplay:1277296551428886588> **${formatNumber(Math.round(zStatistics.record.results.stats.zenith.altitude * 100) / 100)}m in Quick Play**
   - Ranked #${formatNumber(zStatistics.rank)} ${formatCountry(zStatistics.rank_local, country)}
   - [Submitted ${reformatTimestamp(zStatistics.record.ts)}](https://tetr.io/#R:${zStatistics.record.replayid})
-  - ${Math.round(zStatistics.record.results.aggregatestats.pps * 100) / 100} PPS, ${Math.round(zStatistics.record.results.aggregatestats.apm * 100) / 100} APM
-  - Floor ${zStatistics.record.results.stats.zenith.floor}
-  - ${zStatistics.record.results.stats.kills} KOs
-  - Reached ${zStatistics.record.results.stats.topbtb} B2B`
+  - ${Math.round(zStatistics.record.results.aggregatestats.pps * 100) / 100} PPS | ${Math.round(zStatistics.record.results.aggregatestats.apm * 100) / 100} APM
+  - Floor ${zStatistics.record.results.stats.zenith.floor} | ${zStatistics.record.results.stats.kills} KOs | Reached ${zStatistics.record.results.stats.topbtb} B2B`
         if (statistics['zenith'].best.record) {
             zenithText += `
   - All-time best is ${formatNumber(Math.round(zStatistics.best.record.results.stats.zenith.altitude * 100) / 100)}m (#${formatNumber(zStatistics.best.rank)})`
@@ -559,7 +555,7 @@ function formatZenithExpert(statistics, country) {
 
     if (statistics['zenithex'].record) {
         zenithText = `
-- <:quickplayexpert:1277351744413896724> ${formatNumber(Math.round(zStatistics.record.results.stats.zenith.altitude * 100) / 100)}m in Quick Play EXPERT
+- <:quickplayexpert:1277351744413896724> **${formatNumber(Math.round(zStatistics.record.results.stats.zenith.altitude * 100) / 100)}m in Quick Play EXPERT**
   - Ranked #${formatNumber(zStatistics.rank)} ${formatCountry(zStatistics.rank_local, country)}
   - [Submitted ${reformatTimestamp(zStatistics.record.ts)}](https://tetr.io/#R:${zStatistics.record.replayid})
   - ${Math.round(zStatistics.record.results.aggregatestats.pps * 100) / 100} PPS, ${Math.round(zStatistics.record.results.aggregatestats.apm * 100) / 100} APM
@@ -587,7 +583,7 @@ function formatZen(statistics) {
     if (statistics['zen']) {
         let zenStatistics = statistics['zen'];
         return `
-- <:zen:1277364107883974676> Level ${zenStatistics.level} in Zen
+- <:zen:1277364107883974676> **Level ${zenStatistics.level} in Zen**
   - ${formatNumber(Math.round(zenStatistics.score))} points`
     } else {
         return ""
