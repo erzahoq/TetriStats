@@ -25,7 +25,7 @@ module.exports = {
                 .addUserOption((option) =>
                     option
                         .setName('user')
-                        .setDescription('the discord user to search for')
+                        .setDescription('the Discord user to search for')
                         .setRequired(true),
                 ),
         ),

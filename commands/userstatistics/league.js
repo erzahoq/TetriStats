@@ -9,7 +9,7 @@ module.exports = {
         .setDescription('Displays Tetra League information about a user.')
         .addStringOption(option => 
             option.setName('username')
-                .setDescription('The Tetr.io username to fetch data for.')
+                .setDescription('The TETR.IO username to fetch data for.')
                 .setRequired(true)),
 
     async execute(interaction) {
@@ -26,8 +26,6 @@ module.exports = {
             }
 
             const leagueData = data.data;
-
-            console.log(leagueData)
 
             // Extract basic stats
             let { apm, pps, vs, tr, glicko, rd, prev_rank, next_rank, rank, standing, standing_local, country, decaying, bestrank } = leagueData;
@@ -58,7 +56,7 @@ module.exports = {
                 prev_rank = "d"
             }
 
-            let description = `### __${username.toUpperCase()} -> Tetra League__\n`
+            let description = `### __[${username.toUpperCase()}](https://ch.tetr.io/u/${username}/) -> Tetra League__\n`
             
             if (tr < 0) {
                 description += `\n- Currently unranked ${getEmojiOfRank('z')}\n  - ${gamesPlayed}/10 rating games played`

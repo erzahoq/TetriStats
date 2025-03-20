@@ -20,12 +20,13 @@ module.exports = {
 				'easy to access **real-time TETR.IO information** directly within Discord.\n\n' +
 				'With  integration into TETR.IO\'s public API, the bot offers many commands to get player stats, ' +
 				'Tetra League rankings, and much more. Ideal for **competitive players, streamers, and communities** ' +
-				'who want quick and reliable access to TETR.IO data.' //idk why chatgpt formatted this into a bunch of "+"s, but idrc :SILENCE:
+				'who want quick and reliable access to TETR.IO data.'
 			)
 			.addFields(
 				{ name: '📌 Features', value: '- Player statistics tracking\n- Tetra League rankings\n- TETR.IO server statistics\n- Detailed user information', inline: false },
 				{ name: '📊 Bot Stats', value: `**Servers:** ${totalServers}\n**Users:** ${totalUsers}`, inline: false },
-				{ name: '⛓️ Links', value: '[GitHub Repository](https://github.com/erzahoq/TetriStats) • [Tetra Channel](https://ch.tetr.io/) • [Invite TetriStats!](https://discord.com/oauth2/authorize?client_id=1277041428274479124)', inline: false }
+				{ name: '⛓️ Links', value: '[GitHub Repository](https://github.com/erzahoq/TetriStats) • [Tetra Channel](https://ch.tetr.io/) • [Invite TetriStats!](https://discord.com/oauth2/authorize?client_id=1277041428274479124)', inline: false },
+				{ name: '🛠️ Credits', value: 'Developed by **erz (@lunoryx)** and **@monkeyswithpie**.\nSpecial thanks to:\n- **osk** for creating **TETR.IO** and providing the public API', inline: false }
 			)
 			.setFooter({ text: 'Made with ❤ for TETR.IO fans', iconURL: client.user.displayAvatarURL() });
 

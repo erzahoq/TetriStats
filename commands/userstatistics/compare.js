@@ -47,7 +47,7 @@ module.exports = {
             const user = interaction.client.users.cache.get(mention);
             if (!user) {
                 return await interaction.editReply({
-                    content: 'User 1 could not be found on discord!',
+                    content: 'User 1 could not be found on Discord!',
                     ephemeral: true
                 });
             }
@@ -111,7 +111,7 @@ module.exports = {
             const user = interaction.client.users.cache.get(mention);
             if (!user) {
                 return await interaction.editReply({
-                    content: 'User 2 could not be found on discord!',
+                    content: 'User 2 could not be found on Discord!',
                 });
             }
 
