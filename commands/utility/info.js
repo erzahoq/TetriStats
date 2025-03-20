@@ -14,12 +14,12 @@ module.exports = {
 			.setTitle('📊 TetriStats - TETR.IO Statistics & Analysis')
 			.setColor('#0099ff')
 			.setDescription(
-				'**TetriStats** is an [open source](https://github.com/erzahoq/TetriStats) Discord bot that fetches stats from [TETR.IO](https://tetr.io), created by @erzahoq and @monkeyswithpie.\n\n' +
-				'It is designed to provide **detailed insights** into TETR.IO player statistics, leaderboards, and replay analysis. ' +
+				'**TetriStats** is an [open source](https://github.com/erzahoq/TetriStats) Discord bot that fetches stats from [TETR.IO](https://tetr.io), created by erz (@lunoryx) and @monkeyswithpie.\n\n' +
+				'It\'s designed to provide **detailed insights** into TETR.IO player statistics, leaderboards, and replay analysis. ' +
 				'Whether you\'re tracking your own performance, comparing rankings, or analyzing gameplay data, TetriStats makes it ' +
 				'easy to access **real-time TETR.IO information** directly within Discord.\n\n' +
-				'With seamless integration into TETR.IO\'s public API, the bot offers various commands to retrieve player stats, ' +
-				'Tetra League rankings, and even in-depth **replay breakdowns**. Ideal for **competitive players, streamers, and communities** ' +
+				'With  integration into TETR.IO\'s public API, the bot offers many commands to get player stats, ' +
+				'Tetra League rankings, and much more. Ideal for **competitive players, streamers, and communities** ' +
 				'who want quick and reliable access to TETR.IO data.' //idk why chatgpt formatted this into a bunch of "+"s, but idrc :SILENCE:
 			)
 			.addFields(
