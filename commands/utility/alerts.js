@@ -10,22 +10,28 @@ module.exports = {
             .setDescription("Enable alerts?")
         ),
 	async execute(interaction) {
-        let user = await database.User.findOne({ where: { userId: interaction.user.id } })
-        if (!user) {
-            user = await database.User.create({ userId: interaction.user.id })
-        }
-        const enabled = interaction.options.getBoolean("enabled") ?? (user.ratingAlert === null);
+        let [user, _created] = await database.User.findOrCreate({ where: { userId: interaction.user.id } })
 
+        const enabled = interaction.options.getBoolean("enabled") ?? !user.alertsEnabled;
+
+        if (enabled === user.alertsEnabled) {
+            return await interaction.reply(`Rating deviation increase alerts are already ${enabled ? "enabled" : "disabled"}.`)
+        }
+        
         if (enabled) {
-            const resp = await user.checkAlert(true);
+            user.alertsEnabled = true;
+            const resp = await user.checkAlert();
             if (resp instanceof Error) {
+                if (resp.message === "User doesn't have their account linked!") {
+                    return await interaction.reply("Your Discord account is not linked to any existing TETR.IO account.\nTo link your Discord account, go to Config -> Account -> Connections -> Discord, then try again. You may need to make it publically visible.")
+                }
                 return await interaction.reply(`Something went wrong! ${resp.message}`)
             }
         } else {
-            user.ratingAlert = null;    
+            user.alertsEnabled = false;    
         }
 
         await user.save()
-        await interaction.reply(`${enabled ? "Enabled" : "Disabled"} RD increase alerts!`)
+        await interaction.reply(`${enabled ? "Enabled" : "Disabled"} rating deviation increase alerts!`)
 	},
 };

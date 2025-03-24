@@ -344,7 +344,7 @@ async function checkRdAlerts() {
                 embeds: [
                     new EmbedBuilder()
                     .setColor('ffdd22')
-                    .setDescription('Your Tetra League RD has begun rising!')
+                    .setDescription('Your Tetra League rating deviation has begun rising!')
                     .setTitle('RD Alert')
             ]}).catch(
                 (err) => console.log(`Couldn't alert user ${user.userId}! ${err.message}`) // means we can't DM user, cope
