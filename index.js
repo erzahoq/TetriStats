@@ -324,7 +324,7 @@ client.on(Events.InteractionCreate, async interaction => {
 client.once(Events.ClientReady, readyClient => {
 	console.log(`Ready! Logged in as ${readyClient.user.tag}`);
     status();
-    //checkRdAlerts(); disable rq cause it broke DD:
+    checkRdAlerts(); 
 });
 
 // Log in to Discord with your client's token
