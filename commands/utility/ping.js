@@ -132,15 +132,34 @@ module.exports = {
             
 
             /* stats */
-            `there are ${stats.usercount} players online!`,
-            `${stats.usercount} other people could be pinging right now...`
-            `there have been ${stats.gamesplayed} total games played. only ${stats.gamesfinished} were finished, though...`,
+            /* it hates me for some reason
+            `there are ${data.usercount} players online!`,
+            `${data.usercount} other people could be pinging right now...`
+            `there have been ${data.gamesplayed} total games played. only ${data.gamesfinished} were finished, though...`,
             `${data.piecesplaced} pieces have been placed! i wonder how many were misdrops.`,
-            `there are ${stats.rankedcount} ranked players! tetra league for the win.`, // github copilot suggested "i wonder how many are top 100" hmm i wonder
-            `there are ${stats.anoncount} anonymous players! do you think they have something to hide?`,
-            `there have been ${stats.recordcount} saved game records!`,
-            `tetr.io has been played for a total of ${data.gametime} seconds!`,
+            `there are ${data.rankedcount} ranked players! tetra league for the win.`, // github copilot suggested "i wonder how many are top 100" hmm i wonder
+            `there are ${data.anoncount} anonymous players! do you think they have something to hide?`,
+            `there have been ${data.recordcount} saved game records!`,
+            `tetr.io has been played for a total of ${data.gametime} seconds!`,*/
         ];
+
+        if (ping == "infinite ms") {
+            pingMsgs = [
+                "ping so high it's looped back to negative",
+                "reality is collapsing, try again later",
+                "if i had a dollar for every millisecond of this ping, i'd be broke",
+                "ping has become self-aware",
+                "speed so fast, it's undefined",
+                "quantum tunneling detected. packet never returned.",
+                "packet traveled through a wormhole, might be back in a few eons",
+                "ping value too powerful to be measured by mortal math",
+                "this ping has achieved enlightenment",
+                "you've unlocked the ping singularity",
+                "ms? more like mystery seconds",
+                "ping is lost in the tetr.io void",
+                "bot pinged... and got no response from the universe"
+            ]
+        }
 
         let pingMsg = pingMsgs[Math.floor(Math.random()*pingMsgs.length)];
 
