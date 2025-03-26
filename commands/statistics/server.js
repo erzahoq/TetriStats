@@ -26,7 +26,27 @@ module.exports = {
         // massive wall of embed but luckily everything is just a number
         const serverEmbed = new EmbedBuilder()
         .setColor("#81ff7d")
-        .setTitle("📊 **TETR.IO Server Statistics**")
+        .setDescription(
+`### __TETR.IO -> Server Statistics__
+
+- Total of **${formatNumber(data.usercount)} Players**
+  - ${formatNumber(data.usercount - data.anoncount)} are registered (*${Math.round(10000 * ((data.usercount - data.anoncount) / data.usercount)) / 100}%*)
+  - ${formatNumber(data.rankedcount)} are ranked (*${Math.round(10000 * (data.rankedcount / data.totalaccounts)) / 100}% of total, ${Math.round(10000 * (data.rankedcount / (data.usercount - data.anoncount))) / 100}% of registered*)
+  - ${formatNumber(data.anoncount)} are anonymous (*${Math.round(10000 * (data.anoncount / data.usercount)) / 100}%*)
+- **${formatNumber(data.gamesplayed)} Games** played
+  - ${formatNumber(data.gamesfinished)} were finished (*${Math.round(10000 * (data.gamesfinished / data.gamesplayed)) / 100}%*)
+  - ${formatNumber(data.recordcount)} were saved as replays (*${Math.round(10000 * (data.recordcount / data.gamesplayed)) / 100}%*)
+  - A total of ${Math.round(data.gamesplayed_delta * 10) / 10} games per second
+  - Or ${formatNumber(Math.round(gamesPlayedOverTime * 60 * 60 * 100) / 100)} games per hour
+- **${formatNumber(Math.round(secondsToDays(data.gametime) * 10) / 10)} Days** of playtime
+  - Or ${formatNumber(Math.round(data.gametime))} seconds
+  - Or ${formatNumber(Math.round(secondsToYears(data.gametime) * 10) / 10)} years
+- **${formatNumber(data.piecesplaced)} Pieces** placed
+  - ${Math.round(data.piecesplaced / data.gametime * 100) / 100} pieces per second on average
+  - ${formatNumber(data.inputs)} Inputs (${Math.round(data.inputs / data.piecesplaced * 100) / 100} per piece)
+  - ${Math.round(data.inputs / data.gametime * 100) / 100} inputs per second on average
+`)
+        /* .setTitle("📊 **TETR.IO Server Statistics**")
         .setDescription("Here are some detailed statistics on the overall TETR.IO server activity.")
         .addFields(
             { name: '👥 __Total Players__', value: `
@@ -58,7 +78,7 @@ module.exports = {
             `, inline: false }
         )
         .setFooter({ text: "TETR.IO Server Data • TetriStats" })
-        .setTimestamp();
+        .setTimestamp(); */
 
       await interaction.reply({ embeds: [serverEmbed] });
 
