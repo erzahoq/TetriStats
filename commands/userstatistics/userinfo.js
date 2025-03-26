@@ -90,6 +90,18 @@ module.exports = {
         const summaryData = summary.data;
         const badgeArray = statData.badges.map(badge => badge.id); // ??? some magic badge thing erz pls explain
 
+        if (statData.role === 'anon') {
+            const embed = new EmbedBuilder()
+                .setColor("#80bdff")
+                .setThumbnail("https://tetr.io/res/avatar.png")
+                .setDescription(`
+# ANONYMOUS
+${statData.username.toUpperCase()} is **anonymous**, which means they have no statistics, and cannot save replays. There's nothing that can be shown.`) // that's not true but TETR.IO doesn't show so we probably shouldn't either
+        
+            return await interaction.reply({
+                embeds: [embed]
+            })
+        }
         if (statData.role === 'bot') {
             const embed = new EmbedBuilder()
                 .setColor("#80bdff")
