@@ -15,19 +15,6 @@ module.exports = {
             ping = `${Math.floor(ping)}ms`
         }
 
-        //maybe remove this if this is spammming the API becuase people run /ping a lot, but i doubt it
-        //if we get banned from tetrio api then we know why :SILENCE:
-        const response = await fetch('https://ch.tetr.io/api/general/stats');
-        const stats = await response.json(); // Use .json() to parse the response as JSON
-
-        if (!stats.success) {
-            return await interaction.reply({
-                content: `tetr.io api is down lol\nBot API Latency: ${ping}`
-            });
-        }
-
-        const data = stats.data;
-
         let pingMsgs = [
             /* ping related */
             "pong! :3",
@@ -143,11 +130,36 @@ module.exports = {
             `tetr.io has been played for a total of ${data.gametime} seconds!`,*/
         ];
 
+        // 1 in 10 chance for a stat-related ping message
+        if (Math.random()*10 <= 1) {
+            const response = await fetch('https://ch.tetr.io/api/general/stats');
+            const stats = await response.json(); // Use .json() to parse the response as JSON
+    
+            if (!stats.success) {
+                return await interaction.reply({
+                    content: `tetr.io api is down lol\nBot API Latency: ${ping}`
+                });
+            }
+    
+            const data = stats.data;
+
+            pingMsgs = [
+                `there are ${data.usercount} players online!`,
+                `${data.usercount} other people could be pinging right now...`
+                `there have been ${data.gamesplayed} total games played. only ${data.gamesfinished} were finished, though...`,
+                `${data.piecesplaced} pieces have been placed! i wonder how many were misdrops.`,
+                `there are ${data.rankedcount} ranked players! tetra league for the win.`, // github copilot suggested "i wonder how many are top 100" hmm i wonder
+                `there are ${data.anoncount} anonymous players! do you think they have something to hide?`,
+                `there have been ${data.recordcount} saved game records!`,
+                `tetr.io has been played for a total of ${data.gametime} seconds!`,
+            ]
+        }
+
         if (ping == "infinite ms") {
             pingMsgs = [
                 "ping so high it's looped back to negative",
                 "reality is collapsing, try again later",
-                "if i had a dollar for every millisecond of this ping, i'd be broke",
+                "if i had a dollar for every millisecond of this ping, i'd be broke, i think",
                 "ping has become self-aware",
                 "speed so fast, it's undefined",
                 "quantum tunneling detected. packet never returned.",
@@ -155,7 +167,7 @@ module.exports = {
                 "ping value too powerful to be measured by mortal math",
                 "this ping has achieved enlightenment",
                 "you've unlocked the ping singularity",
-                "ms? more like mystery seconds",
+                "ms is milliseconds? more like mystery seconds",
                 "ping is lost in the tetr.io void",
                 "bot pinged... and got no response from the universe"
             ]
