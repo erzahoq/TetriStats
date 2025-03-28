@@ -2,7 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
-		.setName('info')
+		.setName('about')
 		.setDescription('Gives general information about TetriStats.'),
 	async execute(interaction) {
 		const client = interaction.client; // get client
