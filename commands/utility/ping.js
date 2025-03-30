@@ -117,17 +117,6 @@ module.exports = {
             "\"Nobody said MKO!\" you yell in desperation, but it is too late - Caboozled had already stacked four floating TSDs in your living room.",
             "You close your eyes in resignation to your fate as your house is obliterated in a massive 50 spike.",
             
-
-            /* stats */
-            /* it hates me for some reason
-            `there are ${data.usercount} players online!`,
-            `${data.usercount} other people could be pinging right now...`
-            `there have been ${data.gamesplayed} total games played. only ${data.gamesfinished} were finished, though...`,
-            `${data.piecesplaced} pieces have been placed! i wonder how many were misdrops.`,
-            `there are ${data.rankedcount} ranked players! tetra league for the win.`, // github copilot suggested "i wonder how many are top 100" hmm i wonder
-            `there are ${data.anoncount} anonymous players! do you think they have something to hide?`,
-            `there have been ${data.recordcount} saved game records!`,
-            `tetr.io has been played for a total of ${data.gametime} seconds!`,*/
         ];
 
         // 1 in 10 chance for a stat-related ping message
@@ -141,17 +130,17 @@ module.exports = {
                 });
             }
     
-            const data = stats.data;
+            const server = stats.data;
 
             pingMsgs = [
-                `there are ${data.usercount} players online!`,
-                `${data.usercount} other people could be pinging right now...`
-                `there have been ${data.gamesplayed} total games played. only ${data.gamesfinished} were finished, though...`,
-                `${data.piecesplaced} pieces have been placed! i wonder how many were misdrops.`,
-                `there are ${data.rankedcount} ranked players! tetra league for the win.`, // github copilot suggested "i wonder how many are top 100" hmm i wonder
-                `there are ${data.anoncount} anonymous players! do you think they have something to hide?`,
-                `there have been ${data.recordcount} saved game records!`,
-                `tetr.io has been played for a total of ${data.gametime} seconds!`,
+                `there are ${server.usercount} players online!`,
+                `${server.usercount} other people could be pinging right now...`,
+                `there have been ${server.gamesplayed} total games played. only ${server.gamesfinished} were finished, though...`,
+                `${server.piecesplaced} pieces have been placed! i wonder how many were misdrops.`,
+                `there are ${server.rankedcount} ranked players! tetra league for the win.`, // github copilot suggested "i wonder how many are top 100" hmm i wonder
+                `there are ${server.anoncount} anonymous players! do you think they have something to hide?`,
+                `there have been ${server.recordcount} saved game records!`,
+                `tetr.io has been played for a total of ${server.gametime} seconds!`,
             ]
         }
 

@@ -20,7 +20,7 @@ module.exports = (sequelize) => {
             }
 
             const leagueInfo = await (await fetch(`https://ch.tetr.io/api/users/${this.tetrioId}/summaries/league`)).json();
-            console.log(`Fetched league summary for ${this.userId}, got `,leagueInfo)
+            //console.log(`Fetched league summary for ${this.userId}, got `,leagueInfo)
             if (!leagueInfo.success) return new Error("Unable to access TETR.IO servers!"); // i love copy/pasting code
 
             // user was already alerted but their rating is no longer decaying
