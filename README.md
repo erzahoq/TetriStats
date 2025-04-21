@@ -46,7 +46,7 @@ To invite TetriStats to your server:
 
 [➡️ Click here to add TetriStats to your Discord server](https://discord.com/oauth2/authorize?client_id=1277041428274479124)
 
-After inviting, try commands like /stats, /compare, /league, /records, or /replay to get started!
+After inviting, try commands like /stats, /compare, /league, or /records to get started!
 ## 🔗 Links
 
 - [GitHub](https://github.com/erzahoq/TetriStats)
