@@ -133,8 +133,7 @@ module.exports = {
             const server = stats.data;
 
             pingMsgs = [
-                `there are ${server.usercount} players online!`,
-                `${server.usercount} other people could be pinging right now...`,
+                `there are ${server.usercount} players registered!`,
                 `there have been ${server.gamesplayed} total games played. only ${server.gamesfinished} were finished, though...`,
                 `${server.piecesplaced} pieces have been placed! i wonder how many were misdrops.`,
                 `there are ${server.rankedcount} ranked players! tetra league for the win.`, // github copilot suggested "i wonder how many are top 100" hmm i wonder
