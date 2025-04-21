@@ -57,7 +57,7 @@ module.exports = {
             /* tetris related */
             "who stole my tetrominoes?",
             "what's a 'tetris'? all i know is quads... and pings",
-            "sick t-spin! maybe you should've upstacked a bit more, though",
+            "nice t-spin! maybe you should've upstacked a bit more, though",
             "ping successful, but only if you do a t-spin",
             "you're playing tetris, but what if tetris was playing you?",
             "if you rotate really fast, do you think the tetromino gets dizzy?",

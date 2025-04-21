@@ -192,8 +192,8 @@ module.exports = {
 
                 { name: `${escapeUnderscores(userStats1.username.toUpperCase())}`, value: `
                 ${countryCodeToEmoji(userStats1.country) || '🌐'}
-                ${formatNumber(userStats1.gamesplayed)}
-                ${formatNumber(userStats1.gameswon)} (${(userStats1.gameswon / userStats1.gamesplayed * 100).toFixed(2)}%)
+                ${userStats1.gamesplayed=-1?"N/A":formatNumber(userStats1.gamesplayed)}
+                ${userStats1.gamesplayed=-1?"N/A":`${formatNumber(userStats1.gameswon)} (${(userStats1.gameswon / userStats1.gamesplayed * 100).toFixed(2)/*this is extremely scuffed but i dont care */}%)`}
                 ${playtimeConvert(userStats1.gametime)}
                 ${formatNumber(Math.floor(calculateLevel(userStats1.xp)))}
                 ${formatNumber(userStats1.ar)} AR

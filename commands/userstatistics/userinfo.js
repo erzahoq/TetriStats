@@ -90,6 +90,8 @@ module.exports = {
         const summaryData = summary.data;
         const badgeArray = statData.badges.map(badge => badge.id); // ??? some magic badge thing erz pls explain
 
+        console.log(summaryData)
+
         if (statData.role === 'anon') {
             const embed = new EmbedBuilder()
                 .setColor("#80bdff")
@@ -150,7 +152,7 @@ This user is a **BOT**, owned by ${statData.botmaster.toLowerCase()}. Their reco
                 .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
                 .setFooter({ text: `User ID: ${statData._id} | Role: ${statData.role}` })
                 .setDescription(`
-### __[${capitalizeFirstLetter(escapeUnderscores(statData.username))}](https://ch.tetr.io/u/${statData.username}) -> Quick Look -> Gameplay__
+### __[${capitalizeFirstLetter(escapeUnderscores(statData.username))}](https://ch.tetr.io/u/${statData.username}) -> Quick Look -> General__
 
 - Has ${countAchievements(statData.ar_counts)} achievements ${achievementCountsConvert(statData.ar_counts)} ${statData.ar > 0 ? `\n  - Totalling ${statData.ar} Achievement Rating` : ""} ${badgesConvert(badgeArray)} ${displayedAchesConvert(statData.achievements, summaryData.achievements)}
 
@@ -163,7 +165,7 @@ ${statData.gamesplayed >= 0 ? `- Played ${statData.gamesplayed} games${statData.
                 .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
                 .setFooter({ text: `User ID: ${statData._id} | Role: ${statData.role}` })
                 .setDescription(`
-### __[${escapeUnderscores(statData.username.toUpperCase())}](https://ch.tetr.io/u/${statData.username}) -> Quick Look -> Records__
+### __[${escapeUnderscores(statData.username.toUpperCase())}](https://ch.tetr.io/u/${statData.username}) -> Quick Look -> Gameplay__
 ${formatLeaguePreview(summaryData, country)} ${formatZenith(summaryData, country)} ${formatZenithExpert(summaryData, country)} ${format40Lines(summaryData, country)} ${formatBlitz(summaryData, country)} ${formatZen(summaryData)}
 `)
 //                 .setDescription(`
