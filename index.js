@@ -335,9 +335,9 @@ async function checkRdAlerts() {
     const userList = await database.User.findAll();
     let resp;
     for (const user of userList) {
-        console.log('Checking RD alert for ' + user.userId);
         resp = await user.checkAlert(); // check if alert is needed
-        if (!resp instanceof Error && resp) { // make sure it doesn't error, and also is true
+        // console.log(`Checked for ${user.userId}, got ${resp}`);
+        if (!(resp instanceof Error) && resp) { // make sure it doesn't error, and also is true
             console.log('Alerting ' + user.userId);
             const userToMessage = await client.users.fetch(user.userId);
             userToMessage.send({
