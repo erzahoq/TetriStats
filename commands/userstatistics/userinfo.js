@@ -795,7 +795,11 @@ function displayedAchesConvert(displayed, all) {
             if (achievement.vt === 4) {
                 displayCase += ` **${achievement['name']}** - **Floor ${Math.floor(achievement.a)}** (${formatNumber(Math.round((achievement.v) * 100) / 100)}m) ${achievement.object}`
             } else {
-                displayCase += ` **${achievement['name']}** - **${formatNumber(Math.round(achievement.v))}** ${achievement.object}`
+                if (achievement['rank'] !== 100) { // if it isn't issued
+                    displayCase += ` **${achievement['name']}** - **${formatNumber(Math.round(achievement.v))}** ${achievement.object}`
+
+                } else if (achievement.vt === 5) displayCase += ` **${achievement['name']}** - Obtained ${reformatTimestamp(-achievement.v)}` //if it is issued show the time
+                else if (achievement.vt === 6) displayCase += ` **${achievement['name']}** - ${formatNumber(-Math.round(achievement.v))}` // if its some stupid achievement that isnt accounted for then just do this i guess??
             }
 
             if (achievement['rank'] === 100) { // if it's issued
@@ -835,3 +839,15 @@ function formatCountry(localRank, country) {
 }
 
     
+
+function reformatTimestamp(isoString) {
+    if (!isoString) {
+        return "Before account creation was tracked"
+    }
+
+    // Create a Date object from the ISO string
+    const date = new Date(isoString);
+
+    // Return the Unix timestamp by dividing the milliseconds by 1000
+    return `<t:${Math.floor(date.getTime() / 1000)}:R>`;
+}

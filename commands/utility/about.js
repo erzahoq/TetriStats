@@ -33,7 +33,7 @@ module.exports = {
   - [Tetra Channel](https://ch.tetr.io/) and [TETR.IO](https://tetr.io)
   - [Add TetriStats](https://discord.com/oauth2/authorize?client_id=1277041428274479124)
 - **Credits**
-  - Developed by **erz (@erzahoq)** and **@monkeyswithpie**
+  - Developed by **@erzahoq** and **@monkeyswithpie**
   - Thanks to **osk** and the rest of their team for creating TETR.IO
 `)
 		/* const embed = new EmbedBuilder()
