@@ -798,8 +798,8 @@ function displayedAchesConvert(displayed, all) {
                 if (achievement['rank'] !== 100) { // if it isn't issued
                     displayCase += ` **${achievement['name']}** - **${formatNumber(Math.round(achievement.v))}** ${achievement.object}`
 
-                } else if (achievement.vt === 5) displayCase += ` **${achievement['name']}** - Obtained ${reformatTimestamp(-achievement.v)}` //if it is issued show the time
-                else if (achievement.vt === 6) displayCase += ` **${achievement['name']}** - ${formatNumber(-Math.round(achievement.v))}` // if its some stupid achievement that isnt accounted for then just do this i guess??
+                } else if (achievement.vt === 5) displayCase += ` **${achievement['name']}** - Obtained ${reformatTimestamp(-achievement.v)} ${achievement.object}` //if it is issued show the time
+                else if (achievement.vt === 6) displayCase += ` **${achievement['name']}** - ${formatNumber(-Math.round(achievement.v))} ${achievement.object}` // if its some stupid achievement that isnt accounted for then just do this i guess??
             }
 
             if (achievement['rank'] === 100) { // if it's issued
