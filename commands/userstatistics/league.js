@@ -28,10 +28,13 @@ module.exports = {
             const leagueData = data.data;
 
             // Extract basic stats
-            let { apm, pps, vs, tr, glicko, rd, prev_rank, next_rank, rank, standing, standing_local, country, decaying, bestrank } = leagueData;
+            let { apm, pps, vs, tr, glicko, rd, prev_rank, next_rank, rank, standing, standing_local, country, decaying, bestrank, percentile } = leagueData;
             const gamesPlayed = leagueData.gamesplayed || 0;
             const gamesWon = leagueData.gameswon || 0;
             const winRate = gamesPlayed > 0 ? ((gamesWon / gamesPlayed) * 100).toFixed(2) : 'N/A';
+
+            
+            console.log(leagueData)
 
             // Calculate extra stats
 
@@ -67,8 +70,14 @@ module.exports = {
                     description += `\n- Currently unranked ${getEmojiOfRank(rank)}\n  - Probably around ${getEmojiOfRank(leagueData.percentile_rank)}`
                     rankBar = false;
                 } else {
-                    description += `\n- Currently ranked ${getEmojiOfRank(rank)}\n  - Ranked #${standing} in the world\n  - Locally ranked #${standing_local}`
+                    if (percentile < 0.005) {
+                        description += `\n- Currently ranked ${getEmojiOfRank(rank)}\n  - Ranked #${standing} worldwide\n  - Ranked #${standing_local} in ${countryCodeToEmoji(country)}`
+                    } else {
+                        description += `\n- Currently ranked ${getEmojiOfRank(rank)}\n  - Ranked #${standing} worldwide (Top ${(percentile*100).toFixed(1)}%)\n  - Ranked #${standing_local} locally`
+                    }
+
                     rankBar = `${getEmojiOfRank(prev_rank)} ${generateProgressBar("Ranked", (leagueData.prev_at - standing) / (leagueData.prev_at - leagueData.next_at), 15)} ${getEmojiOfRank(next_rank)}`;
+
                 }
 
                 if ((rank != bestrank && rd <= 100) || (leagueData.estRank != bestrank && rd > 100)) {
@@ -180,4 +189,16 @@ function getEmojiOfRank(rank) {
 function formatNumber(num) {
     const numStr = num.toString();
     return numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+// Convert country code to flag emoji
+function countryCodeToEmoji(countryCode) {
+    if (countryCode === 'XM') return ("<:flag_xm:1310891739078328374>");
+    if (!countryCode) return ("❔"); //if a country isn't set i guess
+    const codePoints = countryCode
+        .toUpperCase() // Make sure the code is uppercase
+        .split('')     // Split the letters
+        .map(char => 127397 + char.charCodeAt()); // Convert to regional indicator symbol
+
+    return String.fromCodePoint(...codePoints);
 }
