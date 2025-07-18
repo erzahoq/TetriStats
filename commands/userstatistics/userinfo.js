@@ -426,7 +426,7 @@ function calculateLevel(xp) {
     return ((xp / 500) ** 0.6) + (xp / (5000 + ((Math.max(0, xp - (4 * 10 ** 6))) / 5000))) + 1
 }
 
-//small league 
+//small and cute league function (will purr at you if it gets the chance)
 function formatLeaguePreview(statistics, country) {
     const leagueStats = statistics['league']
 
@@ -483,7 +483,7 @@ function formatLeaguePreview(statistics, country) {
 
     let standing = ""
 
-    if (rank != leagueStats.bestrank) {
+    if (rank != leagueStats.bestrank && gamesPlayed !== 0 && leagueStats.bestRank) {
         standing += `
   - Has reached ${getEmojiOfRank(leagueStats.bestrank)}`
     }
@@ -492,14 +492,16 @@ function formatLeaguePreview(statistics, country) {
         standing += `
   - Probably around ${getEmojiOfRank(estRank)}`
     }
-    if (leagueStats.standing > 0) {
+    if (leagueStats.standing > 0 ) {
         standing += `
   - Ranked #${leagueStats.standing} ${formatCountry(leagueStats.standing_local, country)}`
     }
 
-    standing += `
-  - Won ${gamesWon}/${gamesPlayed} games (${((gamesWon/gamesPlayed)*100).toFixed(2)}%)
-  - ${leagueStats.vs || "N/A"} VS score`
+    if (gamesPlayed !== 0)  {
+        standing += `
+    - Won ${gamesWon}/${gamesPlayed} games (${((gamesWon/gamesPlayed)*100).toFixed(2)}%)
+    - ${leagueStats.vs || "N/A"} VS score`
+    }
 
     return `
 - <:league:1352045247512842251> **${rating}**, ${getEmojiOfRank(rank)} ${standing}`
@@ -602,106 +604,9 @@ function formatZen(statistics) {
     }
 }
 
-/*
-function formatLeague(statistics, country) {
-    const leagueStats = statistics['league']
+//i nuked massive comment
+//im sure its completely fine :3
 
-    // lots of vars
-    let gamesPlayed = leagueStats.gamesplayed;
-    let gamesWon = leagueStats.gameswon;
-    let glicko = leagueStats.glicko;
-    let ratingDeviation = leagueStats.rd;
-    let rating = leagueStats.tr;
-    let glixaire = leagueStats.gxe;
-    let rank = leagueStats.rank;
-    let estRank = leagueStats.percentile_rank;
-
-    let rankBoolean = true;
-
-    let progressToNextRank = (leagueStats.prev_at - leagueStats.standing) / (leagueStats.prev_at - leagueStats.next_at)
-
-    let prevRank = leagueStats.prev_rank;
-    let nextRank = leagueStats.next_rank;
-
-    if (!nextRank && prevRank === 'x') {
-        prevRank = 'x+'
-        nextRank = 'top'
-    }
-
-    if (!prevRank && nextRank === 'd+') {
-        prevRank = "d"
-    }
-
-    prevRank = getEmojiOfRank(prevRank);
-    nextRank = getEmojiOfRank(nextRank);
-
-    let recordDisplay = Math.round(10000 * (gamesWon / gamesPlayed)) / 100;
-
-    // TR display stuff
-    if (rating < 0) {
-        if (leagueStats.gamesplayed === 0) {
-            recordDisplay = 0;
-        }
-        rating = `${leagueStats.gamesplayed}/10 rating games`
-        progressToNextRank = leagueStats.gamesplayed / 10
-        prevRank = '';
-        nextRank = '<:rank_z:1277382169538461746>';
-
-        rankBoolean = "yesnt"; // so true
-    }
-    else {
-        rating = `${formatNumber(Math.round(rating * 100) / 100)} TR`
-    }
-
-    if (ratingDeviation > 100 && rankBoolean != "yesnt") {
-        rankBoolean = false;
-    } 
-
-    let standing = ""
-
-    if (rank != leagueStats.bestrank) {
-        standing += `
-  - Has reached ${getEmojiOfRank(leagueStats.bestrank)}`
-    }
-
-    if (ratingDeviation > 100) {
-        standing += `
-  - Probably around ${getEmojiOfRank(estRank)}`
-    }
-
-    standing += `
-  - Ranked #${leagueStats.standing} ${formatCountry(leagueStats.standing_local, country)}
-  - Has ${formatNumber((Math.round(glicko * 100)) / 100)} ± ${(Math.round(ratingDeviation * 100)) / 100} Glicko`
-
-    if (leagueStats.decaying) {
-        standing += `
-  - Hasn't played in a week; deviation is increasing`
-    }
-
-    standing += `
-- Played ${gamesPlayed} games
-  - Won ${gamesWon} of them (${((gamesWon/gamesPlayed)*100).toFixed(2)}%)
-  - ${leagueStats.apm || "N/A"} APM
-  - ${leagueStats.pps || "N/A"} PPS
-  - ${leagueStats.vs || "N/A"} VS score`
-
-    let bar = generateProgressBar(rankBoolean, progressToNextRank, prevRank, nextRank);
-    if (leagueStats.standing > leagueStats.prev_at) {
-        bar += `\n*Demotion on next loss*`
-    }
-
-    return `
-- Has ${rating}, ${getEmojiOfRank(rank)} ${standing} ${bar}`
-
-    return `# <:league:1277378168717840497> Tetra League:
-# ${getEmojiOfRank(rank)} ${rating}${formatLeagueStanding(leagueStats.bestrank, leagueStats.standing, leagueStats.standing_local, glicko, ratingDeviation, country)}
-**Record: ${gamesWon}/${gamesPlayed}** (${recordDisplay}%)
-${glixaireDisplay}
-Attack Per Minute: ${leagueStats.apm || 0}
-Pieces Per Second: ${leagueStats.pps || 0}
-Versus Score: ${leagueStats.vs || 0}${generateProgressBar(rankBoolean, progressToNextRank, prevRank, nextRank)}`
-} //why is this still here? its unreachable because of the return above it lol
-*/
 function getEmojiOfRank(rank) {
     if (!rank) {
         return;
@@ -733,44 +638,6 @@ function getEmojiOfRank(rank) {
     return `<:${formattedRank}:${rankEmojis[formattedRank]}>`
 }
 
-
-function formatLeagueStanding(bestRank, standing, localStanding, glicko, ratingDeviation, country) {
-    //what does this even mean lmao, i frogor
-    if (standing > 0) {
-        return `\n**Highest Rank: ${getEmojiOfRank(bestRank)}**\n**\\\#${formatNumber(standing)}** (#${formatNumber(localStanding)} ${country})
-**Glicko: ${formatNumber((Math.round(glicko * 100)) / 100)} ± ${(Math.round(ratingDeviation * 100)) / 100}**`
-    } else {
-        return ''
-    }
-}
-
-function generateProgressBar(generateBar, progress, symbolA, symbolB, length = 14) {
-    if (!generateBar) {
-        return '';
-    }
-
-    let startSymbol = "<:bar_start:1277463580513669160>"
-    let endSymbol = "<:bar_end:1277463565036683264>"
-
-    if (generateBar === "yesnt") { // this is when there's no rank
-        startSymbol = "<:bar_start_rankless:1277779429199712317>"
-    }
-
-    // Ensure the progress is within the 0-1 range
-    progress = Math.max(0, Math.min(progress, 1));
-    if (progress === 1) { // this is for when the player is #1 in the world (wow)
-        endSymbol = "<:bar_end_full:1278896013502976000>"
-    }
-
-    // Calculate the position of the "!" marker
-    const position = Math.round(progress * length);
-
-    // Generate the progress bar
-    const bar = Array.from({ length: length }, (_, i) => (i === position ? "<:bar_half:1277463557016916010>" : (i < position ? "<:bar_full:1277463587249586269>" : "<:bar_empty:1277463572863254589>"))).join("");
-
-    // Return the complete progress bar with symbols
-    return `\n\n${symbolA} ${startSymbol}${bar}${endSymbol} ${symbolB}`;
-}
 
 function displayedAchesConvert(displayed, all) {
     const achievementMapping = {
