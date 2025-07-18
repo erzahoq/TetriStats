@@ -90,8 +90,6 @@ module.exports = {
         const summaryData = summary.data;
         const badgeArray = statData.badges.map(badge => badge.id); // ??? some magic badge thing erz pls explain
 
-        console.log(summaryData)
-
         if (statData.role === 'anon') {
             const embed = new EmbedBuilder()
                 .setColor("#80bdff")
@@ -113,7 +111,7 @@ ${statData.username.toUpperCase()} is **anonymous**, which means they have no st
 # BOT
 This user is a **BOT**, owned by ${statData.botmaster.toLowerCase()}. Their records are not available, but some general information can be shown.
 
-### __[${capitalizeFirstLetter(escapeUnderscores(statData.username))}](https://ch.tetr.io/u/${statData.username}) -> Quick Look__
+### __[${escapeUnderscores(statData.username).toUpperCase()}](https://ch.tetr.io/u/${statData.username}) -> Quick Look__
 
 - About:
   - Account created ${reformatTimestamp(statData.ts)}
@@ -136,7 +134,7 @@ This user is a **BOT**, owned by ${statData.botmaster.toLowerCase()}. Their reco
                 .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
                 .setFooter({ text: `User ID: ${statData._id} | Role: ${statData.role}` })
                 .setDescription(`
-### __[${capitalizeFirstLetter(escapeUnderscores(statData.username))}](https://ch.tetr.io/u/${statData.username}) -> Quick Look__
+### __[${escapeUnderscores(statData.username).toUpperCase()}](https://ch.tetr.io/u/${statData.username}) -> Quick Look__
 
 - About:
   - Account created ${reformatTimestamp(statData.ts)}
@@ -152,7 +150,7 @@ This user is a **BOT**, owned by ${statData.botmaster.toLowerCase()}. Their reco
                 .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
                 .setFooter({ text: `User ID: ${statData._id} | Role: ${statData.role}` })
                 .setDescription(`
-### __[${capitalizeFirstLetter(escapeUnderscores(statData.username))}](https://ch.tetr.io/u/${statData.username}) -> Quick Look -> General__
+### __[${escapeUnderscores(statData.username).toUpperCase()}](https://ch.tetr.io/u/${statData.username}) -> Quick Look -> General__
 
 - Has ${countAchievements(statData.ar_counts)} achievements ${achievementCountsConvert(statData.ar_counts)} ${statData.ar > 0 ? `\n  - Totalling ${statData.ar} Achievement Rating` : ""} ${badgesConvert(badgeArray)} ${displayedAchesConvert(statData.achievements, summaryData.achievements)}
 
@@ -783,6 +781,7 @@ function displayedAchesConvert(displayed, all) {
         4: 'platinum',
         5: 'diamond'
     };
+
     let displayCase = "\n  - Displayed achievements:"
 
     // loop thru each displayed ach
@@ -814,6 +813,11 @@ function displayedAchesConvert(displayed, all) {
                 else { // everything else
                     displayCase += ` (Top ${Math.round(achievement['pos'] / achievement['total'] * 10000) / 100}%)`
                 }
+            }
+
+            if (achievement['x'] && !isEmpty(achievement['x'])) {
+
+                displayCase += ` (With [${achievement['x'].ally.username.toUpperCase()}](https://ch.tetr.io/u/${achievement['x'].ally.username}))`
             }
         }
     })
@@ -851,3 +855,13 @@ function reformatTimestamp(isoString) {
     // Return the Unix timestamp by dividing the milliseconds by 1000
     return `<t:${Math.floor(date.getTime() / 1000)}:R>`;
 }
+
+function isEmpty(obj) {
+    for (const prop in obj) {
+      if (Object.hasOwn(obj, prop)) {
+        return false;
+      }
+    }
+  
+    return true;
+  }
