@@ -9,37 +9,57 @@ module.exports = {
         .setContexts(InteractionContextType.BotDM, InteractionContextType.Guild, InteractionContextType.PrivateChannel)
         .setIntegrationTypes(ApplicationIntegrationType.UserInstall)
         .setDescription('Get a user\'s latest and top records via their TETR.IO (or Discord) username/ID.')
-        .addSubcommand(subcommand =>
-            subcommand
-                .setName('tetrio')
-                .setDescription('Get a user\'s latest and top records via their TETR.IO username/ID.')
-                .addStringOption((option) =>
-                    option
-                        .setName('user')
-                        .setDescription('the username/ID to search for')
-                        .setRequired(true),
-                ),
-        )
-        .addSubcommand(subcommand =>
-            subcommand
-                .setName('discord')
-                .setDescription('Get a user\'s records via their Discord, the user must have linked their Discord to TETR.IO')
-                .addUserOption((option) =>
-                    option
-                        .setName('user')
-                        .setDescription('the discord user to search for')
-                        .setRequired(true),
-                ),
+        .addStringOption((option) =>
+            option
+                .setName('user')
+                .setDescription('the TETR.IO username / Discord to fetch data for')
+                .setRequired(true),
         ),
+
     async execute(interaction) {
-        await interaction.deferReply() // defer because this one can take a while (it's 10 API calls)
+        await interaction.deferReply() // defer because this one can take a while (it's 10 API calls :gladeline:)
 
         let records, tetrioID;
 
-        // Fetch the account with either discord or tetrio
-        if (interaction.options.getSubcommand() === 'tetrio') {
-            const user = interaction.options.getString('user').toLowerCase();
+        let user = interaction.options.getString('user').toLowerCase();    
+        let discordRegex = new RegExp("[0-9]{18,}"); // regex to check if there are 18 or more numbers in the name, meaning its probably a discord username
+        let isDiscordUser = false;
 
+        if (discordRegex.test(user)) { // check if it matches
+            isDiscordUser = true;
+        }
+
+        // Fetch the account with either discord or tetrio
+        if (isDiscordUser) {
+            let userID = interaction.options.getString('user');
+            const discordMatch = userID.match(/<@(\d+)>/);
+            if (discordMatch) {
+                userID = discordMatch[1]
+            }
+
+            let response = await fetch(`https://ch.tetr.io/api/users/search/discord:id:${userID}`);
+            stats = await response.json();
+
+            if (stats.data.users[0] === undefined) {
+                return await interaction.editReply({
+                    content: 'No such user found on TETR.IO! Either the account no longer exists, or this person has not linked their Discord with TETR.IO.',
+                    ephemeral: true
+                });
+            }
+
+            response = await fetch(`https://ch.tetr.io/api/users/${stats.data.users[0].username}`);
+            stats = await response.json(); //oopsies :3
+
+            if (!stats.success) {
+                return await interaction.editReply({
+                    content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
+                    ephemeral: true
+                });
+            }
+
+            tetrioID = stats.data._id
+            records = await fetchAll(tetrioID);
+        } else {
             const response = await fetch(`https://ch.tetr.io/api/users/${user}`);
             stats = await response.json();
 
@@ -59,31 +79,6 @@ module.exports = {
 
             records = await fetchAll(user);
             tetrioID = stats.data._id
-        } else if (interaction.options.getSubcommand() === 'discord') {
-            const user = interaction.options.getUser('user');
-
-            let response = await fetch(`https://ch.tetr.io/api/users/search/discord:${user.id}`);
-            stats = await response.json();
-
-            response = await fetch(`https://ch.tetr.io/api/users/${stats.data.user.username}`);
-            stats = await response.json(); //oopsies :3
-
-            if (stats.data === null) {
-                return await interaction.editReply({
-                    content: 'No such user found on TETR.IO! Either the account no longer exists, or this person has not linked their Discord with TETR.IO.',
-                    ephemeral: true
-                });
-            }
-
-            if (!stats.success) {
-                return await interaction.editReply({
-                    content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
-                    ephemeral: true
-                });
-            }
-
-            tetrioID = stats.data._id
-            records = await fetchAll(tetrioID);
         }
 
         // mappings and vars

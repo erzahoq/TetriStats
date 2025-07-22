@@ -7,14 +7,57 @@ module.exports = {
         .setContexts(InteractionContextType.BotDM, InteractionContextType.Guild, InteractionContextType.PrivateChannel)
         .setIntegrationTypes(ApplicationIntegrationType.UserInstall)
         .setDescription('Displays Tetra League information about a user.')
-        .addStringOption(option => 
-            option.setName('username')
-                .setDescription('The TETR.IO username to fetch data for.')
-                .setRequired(true)),
+        .addStringOption((option) =>
+            option
+                .setName('user')
+                .setDescription('the TETR.IO username / Discord to fetch data for')
+                .setRequired(true),
+        ),
 
     async execute(interaction) {
-        const username = interaction.options.getString('username').toLowerCase();
-        const apiURL = `https://ch.tetr.io/api/users/${username}/summaries/league`;
+
+        let tetrioUsername;
+
+        let user = interaction.options.getString('user').toLowerCase();
+        let discordRegex = new RegExp("[0-9]{18,}"); // regex to check if there are 18 or more numbers in the name, meaning its probably a discord username
+        let isDiscordUser = false;
+
+        if (discordRegex.test(user)) { // check if it matches
+            isDiscordUser = true;
+        }
+
+        // Fetch the account with either discord or tetrio
+        if (isDiscordUser) {
+            let userID = interaction.options.getString('user');
+            const discordMatch = userID.match(/<@(\d+)>/);
+            if (discordMatch) {
+                userID = discordMatch[1]
+            }
+
+            let response = await fetch(`https://ch.tetr.io/api/users/search/discord:id:${userID}`);
+            stats = await response.json();
+
+            if (stats.data.users[0] === undefined) {
+                return await interaction.reply({
+                    content: 'No such user found on TETR.IO! Either the account no longer exists, or this person has not linked their Discord with TETR.IO.',
+                    ephemeral: true
+                });
+            }
+
+            if (!stats.success) {
+                return await interaction.reply({
+                    content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
+                    ephemeral: true
+                });
+            }
+
+            tetrioUsername = stats.data.users[0].username
+        } else {
+            tetrioUsername = user;
+        }
+
+
+        const apiURL = `https://ch.tetr.io/api/users/${tetrioUsername}/summaries/league`;
 
         try {
             // Fetch user league data
@@ -22,7 +65,7 @@ module.exports = {
             const data = await response.json();
 
             if (!data.success || !data.data) {
-                return interaction.reply({ content: `Could not find league data for user **${username}**.`, ephemeral: true });
+                return interaction.reply({ content: `Could not find league data for user **${tetrioUsername}**.`, ephemeral: true });
             }
 
             const leagueData = data.data;
@@ -33,9 +76,7 @@ module.exports = {
             const gamesWon = leagueData.gameswon || 0;
             const winRate = gamesPlayed > 0 ? ((gamesWon / gamesPlayed) * 100).toFixed(2) : 'N/A';
 
-            
-            console.log(leagueData)
-
+        
             // Calculate extra stats
 
             // assuming that VS = ((LinesSent + GarbageCleared) / Pieces) * PPS * 100
@@ -59,7 +100,7 @@ module.exports = {
                 prev_rank = "d"
             }
 
-            let description = `### __[${username.toUpperCase()}](https://ch.tetr.io/u/${username}/) -> Tetra League__\n`
+            let description = `### __[${tetrioUsername.toUpperCase()}](https://ch.tetr.io/u/${tetrioUsername}/) -> Tetra League__\n`
             
             if (tr < 0) {
                 description += `\n- Currently unranked ${getEmojiOfRank('z')}\n  - ${gamesPlayed}/10 rating games played`

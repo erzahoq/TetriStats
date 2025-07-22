@@ -6,35 +6,60 @@ module.exports = {
         .setName('user')
         .setContexts(InteractionContextType.BotDM, InteractionContextType.Guild, InteractionContextType.PrivateChannel)
         .setIntegrationTypes(ApplicationIntegrationType.UserInstall)
-        .setDescription('Get detailed information about a specific user via their TETR.IO (or Discord) username/ID.')
-        .addSubcommand(subcommand =>
-            subcommand
-                .setName('tetrio')
-                .setDescription('Get detailed information about a specific user via their TETR.IO username/ID.')
-                .addStringOption((option) =>
-                    option
-                        .setName('user')
-                        .setDescription('the username/ID to search for')
-                        .setRequired(true),
-                ),
-        )
-        .addSubcommand(subcommand =>
-            subcommand
-                .setName('discord')
-                .setDescription('Get info about a specific user via their Discord, the user must have linked their Discord to TETR.IO')
-                .addUserOption((option) =>
-                    option
-                        .setName('user')
-                        .setDescription('the discord user to search for')
-                        .setRequired(true),
-                ),
+        .setDescription('Get detailed information about a specific user via their TETR.IO (or Discord) username/ID.')  
+        .addStringOption((option) =>
+            option
+                .setName('user')
+                .setDescription('the TETR.IO username / Discord to search for')
+                .setRequired(true),
         ),
 
     async execute(interaction) {
         let stats, summary;
 
+        let user = interaction.options.getString('user').toLowerCase();    
+        let discordRegex = new RegExp("[0-9]{18,}"); // regex to check if there are 18 or more numbers in the name, meaning its probably a discord username
+        let isDiscordUser = false;
+
+        if (discordRegex.test(user)) { // check if it matches
+            isDiscordUser = true;
+        }
+
+        
+
         // Fetch the account with either discord or tetrio
-        if (interaction.options.getSubcommand() === 'tetrio') {
+        if (isDiscordUser) {
+            let userID = interaction.options.getString('user');
+            const discordMatch = userID.match(/<@(\d+)>/);
+            if (discordMatch) {
+                userID = discordMatch[1]
+            }
+
+            let response = await fetch(`https://ch.tetr.io/api/users/search/discord:id:${userID}`);
+            stats = await response.json();
+
+            if (stats.data.users[0] === undefined) {
+                return await interaction.reply({
+                    content: 'No such user found on TETR.IO! Either the account no longer exists, or this person has not linked their Discord with TETR.IO.',
+                    ephemeral: true
+                });
+            }
+
+            if (!stats.success) {
+                return await interaction.reply({
+                    content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
+                    ephemeral: true
+                });
+            }
+
+            const tetrioID = stats.data.users[0]._id;
+
+            response = await fetch(`https://ch.tetr.io/api/users/${tetrioID}`);
+            const summaryRaw = await fetch(`https://ch.tetr.io/api/users/${tetrioID}/summaries`);
+
+            stats = await response.json();
+            summary = await summaryRaw.json();
+        } else {
             const user = interaction.options.getString('user').toLowerCase();
 
             const response = await fetch(`https://ch.tetr.io/api/users/${user}`);
@@ -57,34 +82,8 @@ module.exports = {
             const summaryRaw = await fetch(`https://ch.tetr.io/api/users/${user}/summaries`);
             summary = await summaryRaw.json();
 
-        } else if (interaction.options.getSubcommand() === 'discord') {
-            const user = interaction.options.getUser('user');
-
-            let response = await fetch(`https://ch.tetr.io/api/users/search/discord:${user.id}`);
-            stats = await response.json();
-
-            if (stats.data === null) {
-                return await interaction.reply({
-                    content: 'No such user found on TETR.IO! Either the account no longer exists, or this person has not linked their Discord with TETR.IO.',
-                    ephemeral: true
-                });
-            }
-
-            if (!stats.success) {
-                return await interaction.reply({
-                    content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
-                    ephemeral: true
-                });
-            }
-
-            const tetrioID = stats.data.user._id
-
-            response = await fetch(`https://ch.tetr.io/api/users/${tetrioID}`);
-            const summaryRaw = await fetch(`https://ch.tetr.io/api/users/${tetrioID}/summaries`);
-
-            stats = await response.json();
-            summary = await summaryRaw.json();
         }
+
 
         const statData = stats.data;
         const summaryData = summary.data;
