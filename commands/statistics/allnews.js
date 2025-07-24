@@ -1,6 +1,9 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 import("node-fetch");
 
+const { convertToTimeFormat, getEmojiOfRank, reformatTimestamp, capitalizeFirstLetter } = require('../../helpers/functions');
+
+
 //number of things on page (change if you wnat i dont care)
 const itemsPerPage = 15;
 const pageCount = 4;
@@ -118,60 +121,3 @@ module.exports = {
         };
     }
 };
-
-function capitalizeFirstLetter(string) {
-    return string.charAt(0).toUpperCase() + string.slice(1);
-}
-
-
-function reformatTimestamp(isoString) {
-    // Create a Date object from the ISO string
-    const date = new Date(isoString);
-
-    // Return the Unix timestamp by dividing the milliseconds by 1000
-    return `<t:${Math.floor(date.getTime() / 1000)}:R>`;
-}
-
-function convertToTimeFormat(inputSeconds) {
-    const totalSeconds = inputSeconds / 1000
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = (totalSeconds % 60).toFixed(3); // Keep milliseconds as part of seconds
-
-    // Format seconds to ensure two digits before decimal
-    const [intSeconds, fracSeconds] = seconds.split('.');
-    const formattedSeconds = intSeconds.padStart(2, '0') + '.' + (fracSeconds || '000').padEnd(3, '0');
-
-    return `${minutes}:${formattedSeconds}`;
-}
-
-function getEmojiOfRank(rank) {
-    if (!rank) {
-        return;
-    }
-
-    //emoji ids
-    const rankEmojis = {
-        "rank_xplus": "1277293685058310288",
-        "rank_x": "1277293677873463368",
-        "rank_u": "1277293667891286046",
-        "rank_ss": "1277293658403770388",
-        "rank_splus": "1277293647225819196",
-        "rank_s": "1277293636928933888",
-        "rank_sminus": "1277293624157278228",
-        "rank_aplus": "1277293615114358997",
-        "rank_a": "1277293607648231527",
-        "rank_aminus": "1277293600438227106",
-        "rank_bplus": "1277293592511250553",
-        "rank_b": "1277293576895856751",
-        "rank_bminus": "1277293566284267581",
-        "rank_cplus": "1277293553147449505",
-        "rank_c": "1277293540547756115",
-        "rank_cminus": "1277293530095685745",
-        "rank_dplus": "1277293513616265216",
-        "rank_d": "1277293312696516690",
-        "rank_z": "1277382169538461746",
-        "rank_top": "1278185429656670269"
-    }
-    let formattedRank = 'rank_' + rank.toLowerCase().replace("+", "plus").replace("-", "minus");
-    return `<:${formattedRank}:${rankEmojis[formattedRank]}>`
-}

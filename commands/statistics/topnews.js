@@ -1,6 +1,9 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 import("node-fetch");
 
+const { reformatTimestamp, capitalizeFirstLetter } = require('../../helpers/functions');
+
+
 const itemsPerPage = 15;
 const pageCount = 4;
 
@@ -116,21 +119,4 @@ module.exports = {
         };
     }
 };
-
-function capitalizeFirstLetter(string) {
-    return string.charAt(0).toUpperCase() + string.slice(1);
-}
-
-
-function reformatTimestamp(isoString) {
-    if (!isoString) {
-        return "Before account creation was tracked"
-    }
-
-    // Create a Date object from the ISO string
-    const date = new Date(isoString);
-
-    // Return the Unix timestamp by dividing the milliseconds by 1000
-    return `<t:${Math.floor(date.getTime() / 1000)}:R>`;
-}
 

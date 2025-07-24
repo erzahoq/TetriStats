@@ -1,6 +1,8 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
 import("node-fetch");
 
+const { formatNumber, escapeUnderscores, convertToTimeFormat, reformatTimestamp } = require('../../helpers/functions');
+
 const maxItems = 5;
 
 module.exports = {
@@ -237,15 +239,9 @@ function formatRecord(record) {
 
     // Add timestamp and replay link
     formatted += `
-  - **Date:** [<t:${reformatTimestamp(record.ts)}:d> <t:${reformatTimestamp(record.ts)}:t>](https://tetr.io/#R:${record.replayid})`;
+  - [${reformatTimestamp(record.ts)}](https://tetr.io/#R:${record.replayid})`;
 
     return formatted;
-}
-
-
-function formatNumber(num) {
-    const numStr = num.toString();
-    return numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
 function getModEmoji(emoji) {
@@ -272,42 +268,3 @@ function getModEmoji(emoji) {
     return `<:mod_${emoji}:${mapping[emoji]}>`;
 }
 
-function reformatTimestamp(isoString) {
-    if (!isoString) {
-        return "Before account creation was tracked"
-    }
-
-    // Create a Date object from the ISO string
-    const date = new Date(isoString);
-
-    // Return the Unix timestamp by dividing the milliseconds by 1000
-    return `${Math.floor(date.getTime() / 1000)}`;
-}
-
-function convertToTimeFormat(inputSeconds) {
-    const totalSeconds = inputSeconds / 1000
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = (totalSeconds % 60).toFixed(3); // keep milliseconds as part of seconds
-    
-    // format seconds to ensure two digits before decimal
-    const [intSeconds, fracSeconds] = seconds.split('.');
-    const formattedSeconds = intSeconds.padStart(2, '0') + '.' + (fracSeconds || '000').padEnd(3, '0');
-
-    return `${minutes}:${formattedSeconds}`;
-}
-
-function escapeUnderscores(inputString) {
-    // replace _ with \_ :3
-    return inputString.replace(/_/g, '\\_');
-}
-
-function escapeUnderscores(input) {
-    const underscoreCount = (input.match(/_/g) || []).length;
-    
-    // Only escape if the count is a multiple of 2
-    if (underscoreCount % 2 === 0 && underscoreCount > 0) {
-        return input.replace(/_/g, '\\_');
-    }
-    
-    return input;
-}

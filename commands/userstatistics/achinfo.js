@@ -1,6 +1,9 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
 import('node-fetch'); // Ensure 'node-fetch' is imported properly
 
+const { formatNumber, escapeUnderscores, getEmojiOfAch, reformatTimestamp } = require('../../helpers/functions');
+
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('achievement-info')
@@ -184,42 +187,6 @@ module.exports = {
     }
 };
 
-function getEmojiOfAch(name) {
-    //mapping of emoji names to their IDs
-    const achEmojis = {
-        "ach_issued": "1277286439205339146",
-        "ach_bronze": "1277286431949328455",
-        "ach_silver": "1277286422935764992",
-        "ach_gold": "1277286414664339508",
-        "ach_platinum": "1277286402773483603",
-        "ach_diamond": "1277286389146321017",
-        "ach_t5": "1277286374600478785",
-        "ach_t100": "1277286366719381650",
-        "ach_t50": "1277286359777935432",
-        "ach_t25": "1277286349208293466",
-        "ach_t10": "1277286339527577730",
-        "ach_t3": "1277286318824620042"
-    }
-    return `<:ach_${name}:${achEmojis["ach_" + name]}>`
-}
-
-function formatNumber(num) {
-    const numStr = num.toString();
-    return numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-}
-
-function escapeUnderscores(input) {
-    const underscoreCount = (input.match(/_/g) || []).length;
-    
-    // Only escape if the count is a multiple of 2
-    if (underscoreCount % 2 === 0 && underscoreCount > 0) {
-        return input.replace(/_/g, '\\_');
-    }
-    
-    return input;
-}
-
-
 function sortByAchievementRank(items) {
     // Create a mapping for sorting priority, lower values mean higher priority
     const sortOrder = {
@@ -307,16 +274,4 @@ function formatAchievementListText(achlist) {
     });
 
     return allText;
-}
-
-function reformatTimestamp(isoString) {
-    if (!isoString) {
-        return "Before account creation was tracked"
-    }
-
-    // Create a Date object from the ISO string
-    const date = new Date(isoString);
-
-    // Return the Unix timestamp by dividing the milliseconds by 1000
-    return `<t:${Math.floor(date.getTime() / 1000)}:R>`;
 }

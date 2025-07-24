@@ -1,6 +1,8 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { EmbedBuilder, InteractionContextType, ApplicationIntegrationType, Embed } = require('discord.js');
 
+const { formatNumber, countryCodeToEmoji, getEmojiOfRank } = require('../../helpers/functions');
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('league')
@@ -183,63 +185,4 @@ function generateProgressBar(barType, progress, length = 14) {
 
     // Return the complete progress bar with symbols
     return `${startSymbol}${bar}${endSymbol}`;
-}
-
-function countryCodeToEmoji(countryCode) {
-    if (countryCode === 'XM') return ("<:flag_xm:1310891739078328374>");
-    if (!countryCode) return ("❔"); //if a country isn't set i guess
-    const codePoints = countryCode
-        .toUpperCase() // Make sure the code is uppercase
-        .split('')     // Split the letters
-        .map(char => 127397 + char.charCodeAt()); // Convert to regional indicator symbol
-
-    return String.fromCodePoint(...codePoints);
-}
-
-function getEmojiOfRank(rank) {
-    if (!rank) {
-        return "N/A";
-    }
-
-    const rankEmojis = {
-        "rank_xplus": "1277293685058310288",
-        "rank_x": "1277293677873463368",
-        "rank_u": "1277293667891286046",
-        "rank_ss": "1277293658403770388",
-        "rank_splus": "1277293647225819196",
-        "rank_s": "1277293636928933888",
-        "rank_sminus": "1277293624157278228",
-        "rank_aplus": "1277293615114358997",
-        "rank_a": "1277293607648231527",
-        "rank_aminus": "1277293600438227106",
-        "rank_bplus": "1277293592511250553",
-        "rank_b": "1277293576895856751",
-        "rank_bminus": "1277293566284267581",
-        "rank_cplus": "1277293553147449505",
-        "rank_c": "1277293540547756115",
-        "rank_cminus": "1277293530095685745",
-        "rank_dplus": "1277293513616265216",
-        "rank_d": "1277293312696516690",
-        "rank_z": "1277382169538461746",
-        "rank_top": "1278185429656670269"
-    }
-    let formattedRank = 'rank_' + rank.toLowerCase().replace("+", "plus").replace("-", "minus");
-    return `<:${formattedRank}:${rankEmojis[formattedRank]}>`
-}
-
-function formatNumber(num) {
-    const numStr = num.toString();
-    return numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-}
-
-// Convert country code to flag emoji
-function countryCodeToEmoji(countryCode) {
-    if (countryCode === 'XM') return ("<:flag_xm:1310891739078328374>");
-    if (!countryCode) return ("❔"); //if a country isn't set i guess
-    const codePoints = countryCode
-        .toUpperCase() // Make sure the code is uppercase
-        .split('')     // Split the letters
-        .map(char => 127397 + char.charCodeAt()); // Convert to regional indicator symbol
-
-    return String.fromCodePoint(...codePoints);
 }
