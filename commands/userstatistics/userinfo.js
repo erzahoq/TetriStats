@@ -94,7 +94,8 @@ This user is a **BOT**, owned by ${statData.botmaster.toLowerCase()}. Their reco
   - Level ${formatNumber(Math.floor(calculateLevel(statData.xp)))} (${formatNumber(Math.floor(statData.xp))} XP)
   - ${country}
   - Has ${statData.friend_count} friends
-  - ${statData.supporter ? `Has supporter${starConvert(statData.supporter_tier)}${statData.bio ? `\n> -  ${statData.bio}` : ""}` : ""}${formatConnections(statData.connections)}
+${statData.supporter ? ` - Has supporter${starConvert(statData.supporter_tier)}${statData.bio ? `\n> -  ${statData.bio}` : ""}` : ""}${formatConnections(statData.connections)}
+${formatOldUsernames(statData.oldusernames)}
   `)
                 .setTimestamp(),
 
@@ -444,11 +445,9 @@ function formatZenithExpert(statistics, country) {
 - <:quickplayexpert:1277351744413896724> **${formatNumber(Math.round(zStatistics.record.results.stats.zenith.altitude * 100) / 100)}m in Quick Play EXPERT**
   - Ranked #${formatNumber(zStatistics.rank)} ${formatCountry(zStatistics.rank_local, country)}
   - [Submitted ${reformatTimestamp(zStatistics.record.ts)}](https://tetr.io/#R:${zStatistics.record.replayid})
-  - ${Math.round(zStatistics.record.results.aggregatestats.pps * 100) / 100} PPS, ${Math.round(zStatistics.record.results.aggregatestats.apm * 100) / 100} APM
-  - Floor ${zStatistics.record.results.stats.zenith.floor}
-  - ${zStatistics.record.results.stats.kills} KOs
-  - Reached ${zStatistics.record.results.stats.topbtb} B2B`
-        if (statistics['zenithex'].best.record) {
+  - ${Math.round(zStatistics.record.results.aggregatestats.pps * 100) / 100} PPS | ${Math.round(zStatistics.record.results.aggregatestats.apm * 100) / 100} APM
+  - Floor ${zStatistics.record.results.stats.zenith.floor} | ${zStatistics.record.results.stats.kills} KOs | Reached ${zStatistics.record.results.stats.topbtb} B2B`
+        if (statistics['zenith'].best.record) {
             zenithText += `
   - All-time best is ${formatNumber(Math.round(zStatistics.best.record.results.stats.zenith.altitude * 100) / 100)}m (#${formatNumber(zStatistics.best.rank)})`
         }
@@ -537,3 +536,15 @@ function formatCountry(localRank, country) {
 
 //i nuked massive comment
 //im sure its completely fine :3
+
+function formatOldUsernames(usernameArray) {
+    if (usernameArray.length === 0) return "";
+
+    let usernames = `- Previous usernames:`;
+
+    usernameArray.forEach(name => {
+        usernames = usernames + `\n  - ${name.username}`;
+    });
+
+    return usernames;
+}
