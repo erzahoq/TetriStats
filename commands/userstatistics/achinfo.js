@@ -2,7 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, Butt
 import('node-fetch'); // Ensure 'node-fetch' is imported properly
 
 const { formatNumber, escapeUnderscores, getEmojiOfAch, reformatTimestamp } = require('../../helpers/functions');
-
+const { getUser } = require('../../helpers/getuser')
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -18,79 +18,25 @@ module.exports = {
         ),
 
     async execute(interaction) {
-        // ok this one is kinda a mess so good luck
+        const user = await getUser(interaction.options.getString('user').toLowerCase());
 
-        let achs, username, stats, tetrioID;
-
-        let user = interaction.options.getString('user').toLowerCase();    
-        let discordRegex = new RegExp("[0-9]{18,}"); // regex to check if there are 18 or more numbers in the name, meaning its probably a discord username
-        let isDiscordUser = false;
-
-        if (discordRegex.test(user)) { // check if it matches
-            isDiscordUser = true;
-        }
-
-        // Fetch the account with either discord or tetrio
-        if (isDiscordUser) {
-            let userID = interaction.options.getString('user');
-                const discordMatch = userID.match(/<@(\d+)>/);
-            if (discordMatch) {
-                userID = discordMatch[1]
-            }
-
-            let response = await fetch(`https://ch.tetr.io/api/users/search/discord:id:${userID}`);
-            stats = await response.json();
-
-
-            if (stats.data.users[0] === undefined) {
-                return await interaction.reply({
+        if (user === "no such user") {
+            return await interaction.reply({
                     content: 'No such user found on TETR.IO! Either the account no longer exists, or this person has not linked their Discord with TETR.IO.',
                     ephemeral: true
-                });
-            }
-
-            username = stats.data.users[0].username;
-
-            if (!stats.success) {
-                return await interaction.reply({
+            });
+        } else if (user === "server error") {
+            return await interaction.reply({
                     content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
                     ephemeral: true
-                });
-            }
+            });
+        }
 
-            tetrioID = stats.data.users[0]._id
-            stats = stats.data
-            response = await fetch(`https://ch.tetr.io/api/users/${tetrioID}/summaries/achievements`);
-            achs = await response.json();
-        } else { //tetrio user
-            const user = interaction.options.getString('user').toLowerCase();
+        const username = user.username;
 
-            let responseStats = await fetch(`https://ch.tetr.io/api/users/${user}`);
-            stats = await responseStats.json();
-            username = user;
-            tetrioID = stats.data._id
-            
+        const response = await fetch(`https://ch.tetr.io/api/users/${user._id}/summaries/achievements`);
+        let achs = await response.json();
 
-            if (!stats.success) {
-                if (stats.error.msg === "No such user! | Either you mistyped something, or the account no longer exists.") {
-                    return await interaction.reply({
-                        content: 'No such user! Either you mistyped something, or this user no longer exists.',
-                        ephemeral: true
-                    });
-                } else {
-                    return await interaction.reply({
-                        content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
-                        ephemeral: true
-                    });
-                }
-            }
-
-            const response = await fetch(`https://ch.tetr.io/api/users/${user}/summaries/achievements`);
-            achs = await response.json();
-
-            stats = stats.data;
-
-        } 
         achs = achs.data;
 
         // create a bunch of vars
@@ -144,7 +90,7 @@ module.exports = {
             // create the embed and respective button
             textPages.push(new EmbedBuilder()
                 .setColor("#6dc971")
-                .setThumbnail(`https://tetr.io/user-content/avatars/${tetrioID}.jpg`)
+                .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
                 .setDescription(`### __[${escapeUnderscores(username.toUpperCase())}](https://ch.tetr.io/u/${username}) -> Achievements -> ${catMap[trimmedCat]}__\n` + text)
             )
 
@@ -264,7 +210,7 @@ function formatAchievementListText(achlist) {
         //duo achievement
         if (ach.x.ally) {
             let allyUsername = ach.x.ally.username;
-            achText += ` (With [${allyUsername.toUpperCase()}](https://ch.tetr.io/u/${allyUsername}))`;
+            achText += ` (With [${escapeUnderscores(allyUsername).toUpperCase()}](https://ch.tetr.io/u/${allyUsername}))`;
         }
 
         // in case it's undefined, define as ""

@@ -2,6 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, Butt
 import('node-fetch'); // Ensure 'node-fetch' is imported properly
 
 const { formatNumber, escapeUnderscores, countryCodeToEmoji, convertToTimeFormat, playtimeConvert, getEmojiOfAch, getEmojiOfRank, reformatTimestamp, calculateLevel } = require('../../helpers/functions');
+const { getUser } = require('../../helpers/getuser')
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -17,76 +18,27 @@ module.exports = {
         ),
 
     async execute(interaction) {
-        let stats, summary;
+        const user = await getUser(interaction.options.getString('user').toLowerCase()); // calls API only once
 
-        let user = interaction.options.getString('user').toLowerCase();    
-        let discordRegex = new RegExp("[0-9]{18,}"); // regex to check if there are 18 or more numbers in the name, meaning its probably a discord username
-        let isDiscordUser = false;
-
-        if (discordRegex.test(user)) { // check if it matches
-            isDiscordUser = true;
-        }
-
-        
-
-        // Fetch the account with either discord or tetrio
-        if (isDiscordUser) {
-            let userID = interaction.options.getString('user');
-            const discordMatch = userID.match(/<@(\d+)>/);
-            if (discordMatch) {
-                userID = discordMatch[1]
-            }
-
-            let response = await fetch(`https://ch.tetr.io/api/users/search/discord:id:${userID}`);
-            stats = await response.json();
-
-            if (stats.data.users[0] === undefined) {
-                return await interaction.reply({
+        if (user === "no such user") {
+            return await interaction.reply({
                     content: 'No such user found on TETR.IO! Either the account no longer exists, or this person has not linked their Discord with TETR.IO.',
                     ephemeral: true
-                });
-            }
-
-            if (!stats.success) {
-                return await interaction.reply({
+            });
+        } else if (user === "server error") {
+            return await interaction.reply({
                     content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
                     ephemeral: true
-                });
-            }
-
-            const tetrioID = stats.data.users[0]._id;
-
-            response = await fetch(`https://ch.tetr.io/api/users/${tetrioID}`);
-            const summaryRaw = await fetch(`https://ch.tetr.io/api/users/${tetrioID}/summaries`);
-
-            stats = await response.json();
-            summary = await summaryRaw.json();
-        } else {
-            const user = interaction.options.getString('user').toLowerCase();
-
-            const response = await fetch(`https://ch.tetr.io/api/users/${user}`);
-            stats = await response.json();
-
-            if (!stats.success) {
-                if (stats.error.msg === "No such user! | Either you mistyped something, or the account no longer exists.") {
-                    return await interaction.reply({
-                        content: 'No such user! Either you mistyped something, or this user no longer exists.',
-                        ephemeral: true
-                    });
-                } else {
-                    return await interaction.reply({
-                        content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
-                        ephemeral: true
-                    });
-                }
-            }
-
-            const summaryRaw = await fetch(`https://ch.tetr.io/api/users/${user}/summaries`);
-            summary = await summaryRaw.json();
-
+            });
         }
 
+        // fetch from API using the ID
+        const response = await fetch(`https://ch.tetr.io/api/users/${user._id}`);
+        const summaryRaw = await fetch(`https://ch.tetr.io/api/users/${user._id}/summaries`);
 
+        const stats = await response.json();
+        const summary = await summaryRaw.json();
+   
         const statData = stats.data;
         const summaryData = summary.data;
         const badgeArray = statData.badges.map(badge => badge.id); // ??? some magic badge thing erz pls explain
@@ -97,7 +49,7 @@ module.exports = {
                 .setThumbnail("https://tetr.io/res/avatar.png")
                 .setDescription(`
 # ANONYMOUS
-${statData.username.toUpperCase()} is **anonymous**, which means they have no statistics, and cannot save replays. There's nothing that can be shown.`) // that's not true but TETR.IO doesn't show so we probably shouldn't either
+${escapeUnderscores(user.username).toUpperCase()} is **anonymous**, which means they have no statistics, and cannot save replays. There's nothing that can be shown.`) // that's not true but TETR.IO doesn't show so we probably shouldn't either
         
             return await interaction.reply({
                 embeds: [embed]
@@ -112,7 +64,7 @@ ${statData.username.toUpperCase()} is **anonymous**, which means they have no st
 # BOT
 This user is a **BOT**, owned by ${statData.botmaster.toLowerCase()}. Their records are not available, but some general information can be shown.
 
-### __[${escapeUnderscores(statData.username).toUpperCase()}](https://ch.tetr.io/u/${statData.username}) -> Quick Look__
+### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${user.username}) -> Quick Look__
 
 - About:
   - Account created ${reformatTimestamp(statData.ts)}
@@ -135,7 +87,7 @@ This user is a **BOT**, owned by ${statData.botmaster.toLowerCase()}. Their reco
                 .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
                 .setFooter({ text: `User ID: ${statData._id} | Role: ${statData.role}` })
                 .setDescription(`
-### __[${escapeUnderscores(statData.username).toUpperCase()}](https://ch.tetr.io/u/${statData.username}) -> Quick Look__
+### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${user.username}) -> Quick Look__
 
 - About:
   - Account created ${reformatTimestamp(statData.ts)}
@@ -151,7 +103,7 @@ This user is a **BOT**, owned by ${statData.botmaster.toLowerCase()}. Their reco
                 .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
                 .setFooter({ text: `User ID: ${statData._id} | Role: ${statData.role}` })
                 .setDescription(`
-### __[${escapeUnderscores(statData.username).toUpperCase()}](https://ch.tetr.io/u/${statData.username}) -> Quick Look -> General__
+### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${user.username}) -> Quick Look -> General__
 
 - Has ${countAchievements(statData.ar_counts)} achievements ${formatAchievementCounts(statData.ar_counts)} ${statData.ar > 0 ? `\n  - Totalling ${statData.ar} Achievement Rating` : ""} ${formatBadges(badgeArray)} ${formatDisplayedAchs(statData.achievements, summaryData.achievements)}
 
@@ -164,7 +116,7 @@ ${statData.gamesplayed >= 0 ? `- Played ${statData.gamesplayed} games${statData.
                 .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
                 .setFooter({ text: `User ID: ${statData._id} | Role: ${statData.role}` })
                 .setDescription(`
-### __[${escapeUnderscores(statData.username.toUpperCase())}](https://ch.tetr.io/u/${statData.username}) -> Quick Look -> Gameplay__
+### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${user.username}) -> Quick Look -> Gameplay__
 ${formatLeaguePreview(summaryData, country)} ${formatZenith(summaryData, country)} ${formatZenithExpert(summaryData, country)} ${format40Lines(summaryData, country)} ${formatBlitz(summaryData, country)} ${formatZen(summaryData)}
 `)
 //                 .setDescription(`

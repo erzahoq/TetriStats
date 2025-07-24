@@ -2,6 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, Butt
 import("node-fetch");
 
 const { formatNumber, escapeUnderscores, convertToTimeFormat, reformatTimestamp } = require('../../helpers/functions');
+const { getUser } = require('../../helpers/getuser')
 
 const maxItems = 5;
 
@@ -21,67 +22,23 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply() // defer because this one can take a while (it's 10 API calls :gladeline:)
 
-        let records, tetrioID;
+        let records;
 
-        let user = interaction.options.getString('user').toLowerCase();    
-        let discordRegex = new RegExp("[0-9]{18,}"); // regex to check if there are 18 or more numbers in the name, meaning its probably a discord username
-        let isDiscordUser = false;
+        const user = await getUser(interaction.options.getString('user').toLowerCase()); // calls API only once
 
-        if (discordRegex.test(user)) { // check if it matches
-            isDiscordUser = true;
-        }
-
-        // Fetch the account with either discord or tetrio
-        if (isDiscordUser) {
-            let userID = interaction.options.getString('user');
-            const discordMatch = userID.match(/<@(\d+)>/);
-            if (discordMatch) {
-                userID = discordMatch[1]
-            }
-
-            let response = await fetch(`https://ch.tetr.io/api/users/search/discord:id:${userID}`);
-            stats = await response.json();
-
-            if (stats.data.users[0] === undefined) {
-                return await interaction.editReply({
+        if (user === "no such user") {
+            return await interaction.reply({
                     content: 'No such user found on TETR.IO! Either the account no longer exists, or this person has not linked their Discord with TETR.IO.',
                     ephemeral: true
-                });
-            }
-
-            response = await fetch(`https://ch.tetr.io/api/users/${stats.data.users[0].username}`);
-            stats = await response.json(); //oopsies :3
-
-            if (!stats.success) {
-                return await interaction.editReply({
+            });
+        } else if (user === "server error") {
+            return await interaction.reply({
                     content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
                     ephemeral: true
-                });
-            }
-
-            tetrioID = stats.data._id
-            records = await fetchAll(tetrioID);
-        } else {
-            const response = await fetch(`https://ch.tetr.io/api/users/${user}`);
-            stats = await response.json();
-
-            if (!stats.success) {
-                if (stats.error.msg === "No such user! | Either you mistyped something, or the account no longer exists.") {
-                    return await interaction.editReply({
-                        content: 'No such user! Either you mistyped something, or this user no longer exists.',
-                        ephemeral: true
-                    });
-                } else {
-                    return await interaction.editReply({
-                        content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
-                        ephemeral: true
-                    });
-                }
-            }
-
-            records = await fetchAll(user);
-            tetrioID = stats.data._id
+            });
         }
+
+        records = await fetchAll(user._id)
 
         // mappings and vars
         const gametypeMapping = {
@@ -100,9 +57,9 @@ module.exports = {
             // create embed and button
             const embed = new EmbedBuilder()
                 .setColor('#57b1ff')
-                .setThumbnail(`https://tetr.io/user-content/avatars/${tetrioID}.jpg`)
-                .setTitle(`${escapeUnderscores(stats.data.username.toUpperCase())}'s ${gametypeMapping[category]} Records:`)
-                .setURL(`https://ch.tetr.io/u/${stats.data.username}`)
+                .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
+                .setTitle(`${escapeUnderscores(user.username.toUpperCase())}'s ${gametypeMapping[category]} Records:`)
+                .setURL(`https://ch.tetr.io/u/${user.username}`)
             const button = new ButtonBuilder()
                 .setCustomId(`recordspage_${category}_${buttons.length}`)
                 .setDisabled(buttons.length === 0)

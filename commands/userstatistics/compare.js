@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
 
 const { formatNumber, escapeUnderscores, countryCodeToEmoji, playtimeConvert, getEmojiOfRank, calculateLevel } = require('../../helpers/functions');
+const { getUser } = require('../../helpers/getuser')
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -23,147 +24,34 @@ module.exports = {
 	async execute(interaction) {
         await interaction.deferReply() // but here's the thinker
 
-        const user1 = interaction.options.getString('user1').toLowerCase();
-        const user2 = interaction.options.getString('user2').toLowerCase();
+        const user1 = await getUser(interaction.options.getString('user1').toLowerCase())
+        const user2 = await getUser(interaction.options.getString('user2').toLowerCase())
 
-        let userStats1;
-        let userStats2;
-
-        let response = null;
-
-        let summary = null;
-
-        const discordRegex = new RegExp('<@[0-9]+>');
-
-        //calls api 8 times in the worst case sceneario
-        //thats probably bad
-        
-        //user one
-        if (discordRegex.test(user1)) {
-            mention = user1.slice(2, -1);
-
-            if (mention.startsWith('!')) {
-                mention = mention.slice(1);
-            }
-
-            const user = interaction.client.users.cache.get(mention);
-            if (!user) {
-                return await interaction.editReply({
-                    content: 'User 1 could not be found on Discord!',
+        if (user1 === "no such user") {
+            return await interaction.reply({
+                    content: 'User 1 not found on TETR.IO! Either the account no longer exists, or this person has not linked their Discord with TETR.IO.',
                     ephemeral: true
-                });
-            }
-
-            response = await fetch(`https://ch.tetr.io/api/users/search/discord:${user.id}`);
-            let stats = await response.json();
-
-            if (!stats.data) {
-                return await interaction.editReply({
-                    content: 'User 1 has not linked a TETR.IO account!',
+            });
+        } else if (user2 === "no such user") {
+            return await interaction.reply({
+                    content: 'User 2 not found on TETR.IO! Either the account no longer exists, or this person has not linked their Discord with TETR.IO.',
                     ephemeral: true
-                });
-            }
-            
-            response = await fetch(`https://ch.tetr.io/api/users/${stats.data.user._id}`);
-
-            userStats1 = await response.json();
-
-            if (!userStats1.success) { // not sure if this one can even happen but um, just in case :SILENCE:
-                if (userStats1.error.msg === "No such user! | Either you mistyped something, or the account no longer exists.") {
-                    return await interaction.editReply({
-                        content: 'Could not find user 1! Either you mistyped something, or this user no longer exists.',
-                        ephemeral: true
-                    });
-                } else {
-                    return await interaction.editReply({
-                        content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
-                        ephemeral: true
-                    });
-                }
-            }
-
-        } else {
-            response = await fetch(`https://ch.tetr.io/api/users/${user1}`);
-
-            userStats1 = await response.json();
-
-            if (!userStats1.success) {
-                if (userStats1.error.msg === "No such user! | Either you mistyped something, or the account no longer exists.") {
-                    return await interaction.editReply({
-                        content: 'Could not find user 1! Either you mistyped something, or this user no longer exists.',
-                        ephemeral: true
-                    });
-                } else {
-                    return await interaction.editReply({
-                        content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
-                        ephemeral: true
-                    });
-                }
-            }
+            });
+        } else if (user1 === "server error" || user2 === "server error") {
+            return await interaction.reply({
+                    content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
+                    ephemeral: true
+            });
         }
 
-        //user two
-        if (discordRegex.test(user2)) {
-            mention = user2.slice(2, -1);
+        let response1 = await fetch(`https://ch.tetr.io/api/users/${user1._id}`);
+        let response2 = await fetch(`https://ch.tetr.io/api/users/${user2._id}`);
 
-            if (mention.startsWith('!')) {
-                mention = mention.slice(1);
-            }
-
-            const user = interaction.client.users.cache.get(mention);
-            if (!user) {
-                return await interaction.editReply({
-                    content: 'User 2 could not be found on Discord!',
-                });
-            }
-
-            response = await fetch(`https://ch.tetr.io/api/users/search/discord:${user.id}`);
-            let stats = await response.json();
-
-            if (!stats.data) {
-                return await interaction.editReply({
-                    content: 'User 2 has not linked a TETR.IO account!',
-                });
-            }
-            
-            response = await fetch(`https://ch.tetr.io/api/users/${stats.data.user._id}`);
-
-            userStats2 = await response.json();
-
-            if (!userStats2.success) { // not sure if this one can even happen but um, just in case :SILENCE:
-                if (userStats2.error.msg === "No such user! | Either you mistyped something, or the account no longer exists.") {
-                    return await interaction.editReply({
-                        content: 'Could not find user 2! Either you mistyped something, or this user no longer exists.',
-                    });
-                } else {
-                    return await interaction.editReply({
-                        content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
-                    });
-                }
-            }
-
-        } else {
-            response = await fetch(`https://ch.tetr.io/api/users/${user2}`);
-
-            userStats2 = await response.json();
-
-            if (!userStats2.success) {
-                if (userStats2.error.msg === "No such user! | Either you mistyped something, or the account no longer exists.") {
-                    return await interaction.editReply({
-                        content: 'Could not find user 2! Either you mistyped something, or this user no longer exists.',
-                    });
-                } else {
-                    return await interaction.editReply({
-                        content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
-                    });
-                }
-            }
-        }
+        let userStats1 = await response1.json();
+        let userStats2 = await response2.json();
 
         userStats1 = userStats1.data;
         userStats2 = userStats2.data;
-
-        console.log(userStats1)
 
         let userSummary1 = await fetch(`https://ch.tetr.io/api/users/${userStats1._id}/summaries`);
         let userSummary2 = await fetch(`https://ch.tetr.io/api/users/${userStats2._id}/summaries`);
