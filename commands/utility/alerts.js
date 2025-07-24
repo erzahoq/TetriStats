@@ -1,9 +1,10 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, InteractionContextType } = require('discord.js');
 const { database } = require('./../../database.js')
 
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('alerts')
+        .setContexts(InteractionContextType.BotDM, InteractionContextType.Guild, InteractionContextType.PrivateChannel)
 		.setDescription('Enables or disables alerts from TetriStats.')
         .addBooleanOption(option =>
             option.setName("enabled")

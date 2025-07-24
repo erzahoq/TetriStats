@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, InteractionContextType } = require('discord.js');
 import("node-fetch");
 
 const { formatNumber } = require('../../helpers/functions');
@@ -7,6 +7,7 @@ const { formatNumber } = require('../../helpers/functions');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('server-stats')
+        .setContexts(InteractionContextType.BotDM, InteractionContextType.Guild, InteractionContextType.PrivateChannel)
         .setDescription('Gets the general statistics of TETR.IO servers.'),
     async execute(interaction) {
         const response = await fetch('https://ch.tetr.io/api/general/stats');
