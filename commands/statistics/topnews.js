@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, InteractionContextType } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, InteractionContextType, MessageFlags } = require('discord.js');
 import("node-fetch");
 
 const { reformatTimestamp, capitalizeFirstLetter } = require('../../helpers/functions');
@@ -19,7 +19,7 @@ module.exports = {
         if (!stats.success) {
             return await interaction.reply({
                 content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
 

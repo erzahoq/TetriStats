@@ -1,7 +1,9 @@
 //ill work on this one day i swear
 
+//i really should do this huh
+
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, InteractionContextType, ApplicationIntegrationType, MessageFlags } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -15,12 +17,12 @@ module.exports = {
                 .setRequired(true)),
 
     async execute(interaction) {
-        return interaction.reply({content: 'This command is still under construction! Thanks for your patience.', ephemeral: true})
+        return interaction.reply({content: 'This command is still under construction! Thanks for your patience.', flags: MessageFlags.Ephemeral})
 
         const replayAttachment = interaction.options.getAttachment('replay');
 
         if (!replayAttachment.name.endsWith('.ttr')) {
-            return interaction.reply({ content: 'Please upload a valid .ttr replay file.', ephemeral: true });
+            return interaction.reply({ content: 'Please upload a valid .ttr replay file.', flags: MessageFlags.Ephemeral });
         }
 
         try {
@@ -69,7 +71,7 @@ APM: ${(replayData.replay.results.aggregatestats.apm).toFixed(2)} | PPS: ${(repl
                 ]
                 
             } else {
-                return interaction.reply({content: 'This type of replay file has not been accounted for yet, please contact the developers if you believe this is a mistake.', ephemeral: true})
+                return interaction.reply({content: 'This type of replay file has not been accounted for yet, please contact the developers if you believe this is a mistake.', flags: MessageFlags.Ephemeral})
             }
 
             // Initial row of buttons
@@ -109,7 +111,7 @@ APM: ${(replayData.replay.results.aggregatestats.apm).toFixed(2)} | PPS: ${(repl
             
         } catch (error) {
             console.error('Error analyzing replay:', error);
-            return interaction.reply({ content: 'An error occurred while analyzing the replay. Please ensure it is a valid .ttr file.', ephemeral: true });
+            return interaction.reply({ content: 'An error occurred while analyzing the replay. Please ensure it is a valid .ttr file.', flags: MessageFlags.Ephemeral });
         }
     }
 };

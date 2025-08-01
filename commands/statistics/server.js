@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, InteractionContextType } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, InteractionContextType, MessageFlags } = require('discord.js');
 import("node-fetch");
 
 const { formatNumber } = require('../../helpers/functions');
@@ -16,7 +16,7 @@ module.exports = {
         if (!stats.success) {
             return await interaction.reply({
                 content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
 

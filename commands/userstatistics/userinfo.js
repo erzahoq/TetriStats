@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, ComponentType, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
 import('node-fetch'); // Ensure 'node-fetch' is imported properly
 
 const { formatNumber, escapeUnderscores, countryCodeToEmoji, convertToTimeFormat, playtimeConvert, getEmojiOfAch, getEmojiOfRank, reformatTimestamp, calculateLevel } = require('../../helpers/functions');
@@ -23,12 +23,12 @@ module.exports = {
         if (user === "no such user") {
             return await interaction.reply({
                     content: 'No such user found on TETR.IO! Either the account no longer exists, or this person has not linked their Discord with TETR.IO.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
             });
         } else if (user === "server error") {
             return await interaction.reply({
                     content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
             });
         }
 

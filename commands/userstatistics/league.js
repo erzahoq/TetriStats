@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder, InteractionContextType, ApplicationIntegrationType, Embed } = require('discord.js');
+const { EmbedBuilder, InteractionContextType, ApplicationIntegrationType, MessageFlags } = require('discord.js');
 
 const { formatNumber, countryCodeToEmoji, getEmojiOfRank, escapeUnderscores } = require('../../helpers/functions');
 const { getUser } = require('../../helpers/getuser')
@@ -23,12 +23,12 @@ module.exports = {
         if (user === "no such user") {
             return await interaction.reply({
                     content: 'No such user found on TETR.IO! Either the account no longer exists, or this person has not linked their Discord with TETR.IO.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
             });
         } else if (user === "server error") {
             return await interaction.reply({
                     content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
             });
         }
 
@@ -40,7 +40,7 @@ module.exports = {
             const data = await response.json();
 
             if (!data.success || !data.data) {
-                return interaction.reply({ content: `Could not find league data for user **${user.username}**.`, ephemeral: true }); // this should like never happen because we checked for it earlier but like just in case
+                return interaction.reply({ content: `Could not find league data for user **${user.username}**.`, flags: MessageFlags.Ephemeral }); // this should like never happen because we checked for it earlier but like just in case
             }
 
             const leagueData = data.data;
@@ -131,7 +131,7 @@ module.exports = {
 
         } catch (error) {
             console.error(error);
-            interaction.reply({ content: 'An error occurred while fetching data. Please try again later.', ephemeral: true });
+            interaction.reply({ content: 'An error occurred while fetching data. Please try again later.', flags: MessageFlags.Ephemeral });
         }
     }
 };
