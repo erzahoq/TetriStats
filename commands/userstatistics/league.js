@@ -46,10 +46,34 @@ module.exports = {
             const leagueData = data.data;
 
             // Extract basic stats
-            let { apm, pps, vs, tr, glicko, rd, prev_rank, next_rank, rank, standing, standing_local, country, decaying, bestrank, percentile } = leagueData;
+            let { apm, pps, vs, tr, glicko, rd, prev_rank, next_rank, rank, standing, standing_local, country, decaying, bestrank, percentile, gxe } = leagueData;
             const gamesPlayed = leagueData.gamesplayed || 0;
             const gamesWon = leagueData.gameswon || 0;
             const winRate = gamesPlayed > 0 ? ((gamesWon / gamesPlayed) * 100).toFixed(2) : 'N/A';
+
+            const ratingColours = {
+                "z": "#7d7d7d",
+                "d": "#846b83",
+                "d+": "#8a5d8b",
+                "c-": "#755188",
+                "c": "#733e8f", 
+                "c+": "#562a89",
+                "b-": "#5550c5",
+                "b": "#4f65cb",
+                "b+": "#4e99c0",
+                "a-": "#45ca7f",
+                "a": "#6bcb55",
+                "a+": "#4fca18",
+                "s-": "#c8b82d",
+                "s": "#e8b215",
+                "s+": "#ffec0e",
+                "ss": "#feaf1b",
+                "u": "#ff2713",
+                "x": "#fd73fc",
+                "x+": "#f018d0"
+            }
+
+            let colour = ratingColours[rank]
 
         
             // Calculate extra stats
@@ -78,43 +102,56 @@ module.exports = {
             let description = `### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${user.username}/) -> Tetra League__\n`
             
             if (tr < 0) {
-                description += `\n- Currently unranked ${getEmojiOfRank('z')}\n  - ${gamesPlayed}/10 rating games played`
+                description += `\n- **Currently unranked ${getEmojiOfRank('z')}**\n  - ${gamesPlayed}/10 rating games played`
                 rankBar = `${generateProgressBar("Unranked", gamesPlayed / 10, 10)} ${getEmojiOfRank('z')}`;
+                // Show best rank if different from percentile_rank
+                if (bestrank && bestrank !== leagueData.percentile_rank) {
+                    description += `\n  - Has reached ${getEmojiOfRank(bestrank)}`
+                }
             } 
             else {
                 if (rd > 100) {
-                    description += `\n- Currently unranked ${getEmojiOfRank(rank)}\n  - Probably around ${getEmojiOfRank(leagueData.percentile_rank)}`
+                    description += `\n- **Currently unranked ${getEmojiOfRank(rank)}**\n  - Probably around ${getEmojiOfRank(leagueData.percentile_rank)} (Top ${(percentile*100).toFixed(1)}%)`
                     rankBar = false;
+                    // Show best rank if different from percentile_rank
+                    if (bestrank && bestrank !== leagueData.percentile_rank) {
+                        description += `\n  - Has reached ${getEmojiOfRank(bestrank)}`
+                    }
                 } else {
                     if (percentile < 0.005) {
-                        description += `\n- Currently ranked ${getEmojiOfRank(rank)}\n  - Ranked #${standing} worldwide\n  - Ranked #${standing_local} in ${countryCodeToEmoji(country)}`
+                        description += `\n- **Currently ranked ${getEmojiOfRank(rank)}**\n  - Ranked #${standing} worldwide`
+                        if (standing !== 1) {
+                            description += `\n - Ranked #${standing_local} locally`
+                        }
                     } else {
-                        description += `\n- Currently ranked ${getEmojiOfRank(rank)}\n  - Ranked #${standing} worldwide (Top ${(percentile*100).toFixed(1)}%)\n  - Ranked #${standing_local} locally`
+                        description += `\n- **Currently ranked ${getEmojiOfRank(rank)}**\n  - Ranked #${standing} worldwide (Top ${(percentile*100).toFixed(1)}%)\n  - Ranked #${standing_local} locally`
                     }
 
                     rankBar = `${getEmojiOfRank(prev_rank)} ${generateProgressBar("Ranked", (leagueData.prev_at - standing) / (leagueData.prev_at - leagueData.next_at), 15)} ${getEmojiOfRank(next_rank)}`;
 
-                }
-
-                if ((rank != bestrank && rd <= 100) || (leagueData.estRank != bestrank && rd > 100)) {
-                    description += `\n  - Has reached ${getEmojiOfRank(bestrank)}`
+                    // Show best rank if different from current rank
+                    if (bestrank && bestrank !== rank) {
+                        description += `\n  - Has reached ${getEmojiOfRank(bestrank)}`
+                    }
                 }
 
                 description += `\n  - Has ${formatNumber(tr.toFixed(1))} TR\n  - Has ${glicko.toFixed(2)} ± ${rd.toFixed(1)} Glicko`
-                
+
+                if (gxe) {
+                    description += `\n  - ${gxe.toFixed(1)}% chance to win against random player`
+                }
+
                 if (decaying) {
-                    description += `\n  - Hasn't played in a week; rating deviation is increasing`
+                    description += `\n  - Hasn't played in a week; __rating deviation is increasing__`
                 }
             }
 
-            description += `\n- Has played ${gamesPlayed} game${gamesPlayed === 1 ? '' : 's'}`
+            description += `\n- **Has played ${gamesPlayed} game${gamesPlayed === 1 ? '' : 's'}**`
 
             if (gamesPlayed > 0) {
                 description += `
   - Won ${gamesWon} of them (${winRate}%)
-  - ${apm.toFixed(2)} APM
-  - ${pps.toFixed(2)} PPS
-  - ${vs.toFixed(2)} VS score
+  - ${apm.toFixed(2)} APM | ${pps.toFixed(2)} PPS | ${vs.toFixed(2)} VS score
                 `
             }
             
@@ -123,8 +160,9 @@ module.exports = {
             }
 
             const embed = new EmbedBuilder()
+                .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
                 .setDescription(description)
-                .setColor('#ffd230')
+                .setColor(colour || '#ff8c57') 
 
             // Send the formatted embed
             await interaction.reply({ embeds: [embed] });
