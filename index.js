@@ -109,6 +109,7 @@ client.on(Events.InteractionCreate, async interaction => {
         let achPageRegex = /^achpage_[0-9]$/;
         let recordsPageRegex = /^recordspage_.*$/;
         let replayPageRegex = /^replaypage_[0-9]$/;
+        let leaguePageRegex = /^leaguepage_\d+$/;
 
         // Profile pages
         if (profilePageRegex.test(buttonId)) {
@@ -187,6 +188,27 @@ client.on(Events.InteractionCreate, async interaction => {
                 prefix: 'replaypage',
                 pageKey: 'pages',
                 labels: ['General', 'Stats', 'Tetra League', '4']
+            });
+        }
+
+        // League pages
+        else if (leaguePageRegex.test(buttonId)) {
+            // Dynamically generate labels: "Current", then "Season X" for each season
+            const pageData = interaction.client.pageData?.[interactionId];
+            if (!pageData) return;
+
+            const labels = ['Current'];
+            if (pageData.seasonNumbers) {
+                for (const season of pageData.seasonNumbers) {
+                    labels.push(`Season ${season}`);
+                }
+            }
+
+            await handlePageButtons({
+                interaction, buttonId, interactionId,
+                prefix: 'leaguepage',
+                pageKey: 'pages',
+                labels
             });
         }
     }

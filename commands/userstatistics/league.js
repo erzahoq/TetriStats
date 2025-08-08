@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder, InteractionContextType, ApplicationIntegrationType, MessageFlags } = require('discord.js');
+const { EmbedBuilder, InteractionContextType, ApplicationIntegrationType, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
 const { formatNumber, countryCodeToEmoji, getEmojiOfRank, escapeUnderscores } = require('../../helpers/functions');
 const { getUser } = require('../../helpers/getuser')
@@ -45,8 +45,11 @@ module.exports = {
 
             const leagueData = data.data;
 
-            // Extract basic stats
-            let { apm, pps, vs, tr, glicko, rd, prev_rank, next_rank, rank, standing, standing_local, country, decaying, bestrank, percentile, gxe } = leagueData;
+            // Extract basic stats from current league data
+            //
+            //
+            //
+            let { apm, pps, vs, tr, glicko, rd, prev_rank, next_rank, rank, standing, standing_local, decaying, bestrank, percentile, gxe, past } = leagueData;
             const gamesPlayed = leagueData.gamesplayed || 0;
             const gamesWon = leagueData.gameswon || 0;
             const winRate = gamesPlayed > 0 ? ((gamesWon / gamesPlayed) * 100).toFixed(2) : 'N/A';
@@ -72,8 +75,6 @@ module.exports = {
                 "x": "#fd73fc",
                 "x+": "#f018d0"
             }
-
-            let colour = ratingColours[rank]
 
         
             // Calculate extra stats
@@ -159,13 +160,117 @@ module.exports = {
                 description += `\n\n${rankBar}`
             }
 
-            const embed = new EmbedBuilder()
-                .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
-                .setDescription(description)
-                .setColor(colour || '#ff8c57') 
 
-            // Send the formatted embed
-            await interaction.reply({ embeds: [embed] });
+            //past data
+
+            // Check if past is empty
+            if (!past || Object.keys(past).length === 0) {
+                // Only send current league data, no buttons
+                const embed = new EmbedBuilder()
+                    .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
+                    .setDescription(description)
+                    .setColor(ratingColours[rank] || '#ff8c57');
+                await interaction.reply({
+                    embeds: [embed]
+                });
+            } else {
+                // Build pages: first is current, then each season
+                const pages = [
+                    new EmbedBuilder()
+                        .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
+                        .setDescription(description)
+                        .setColor(ratingColours[rank] || '#ff8c57')
+                ];
+
+                // Add a page for each season in order
+                const seasonNumbers = Object.keys(past).map(Number).sort((a, b) => a - b);
+                for (const season of seasonNumbers) {
+                    const seasonData = past[season];
+                    let pastDescription = `### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${seasonData.username}/) -> Tetra League -> Season ${season}__\n`
+                    if (seasonData.tr < 0) {
+                        pastDescription += `\n- **Unranked ${getEmojiOfRank('z')}**\n  - ${seasonData.gamesPlayed}/10 rating games played`
+                        if (seasonData.bestrank) {
+                            pastDescription += `\n  - Has reached ${getEmojiOfRank(seasonData.bestrank)}`
+                        }
+                    } 
+                    else {
+                        if (rd > 100) {
+                            pastDescription += `\n- **Unranked ${getEmojiOfRank(seasonData.rank)}**\n`
+                            // Show best rank if different from percentile_rank
+                            if (seasonData.bestrank) {
+                                pastDescription += `\n  - Has reached ${getEmojiOfRank(seasonData.bestrank)}`
+                            }
+                        } else {
+                            pastDescription += `\n- **Ranked ${getEmojiOfRank(seasonData.rank)}**`
+
+                            if (seasonData.placement) {
+                                pastDescription += `\n  - Rank #${seasonData.placement} worldwide`
+                            }
+
+                            // Show best rank if different from current rank
+                            if (seasonData.bestrank && seasonData.bestrank !== seasonData.rank) {
+                                pastDescription += `\n  - Has reached ${getEmojiOfRank(seasonData.bestrank)}`
+                            }
+                        }
+
+                        pastDescription += `\n  - Had ${formatNumber(seasonData.tr.toFixed(1))} TR\n  - Had ${seasonData.glicko.toFixed(2)} ± ${seasonData.rd.toFixed(1)} Glicko`
+
+                        if (seasonData.gxe) {
+                            pastDescription += `\n  - ${seasonData.gxe.toFixed(1)}% chance to win against random player`
+                        }
+
+                        pastDescription += `\n- **Played ${seasonData.gamesplayed} game${seasonData.gamesplayed === 1 ? '' : 's'}**`
+
+                        if (seasonData.gamesplayed > 0) {
+                            pastDescription += `
+  - Won ${seasonData.gameswon} of them (${(100*(seasonData.gameswon/seasonData.gamesplayed)).toFixed(2)}%)
+  - ${seasonData.apm.toFixed(2)} APM | ${seasonData.pps.toFixed(2)} PPS | ${seasonData.vs.toFixed(2)} VS score
+                `
+                        }
+                    }
+
+
+                    pages.push(
+                        new EmbedBuilder()
+                            .setColor(ratingColours[seasonData.rank] || '#ff8c57')
+                            .setDescription(pastDescription)
+                    );
+                }
+
+                // Create dynamic buttons: "Current", then "Season X" for each season
+                const buttons = [
+                    new ButtonBuilder()
+                        .setCustomId('leaguepage_0')
+                        .setLabel('Current')
+                        .setStyle(ButtonStyle.Primary)
+                        .setDisabled(true) // Default page
+                ];
+                for (let i = 0; i < seasonNumbers.length; i++) {
+                    buttons.push(
+                        new ButtonBuilder()
+                            .setCustomId(`leaguepage_${i + 1}`) // +1 because 0 is "Current"
+                            .setLabel(`Season ${seasonNumbers[i]}`)
+                            .setStyle(ButtonStyle.Primary)
+                    );
+                }
+
+                const row = new ActionRowBuilder().addComponents(buttons);
+
+                await interaction.reply({
+                    embeds: [pages[0]],
+                    components: [row]
+                });
+
+                // Store pages and button count for later use
+                interaction.client.pageData = {
+                    ...interaction.client.pageData,
+                    [interaction.id]: {
+                        pages,
+                        currentPage: 0,
+                        seasonNumbers // Save for reference if needed
+                    }
+                };
+            }
 
         } catch (error) {
             console.error(error);
