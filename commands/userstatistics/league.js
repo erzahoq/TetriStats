@@ -100,64 +100,56 @@ module.exports = {
                 prev_rank = "d"
             }
 
-            let description = `### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${user.username}/) -> Tetra League__\n`
-            
+            // For current data
+            let description = `### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${user.username}/) -> Tetra League__\n`;
+            description += `## ${tr < 0 ? `Currently unranked ${getEmojiOfRank('z')}` : `Currently ranked ${getEmojiOfRank(rank)}`}\n`;
+
             if (tr < 0) {
-                description += `\n- **Currently unranked ${getEmojiOfRank('z')}**\n  - ${gamesPlayed}/10 rating games played`
-                rankBar = `${generateProgressBar("Unranked", gamesPlayed / 10, 10)} ${getEmojiOfRank('z')}`;
-                // Show best rank if different from percentile_rank
-                if (bestrank && bestrank !== leagueData.percentile_rank) {
-                    description += `\n  - Has reached ${getEmojiOfRank(bestrank)}`
+                description += `- **Has played ${gamesPlayed}/10 rating games**\n`;
+                if (gamesPlayed > 0) {
+                    description += `  - Won ${gamesWon} of them (${winRate}%)\n  - ${apm.toFixed(2)} APM | ${pps.toFixed(2)} PPS | ${vs.toFixed(2)} VS score\n`;
                 }
-            } 
-            else {
+                rankBar = `${generateProgressBar("Unranked", gamesPlayed / 10, 10)} ${getEmojiOfRank('z')}`;
+                if (bestrank && bestrank !== leagueData.percentile_rank) {
+                    description += `  - Has reached ${getEmojiOfRank(bestrank)}\n`;
+                }
+            } else {
+                description += `- **Has ${formatNumber(tr.toFixed(1))} TR**\n`;
                 if (rd > 100) {
-                    description += `\n- **Currently unranked ${getEmojiOfRank(rank)}**\n  - Probably around ${getEmojiOfRank(leagueData.percentile_rank)} (Top ${(percentile*100).toFixed(1)}%)`
+                    description += `  - Probably around ${getEmojiOfRank(leagueData.percentile_rank)} (Top ${(percentile*100).toFixed(1)}%)\n`;
                     rankBar = false;
-                    // Show best rank if different from percentile_rank
                     if (bestrank && bestrank !== leagueData.percentile_rank) {
-                        description += `\n  - Has reached ${getEmojiOfRank(bestrank)}`
+                        description += `  - Has reached ${getEmojiOfRank(bestrank)}\n`;
                     }
                 } else {
                     if (percentile < 0.005) {
-                        description += `\n- **Currently ranked ${getEmojiOfRank(rank)}**\n  - Ranked #${standing} worldwide`
+                        description += `  - Ranked #${standing} worldwide\n`;
                         if (standing !== 1) {
-                            description += `\n - Ranked #${standing_local} locally`
+                            description += `  - Ranked #${standing_local} locally\n`;
                         }
                     } else {
-                        description += `\n- **Currently ranked ${getEmojiOfRank(rank)}**\n  - Ranked #${standing} worldwide (Top ${(percentile*100).toFixed(1)}%)\n  - Ranked #${standing_local} locally`
+                        description += `  - Ranked #${standing} worldwide (Top ${(percentile*100).toFixed(1)}%)\n  - Ranked #${standing_local} locally\n`;
                     }
-
                     rankBar = `${getEmojiOfRank(prev_rank)} ${generateProgressBar("Ranked", (leagueData.prev_at - standing) / (leagueData.prev_at - leagueData.next_at), 15)} ${getEmojiOfRank(next_rank)}`;
-
-                    // Show best rank if different from current rank
                     if (bestrank && bestrank !== rank) {
-                        description += `\n  - Has reached ${getEmojiOfRank(bestrank)}`
+                        description += `  - Has reached ${getEmojiOfRank(bestrank)}\n`;
                     }
                 }
-
-                description += `\n  - Has ${formatNumber(tr.toFixed(1))} TR\n  - Has ${glicko.toFixed(2)} ± ${rd.toFixed(1)} Glicko`
-
+                description += `  - Has ${glicko.toFixed(2)} ± ${rd.toFixed(1)} Glicko\n`;
                 if (gxe) {
-                    description += `\n  - ${gxe.toFixed(1)}% chance to win against random player`
+                    description += `  - ${gxe.toFixed(1)}% chance to win against random player\n`;
                 }
-
                 if (decaying) {
-                    description += `\n  - Hasn't played in a week; __rating deviation is increasing__`
+                    description += `  - Hasn't played in a week; __rating deviation is increasing__\n`;
+                }
+                description += `- **Has played ${gamesPlayed} game${gamesPlayed === 1 ? '' : 's'}**\n`;
+                if (gamesPlayed > 0) {
+                    description += `  - Won ${gamesWon} of them (${winRate}%)\n  - ${apm.toFixed(2)} APM | ${pps.toFixed(2)} PPS | ${vs.toFixed(2)} VS score\n`;
                 }
             }
 
-            description += `\n- **Has played ${gamesPlayed} game${gamesPlayed === 1 ? '' : 's'}**`
-
-            if (gamesPlayed > 0) {
-                description += `
-  - Won ${gamesWon} of them (${winRate}%)
-  - ${apm.toFixed(2)} APM | ${pps.toFixed(2)} PPS | ${vs.toFixed(2)} VS score
-                `
-            }
-            
             if (rankBar) {
-                description += `\n\n${rankBar}`
+                description += `\n${rankBar}`;
             }
 
 
@@ -186,52 +178,44 @@ module.exports = {
                 const seasonNumbers = Object.keys(past).map(Number).sort((a, b) => a - b);
                 for (const season of seasonNumbers) {
                     const seasonData = past[season];
-                    let pastDescription = `### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${seasonData.username}/) -> Tetra League -> Season ${season}__\n`
+                    let pastDescription = `### __[${escapeUnderscores(seasonData.username).toUpperCase()}](https://ch.tetr.io/u/${seasonData.username}/) -> Tetra League -> Season ${season}__\n`;
+                    pastDescription += `## ${seasonData.tr < 0 ? `Unranked ${getEmojiOfRank('z')}` : `Ranked ${getEmojiOfRank(seasonData.rank)}`}\n`;
                     if (seasonData.tr < 0) {
-                        pastDescription += `\n- **Unranked ${getEmojiOfRank('z')}**\n  - ${seasonData.gamesPlayed}/10 rating games played`
+                        pastDescription += `- Has played ${seasonData.gamesPlayed}/10 rating games\n`;
+                        if (seasonData.gamesplayed > 0) {
+                            pastDescription += `  - Won ${seasonData.gameswon} of them (${(100*(seasonData.gameswon/seasonData.gamesplayed)).toFixed(2)}%)\n  - ${seasonData.apm.toFixed(2)} APM | ${seasonData.pps.toFixed(2)} PPS | ${seasonData.vs.toFixed(2)} VS score\n`;
+                        }
                         if (seasonData.bestrank) {
-                            pastDescription += `\n  - Has reached ${getEmojiOfRank(seasonData.bestrank)}`
+                            pastDescription += `  - Has reached ${getEmojiOfRank(seasonData.bestrank)}\n`;
                         }
                     } 
                     else {
+                        pastDescription += `- **Had ${formatNumber(seasonData.tr.toFixed(1))} TR**\n`;
                         if (rd > 100) {
-                            pastDescription += `\n- **Unranked ${getEmojiOfRank(seasonData.rank)}**\n`
-                            // Show best rank if different from percentile_rank
+                            pastDescription += `  - Unranked\n`;
                             if (seasonData.bestrank) {
-                                pastDescription += `\n  - Has reached ${getEmojiOfRank(seasonData.bestrank)}`
+                                pastDescription += `  - Has reached ${getEmojiOfRank(seasonData.bestrank)}\n`;
                             }
                         } else {
-                            pastDescription += `\n- **Ranked ${getEmojiOfRank(seasonData.rank)}**`
-
-                            if (seasonData.placement) {
-                                pastDescription += `\n  - Rank #${seasonData.placement} worldwide`
-                            }
-
-                            // Show best rank if different from current rank
+                            pastDescription += `  - Rank #${seasonData.placement ? seasonData.placement : '?'} worldwide\n`;
                             if (seasonData.bestrank && seasonData.bestrank !== seasonData.rank) {
-                                pastDescription += `\n  - Has reached ${getEmojiOfRank(seasonData.bestrank)}`
+                                pastDescription += `  - Has reached ${getEmojiOfRank(seasonData.bestrank)}\n`;
                             }
                         }
-
-                        pastDescription += `\n  - Had ${formatNumber(seasonData.tr.toFixed(1))} TR\n  - Had ${seasonData.glicko.toFixed(2)} ± ${seasonData.rd.toFixed(1)} Glicko`
-
+                        pastDescription += `  - Had ${seasonData.glicko.toFixed(2)} ± ${seasonData.rd.toFixed(1)} Glicko\n`;
                         if (seasonData.gxe) {
-                            pastDescription += `\n  - ${seasonData.gxe.toFixed(1)}% chance to win against random player`
+                            pastDescription += `  - ${seasonData.gxe.toFixed(1)}% chance to win against random player\n`;
                         }
-
-                        pastDescription += `\n- **Played ${seasonData.gamesplayed} game${seasonData.gamesplayed === 1 ? '' : 's'}**`
-
+                        pastDescription += `- **Played ${seasonData.gamesplayed} game${seasonData.gamesplayed === 1 ? '' : 's'}**\n`;
                         if (seasonData.gamesplayed > 0) {
-                            pastDescription += `
-  - Won ${seasonData.gameswon} of them (${(100*(seasonData.gameswon/seasonData.gamesplayed)).toFixed(2)}%)
-  - ${seasonData.apm.toFixed(2)} APM | ${seasonData.pps.toFixed(2)} PPS | ${seasonData.vs.toFixed(2)} VS score
-                `
+                            pastDescription += `  - Won ${seasonData.gameswon} of them (${(100*(seasonData.gameswon/seasonData.gamesplayed)).toFixed(2)}%)\n  - ${seasonData.apm.toFixed(2)} APM | ${seasonData.pps.toFixed(2)} PPS | ${seasonData.vs.toFixed(2)} VS score\n`;
                         }
                     }
 
 
                     pages.push(
                         new EmbedBuilder()
+                            .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
                             .setColor(ratingColours[seasonData.rank] || '#ff8c57')
                             .setDescription(pastDescription)
                     );
