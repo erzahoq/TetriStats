@@ -22,6 +22,7 @@ module.exports = {
   - Using TETR.IO's public API, the bot offers many commands to get player stats, Tetra League rankings, and much more. Ideal for competitive players, streamers, and communities who want quick and reliable access to TETR.IO data.
 - **Features**
   - Player statistics tracking
+  - Rating deviation increase alerts
   - Tetra League rankings
   - TETR.IO server statistics
   - Detailed user information
