@@ -29,8 +29,58 @@ for (const folder of commandFolders) {
 	}
 }
 
+/**
+ * Generalized page handler for button interactions.
+ * Thanks AI :3
+ * @param {Object} params
+ * @param {Object} params.interaction - The Discord interaction object.
+ * @param {string} params.buttonId - The customId of the button.
+ * @param {string} params.interactionId - The interaction id for pageData.
+ * @param {string} params.prefix - The button customId prefix (e.g. 'profilepage').
+ * @param {string} params.pageKey - The key in pageData to use ('pages' or 'textPages').
+ * @param {Array<string>} params.labels - The button labels.
+ */
+async function handlePageButtons({ interaction, buttonId, interactionId, prefix, pageKey, labels }) {
+    if (interaction.user.id !== interaction.message.interaction.user.id) {
+        return await interaction.reply({ content: 'You cannot interact with this!', ephemeral: true });
+    }
+
+    const pageData = interaction.client.pageData?.[interactionId];
+    if (!pageData) return;
+
+    const newPageIndex = parseInt(buttonId.split('_')[1]);
+    const buttons = labels.map((label, i) =>
+        new ButtonBuilder()
+            .setCustomId(`${prefix}_${i}`)
+            .setLabel(label)
+            .setStyle(ButtonStyle.Primary)
+            .setDisabled(newPageIndex === i)
+    );
+
+    // For achievements, buttons may be split into multiple rows
+    let components;
+    if (prefix === 'achpage') {
+        const rows = [];
+        for (let i = 0; i < buttons.length; i++) {
+            const rowind = Math.floor(i / 5);
+            rows[rowind] = i % 5 === 0 ? new ActionRowBuilder() : rows[rowind];
+            rows[rowind].addComponents(buttons[i]);
+        }
+        components = rows;
+    } else {
+        components = [new ActionRowBuilder().addComponents(buttons)];
+    }
+
+    await interaction.update({
+        embeds: [pageData[pageKey][newPageIndex]],
+        components
+    });
+
+    pageData.currentPage = newPageIndex;
+}
+
 client.on(Events.InteractionCreate, async interaction => {
-	if (interaction.isChatInputCommand()) {
+    if (interaction.isChatInputCommand()) {
 		const command = interaction.client.commands.get(interaction.commandName);
 
 		if (!command) {
@@ -51,271 +101,95 @@ client.on(Events.InteractionCreate, async interaction => {
 	} else if (interaction.isButton()) {
         const buttonId = interaction.customId;
         const interactionId = interaction.message.interaction.id;
-        
-        //regex thing
-        let profilePageRegex = new RegExp('profilepage_[0-2]');
-        let topNewsRegex = new RegExp('topnewspage_[0-3]');
-        let allNewsRegex = new RegExp('allnewspage_[0-3]');
-        let achPageRegex = new RegExp('achpage_[0-9]'); //good job morky
-        let recordsPageRegex = new RegExp('recordspage_*.');
-        let replayPageRegex = new RegExp('replaypage_[0-9]')
-        //handle "userinfo.js" buttons
+
+        // Regexes
+        let profilePageRegex = /^profilepage_[0-2]$/;
+        let topNewsRegex = /^topnewspage_[0-3]$/;
+        let allNewsRegex = /^allnewspage_[0-3]$/;
+        let achPageRegex = /^achpage_[0-9]$/;
+        let recordsPageRegex = /^recordspage_.*$/;
+        let replayPageRegex = /^replaypage_[0-9]$/;
+
+        // Profile pages
         if (profilePageRegex.test(buttonId)) {
-            if (interaction.user.id !== interaction.message.interaction.user.id) {
-                return await interaction.reply({content: 'You cannot interact with this!', ephemeral: true});
-            }
-
-            // Retrieve stored page data
-            const pageData = interaction.client.pageData?.[interactionId];
-            if (!pageData) return; // Exit if no page data is found
-
-            const { pages, currentPage } = pageData;
-            const newPageIndex = parseInt(buttonId.split('_')[1]);
-
-            // Create updated buttons with the correct page disabled
-            const row = new ActionRowBuilder().addComponents(
-                new ButtonBuilder()
-                    .setCustomId('profilepage_0')
-                    .setLabel('Profile')
-                    .setStyle(ButtonStyle.Primary)
-                    .setDisabled(newPageIndex === 0),
-                new ButtonBuilder()
-                    .setCustomId('profilepage_1')
-                    .setLabel('General')
-                    .setStyle(ButtonStyle.Primary)
-                    .setDisabled(newPageIndex === 1),
-                new ButtonBuilder()
-                    .setCustomId('profilepage_2')
-                    .setLabel('Gameplay')
-                    .setStyle(ButtonStyle.Primary)
-                    .setDisabled(newPageIndex === 2)
-            );
-
-            // Update interaction with the selected page
-            await interaction.update({
-                embeds: [pages[newPageIndex]],
-                components: [row]
+            await handlePageButtons({
+                interaction, buttonId, interactionId,
+                prefix: 'profilepage',
+                pageKey: 'pages',
+                labels: ['Profile', 'General', 'Gameplay']
             });
-
-            // Update current page index
-            interaction.client.pageData[interactionId].currentPage = newPageIndex;
         }
 
-        //handles "records.js" buttons
-        if (recordsPageRegex.test(buttonId)) {
-            if (interaction.user.id !== interaction.message.interaction.user.id) {
-                return await interaction.reply({content: 'You cannot interact with this!', ephemeral: true});
-            }
-
-            // Retrieve stored page data
+        // Records pages
+        else if (recordsPageRegex.test(buttonId)) {
             const pageData = interaction.client.pageData?.[interactionId];
-
-            if (!pageData) return; // Exit if no page data is found
-
-            const { pages, currentPage, buttons } = pageData;
+            if (!pageData) return;
             const newPageIndex = buttonId.split('_')[1];
             const newPageButtonIndex = parseInt(buttonId.split('_')[2]);
-
-            // Create updated buttons with the correct page disabled
-            for (var i = 0; i < buttons.length; i++) {
-                buttons[i].setDisabled(newPageButtonIndex === i);
+            // Update button states
+            for (let i = 0; i < pageData.buttons.length; i++) {
+                pageData.buttons[i].setDisabled(newPageButtonIndex === i);
             }
-
             const row = new ActionRowBuilder();
-            buttons.forEach(but => {
-                row.addComponents(but);
-            })
-
-            // Update interaction with the selected page
+            pageData.buttons.forEach(but => row.addComponents(but));
             await interaction.update({
-                embeds: [pages[newPageIndex]],
+                embeds: [pageData.pages[newPageIndex]],
                 components: [row]
             });
-
-            // Update current page index
-            interaction.client.pageData[interactionId].currentPage = newPageIndex;
+            pageData.currentPage = newPageIndex;
         }
 
-        //handle "achinfo.js" buttons
-        if (achPageRegex.test(buttonId)) {
-            if (interaction.user.id !== interaction.message.interaction.user.id) {
-                return await interaction.reply({content: 'You cannot interact with this!', ephemeral: true});
-            }
-
-            // Retrieve stored page data
+        // Achievements pages
+        else if (achPageRegex.test(buttonId)) {
             const pageData = interaction.client.pageData?.[interactionId];
-
-            if (!pageData) return; // Exit if no page data is found
-
-            const { textPages, currentPage, buttons } = pageData;
+            if (!pageData) return;
             const newPageIndex = parseInt(buttonId.split('_')[1]);
-
-            // Create updated buttons with the correct page disabled
-            for (var i = 0; i < buttons.length; i++) {
-                buttons[i].setDisabled(newPageIndex === i);
+            for (let i = 0; i < pageData.buttons.length; i++) {
+                pageData.buttons[i].setDisabled(newPageIndex === i);
             }
-
             const rows = [];
-            for (var i = 0; i < buttons.length; i++) {
-                var rowind = Math.floor(i/5)
-                rows[rowind] = i % 5 == 0 ? new ActionRowBuilder() : rows[rowind];
-                rows[rowind].addComponents(buttons[i])
+            for (let i = 0; i < pageData.buttons.length; i++) {
+                const rowind = Math.floor(i / 5);
+                rows[rowind] = i % 5 === 0 ? new ActionRowBuilder() : rows[rowind];
+                rows[rowind].addComponents(pageData.buttons[i]);
             }
-
-
-            // Update interaction with the selected page
             await interaction.update({
-                embeds: [textPages[newPageIndex]],
+                embeds: [pageData.textPages[newPageIndex]],
                 components: rows
             });
-
-            // Update current page index
-            interaction.client.pageData[interactionId].currentPage = newPageIndex;
+            pageData.currentPage = newPageIndex;
         }
 
-        //handle "topnews.js" buttons
-        if (topNewsRegex.test(buttonId)) {
-            if (interaction.user.id !== interaction.message.interaction.user.id) {
-                return await interaction.reply({content: 'You cannot interact with this!', ephemeral: true});
-            }
-
-            // Retrieve stored page data
-            const pageData = interaction.client.pageData?.[interactionId];
-            if (!pageData) return; // Exit if no page data is found
-
-            const { pages, currentPage } = pageData;
-            const newPageIndex = parseInt(buttonId.split('_')[1]);
-
-            // Create updated buttons with the correct page disabled
-            const row = new ActionRowBuilder().addComponents(
-                new ButtonBuilder()
-                    .setCustomId('topnewspage_0')
-                    .setLabel('Page 1')
-                    .setStyle(ButtonStyle.Primary)
-                    .setDisabled(newPageIndex === 0),
-                new ButtonBuilder()
-                    .setCustomId('topnewspage_1')
-                    .setLabel('Page 2')
-                    .setStyle(ButtonStyle.Primary)
-                    .setDisabled(newPageIndex === 1),
-                new ButtonBuilder()
-                    .setCustomId('topnewspage_2')
-                    .setLabel('Page 3')
-                    .setStyle(ButtonStyle.Primary)
-                    .setDisabled(newPageIndex === 2),
-                new ButtonBuilder()
-                    .setCustomId('topnewspage_3')
-                    .setLabel('Page 4')
-                    .setStyle(ButtonStyle.Primary)
-                    .setDisabled(newPageIndex === 3)
-                
-            );
-
-            // Update interaction with the selected page
-            await interaction.update({
-                embeds: [pages[newPageIndex]],
-                components: [row]
+        // Top news pages
+        else if (topNewsRegex.test(buttonId)) {
+            await handlePageButtons({
+                interaction, buttonId, interactionId,
+                prefix: 'topnewspage',
+                pageKey: 'pages',
+                labels: ['Page 1', 'Page 2', 'Page 3', 'Page 4']
             });
-
-            // Update current page index
-            interaction.client.pageData[interactionId].currentPage = newPageIndex;
         }
 
-        //handle "allnews.js" buttons
-        if (allNewsRegex.test(buttonId)) {
-            if (interaction.user.id !== interaction.message.interaction.user.id) {
-                return await interaction.reply({content: 'You cannot interact with this!', ephemeral: true});
-            }
-
-            // Retrieve stored page data
-            const pageData = interaction.client.pageData?.[interactionId];
-            if (!pageData) return; // Exit if no page data is found
-
-            const { pages, currentPage } = pageData;
-            const newPageIndex = parseInt(buttonId.split('_')[1]);
-
-            // Create updated buttons with the correct page disabled
-            const row = new ActionRowBuilder().addComponents(
-                new ButtonBuilder()
-                    .setCustomId('allnewspage_0')
-                    .setLabel('Page 1')
-                    .setStyle(ButtonStyle.Primary)
-                    .setDisabled(newPageIndex === 0),
-                new ButtonBuilder()
-                    .setCustomId('allnewspage_1')
-                    .setLabel('Page 2')
-                    .setStyle(ButtonStyle.Primary)
-                    .setDisabled(newPageIndex === 1),
-                new ButtonBuilder()
-                    .setCustomId('allnewspage_2')
-                    .setLabel('Page 3')
-                    .setStyle(ButtonStyle.Primary)
-                    .setDisabled(newPageIndex === 2),
-                new ButtonBuilder()
-                    .setCustomId('allnewspage_3')
-                    .setLabel('Page 4')
-                    .setStyle(ButtonStyle.Primary)
-                    .setDisabled(newPageIndex === 3)
-                
-            );
-
-            // Update interaction with the selected page
-            await interaction.update({
-                embeds: [pages[newPageIndex]],
-                components: [row]
+        // All news pages
+        else if (allNewsRegex.test(buttonId)) {
+            await handlePageButtons({
+                interaction, buttonId, interactionId,
+                prefix: 'allnewspage',
+                pageKey: 'pages',
+                labels: ['Page 1', 'Page 2', 'Page 3', 'Page 4']
             });
-
-            // Update current page index
-            interaction.client.pageData[interactionId].currentPage = newPageIndex;
         }
 
-        //handle "replay.js" buttons
-        if (replayPageRegex.test(buttonId)) {
-            if (interaction.user.id !== interaction.message.interaction.user.id) {
-                return await interaction.reply({content: 'You cannot interact with this!', ephemeral: true});
-            }
-
-            // Retrieve stored page data
-            const pageData = interaction.client.pageData?.[interactionId];
-            if (!pageData) return; // Exit if no page data is found
-
-            const { pages, currentPage } = pageData;
-            const newPageIndex = parseInt(buttonId.split('_')[1]);
-
-            // Create updated buttons with the correct page disabled
-            const row = new ActionRowBuilder().addComponents(
-                new ButtonBuilder()
-                    .setCustomId('replaypage_0')
-                    .setLabel('General')
-                    .setStyle(ButtonStyle.Primary)
-                    .setDisabled(newPageIndex === 0),
-                new ButtonBuilder()
-                    .setCustomId('replaypage_1')
-                    .setLabel('Stats')
-                    .setStyle(ButtonStyle.Primary)
-                    .setDisabled(newPageIndex === 1),
-                new ButtonBuilder()
-                    .setCustomId('replaypage_2')
-                    .setLabel('Tetra League')
-                    .setStyle(ButtonStyle.Primary)
-                    .setDisabled(newPageIndex === 2),
-                    new ButtonBuilder()
-                    .setCustomId('replaypage_3')
-                    .setLabel('4')
-                    .setStyle(ButtonStyle.Primary)
-                    .setDisabled(newPageIndex === 3),
-            );
-
-            // Update interaction with the selected page
-            await interaction.update({
-                embeds: [pages[newPageIndex]],
-                components: [row]
+        // Replay pages
+        else if (replayPageRegex.test(buttonId)) {
+            await handlePageButtons({
+                interaction, buttonId, interactionId,
+                prefix: 'replaypage',
+                pageKey: 'pages',
+                labels: ['General', 'Stats', 'Tetra League', '4']
             });
-
-            // Update current page index
-            interaction.client.pageData[interactionId].currentPage = newPageIndex;
         }
-	}
+    }
 });
 
 // When the client is ready, run this code (only once).
