@@ -48,6 +48,15 @@ module.exports = {
             'zenithex': 'Expert Quick Play',
             'league': 'Tetra League'
         }
+
+        const colourMapping = {
+            '40l': '#ffd94f',
+            'blitz': '#ff5410',
+            'zenith': '#ff7024',
+            'zenithex': '#ffc800',
+            'league': '#c51111'
+        };
+
         let pages = {};
         let buttons = [];
 
@@ -56,7 +65,7 @@ module.exports = {
 
             // create embed and button
             const embed = new EmbedBuilder()
-                .setColor('#57b1ff')
+                .setColor(colourMapping[category])
                 .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
                 .setTitle(`${escapeUnderscores(user.username.toUpperCase())}'s ${gametypeMapping[category]} Records:`)
                 .setURL(`https://ch.tetr.io/u/${user.username}`)

@@ -55,9 +55,9 @@ module.exports = {
             if (user.type === 'leaderboard') {
                 let rank = userData.rank;
                 if (rank > 4) rank = 4;
-                message += `- <:news_lb${rank}:${leaderboardEmojiMapping[rank]}> [${capitalizeFirstLetter(userData.username)}](https://ch.tetr.io/u/${userData.username}) reached #${userData.rank} in ${gametypeMapping[userData.gametype]}`;
+                message += `- <:news_lb${rank}:${leaderboardEmojiMapping[rank]}> [${(userData.username).toUpperCase()}](https://ch.tetr.io/u/${userData.username}) reached #${userData.rank} in ${gametypeMapping[userData.gametype]}`;
             } else if (user.type === 'badge') {
-                message += `- <:news_badge:1280338130989482004> [${capitalizeFirstLetter(userData.username)}](https://ch.tetr.io/u/${userData.username}) received the "${userData.label}" badge`;
+                message += `- <:news_badge:1280338130989482004> [${(userData.username).toUpperCase()}](https://ch.tetr.io/u/${userData.username}) received the "${userData.label}" badge`;
             }
             message += ` (${reformatTimestamp(user.ts)})`;
 

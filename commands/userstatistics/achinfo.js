@@ -52,6 +52,14 @@ module.exports = {
         let achDisplays = {};
         let pages = {};
 
+        const colourMapping = {
+            "general": "#6dc971",
+            "league": "#c51111",
+            "solo": "#ff7024",
+            "zenith": "#ffc800",
+            "legacy": "#d384f5"
+        };
+
         //magic voodoo sorting raah
         let sortedAchs = sortByAchievementRank(achs);
 
@@ -89,7 +97,7 @@ module.exports = {
 
             // create the embed and respective button
             textPages.push(new EmbedBuilder()
-                .setColor("#6dc971")
+                .setColor(colourMapping[trimmedCat])
                 .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
                 .setDescription(`### __[${escapeUnderscores(username.toUpperCase())}](https://ch.tetr.io/u/${username}) -> Achievements -> ${catMap[trimmedCat]}__\n` + text)
             )
