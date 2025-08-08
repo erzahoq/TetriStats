@@ -27,14 +27,14 @@ module.exports = {
         const user = await getUser(interaction.options.getString('user').toLowerCase()); // calls API only once
 
         if (user === "no such user") {
-            return await interaction.reply({
-                    content: 'No such user found on TETR.IO! Either the account no longer exists, or this person has not linked their Discord with TETR.IO.',
-                    flags: MessageFlags.Ephemeral
+            return await interaction.editReply({
+                content: 'No such user found on TETR.IO! Either the account no longer exists, or this person has not linked their Discord with TETR.IO.',
+                flags: MessageFlags.Ephemeral
             });
         } else if (user === "server error") {
-            return await interaction.reply({
-                    content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
-                    flags: MessageFlags.Ephemeral
+            return await interaction.editReply({
+                content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
+                flags: MessageFlags.Ephemeral
             });
         }
 
