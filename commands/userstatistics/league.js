@@ -2,7 +2,8 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 const { EmbedBuilder, InteractionContextType, ApplicationIntegrationType, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
 const { formatNumber, countryCodeToEmoji, getEmojiOfRank, escapeUnderscores } = require('../../helpers/functions');
-const { getUser } = require('../../helpers/getuser')
+const { getUser } = require('../../helpers/getuser');
+const { getEmoji } = require('../../helpers/emojis');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -264,24 +265,24 @@ module.exports = {
 };
 
 function generateProgressBar(barType, progress, length = 14) {
-    let startSymbol = "<:bar_start:1277463580513669160>"
-    let endSymbol = "<:bar_end:1277463565036683264>"
+    let startSymbol = getEmoji("bar_start");
+    let endSymbol = getEmoji("bar_end");
 
     if (barType === "Unranked") { // this is when there's no rank
-        startSymbol = "<:bar_start_rankless:1277779429199712317>"
+        startSymbol = getEmoji("bar_start_rankless");
     }
 
     // Ensure the progress is within the 0-1 range
     progress = Math.max(0, Math.min(progress, 1));
     if (progress === 1) { // this is for when the player is #1 in the world (wow)
-        endSymbol = "<:bar_end_full:1278896013502976000>"
+        endSymbol = getEmoji("bar_end_full")
     }
 
     // Calculate the position of the "!" marker
     const position = Math.round(progress * length);
 
     // Generate the progress bar
-    const bar = Array.from({ length: length }, (_, i) => (i === position ? "<:bar_half:1277463557016916010>" : (i < position ? "<:bar_full:1277463587249586269>" : "<:bar_empty:1277463572863254589>"))).join("");
+    const bar = Array.from({ length: length }, (_, i) => (i === position ? getEmoji("bar_half") : (i < position ? getEmoji('bar_full') : getEmoji('bar_empty')))).join("");
 
     // Return the complete progress bar with symbols
     return `${startSymbol}${bar}${endSymbol}`;

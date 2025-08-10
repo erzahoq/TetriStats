@@ -2,6 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, Butt
 import("node-fetch");
 
 const { reformatTimestamp, capitalizeFirstLetter } = require('../../helpers/functions');
+const { getEmoji } = require('../../helpers/emojis');
 
 
 const itemsPerPage = 15;
@@ -25,14 +26,7 @@ module.exports = {
 
         //get the news info more cleanly
         const data = stats.data.news;
-
-        // create mappings for emojis and gametypes
-        const leaderboardEmojiMapping = {
-            1: '1280337193843425310',
-            2: '1280337201745625160',
-            3: '1280337209739706428',
-            4: '1280337216991662091'
-        }
+        
         const gametypeMapping = {
             '40l': '40 Lines',
             'blitz': "Blitz",
@@ -55,9 +49,9 @@ module.exports = {
             if (user.type === 'leaderboard') {
                 let rank = userData.rank;
                 if (rank > 4) rank = 4;
-                message += `- <:news_lb${rank}:${leaderboardEmojiMapping[rank]}> [${(userData.username).toUpperCase()}](https://ch.tetr.io/u/${userData.username}) reached #${userData.rank} in ${gametypeMapping[userData.gametype]}`;
+                message += `- ${getEmoji(`news_lb${rank}`)} [${(userData.username).toUpperCase()}](https://ch.tetr.io/u/${userData.username}) reached #${userData.rank} in ${gametypeMapping[userData.gametype]}`;
             } else if (user.type === 'badge') {
-                message += `- <:news_badge:1280338130989482004> [${(userData.username).toUpperCase()}](https://ch.tetr.io/u/${userData.username}) received the "${userData.label}" badge`;
+                message += `- ${getEmoji("news_badge")} [${(userData.username).toUpperCase()}](https://ch.tetr.io/u/${userData.username}) received the "${userData.label}" badge`;
             }
             message += ` (${reformatTimestamp(user.ts)})`;
 

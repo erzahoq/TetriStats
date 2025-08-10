@@ -3,6 +3,7 @@ import('node-fetch'); // Ensure 'node-fetch' is imported properly
 
 const { formatNumber, escapeUnderscores, countryCodeToEmoji, convertToTimeFormat, playtimeConvert, getEmojiOfAch, getEmojiOfRank, reformatTimestamp, calculateLevel } = require('../../helpers/functions');
 const { getUser } = require('../../helpers/getuser')
+const { getEmoji } = require('../../helpers/emojis');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -193,7 +194,7 @@ function starConvert(supporterTier) {
     let supporterString = '';
 
     for (let i = 1; i < supporterTier; i++) { // add stars because those exist
-        supporterString = supporterString.concat(" <:supporter_star:1277300953111855231>")
+        supporterString = supporterString.concat(` ${getEmoji('supporter_star')}`);
 
     }
     return (`${supporterString}`)
@@ -342,7 +343,7 @@ function formatLeaguePreview(statistics, country) {
         rating = `${leagueStats.gamesplayed}/10 rating games`
         progressToNextRank = leagueStats.gamesplayed / 10
         prevRank = '';
-        nextRank = '<:rank_z:1277382169538461746>';
+        nextRank = getEmoji("rank_z");
 
         rankBoolean = "yesnt"; // so true
     }
@@ -377,7 +378,7 @@ function formatLeaguePreview(statistics, country) {
     }
 
     return `
-- <:league:1352045247512842251> **${rating}**, ${getEmojiOfRank(rank)} ${standing}`
+- ${getEmoji('league')} **${rating}**, ${getEmojiOfRank(rank)} ${standing}`
 }
 
 function format40Lines(statistics, country) {
@@ -385,7 +386,7 @@ function format40Lines(statistics, country) {
         let flStatistics = statistics['40l'];
         let results = flStatistics.record.results;
         return `
-- <:40lines:1277298516380614786> **40 Lines in ${convertToTimeFormat(results.stats.finaltime)}**
+- ${getEmoji('40lines')} **40 Lines in ${convertToTimeFormat(results.stats.finaltime)}**
   - Ranked #${formatNumber(flStatistics.rank)} ${formatCountry(flStatistics.rank_local, country)}
   - [Submitted ${reformatTimestamp(flStatistics.record.ts)}](https://tetr.io/#R:${flStatistics.record.replayid})
   - ${Math.round(results.aggregatestats.pps * 100) / 100} PPS | ${formatNumber(results.stats.finesse.faults)} finesse faults`
@@ -398,7 +399,7 @@ function formatBlitz(statistics, country) {
     if (statistics['blitz'].record) {
         let blStatistics = statistics['blitz'];
         return `
-- <:blitz:1277298507920838718> **${formatNumber(blStatistics.record.results.stats.score)} points in Blitz**
+- ${getEmoji("blitz")} **${formatNumber(blStatistics.record.results.stats.score)} points in Blitz**
   - Ranked #${formatNumber(blStatistics.rank)} ${formatCountry(blStatistics.rank_local, country)}
   - [Submitted ${reformatTimestamp(blStatistics.record.ts)}](https://tetr.io/#R:${blStatistics.record.replayid})
   - ${Math.round(blStatistics.record.results.aggregatestats.pps * 100) / 100} PPS | ${formatNumber(Math.round(blStatistics.record.results.stats.score/blStatistics.record.results.stats.piecesplaced*100)/100)} Points/Piece`
@@ -413,7 +414,7 @@ function formatZenith(statistics, country) {
 
     if (statistics['zenith'].record) {
         zenithText = `
-- <:quickplay:1277296551428886588> **${formatNumber(Math.round(zStatistics.record.results.stats.zenith.altitude * 100) / 100)}m in Quick Play**
+- ${getEmoji("quickplay")} **${formatNumber(Math.round(zStatistics.record.results.stats.zenith.altitude * 100) / 100)}m in Quick Play**
   - Ranked #${formatNumber(zStatistics.rank)} ${formatCountry(zStatistics.rank_local, country)}
   - [Submitted ${reformatTimestamp(zStatistics.record.ts)}](https://tetr.io/#R:${zStatistics.record.replayid})
   - ${Math.round(zStatistics.record.results.aggregatestats.pps * 100) / 100} PPS | ${Math.round(zStatistics.record.results.aggregatestats.apm * 100) / 100} APM
@@ -425,7 +426,7 @@ function formatZenith(statistics, country) {
     }
     else if (statistics['zenith'].best.record) {
         zenithText = `
-- <:quickplay:1277296551428886588> Hasn't played Quick Play this week
+- ${getEmoji('quickplay')} Hasn't played Quick Play this week
   - All-time best is ${formatNumber(Math.round(zStatistics.best.record.results.stats.zenith.altitude * 100) / 100)}m
   - Ranked #${formatNumber(zStatistics.best.rank)}
   - [Submitted ${reformatTimestamp(zStatistics.best.record.ts)}](https://tetr.io/#R:${zStatistics.best.record.replayid})`
@@ -442,7 +443,7 @@ function formatZenithExpert(statistics, country) {
 
     if (statistics['zenithex'].record) {
         zenithText = `
-- <:quickplayexpert:1277351744413896724> **${formatNumber(Math.round(zStatistics.record.results.stats.zenith.altitude * 100) / 100)}m in Quick Play EXPERT**
+- ${getEmoji('quickplayexpert')} **${formatNumber(Math.round(zStatistics.record.results.stats.zenith.altitude * 100) / 100)}m in Quick Play EXPERT**
   - Ranked #${formatNumber(zStatistics.rank)} ${formatCountry(zStatistics.rank_local, country)}
   - [Submitted ${reformatTimestamp(zStatistics.record.ts)}](https://tetr.io/#R:${zStatistics.record.replayid})
   - ${Math.round(zStatistics.record.results.aggregatestats.pps * 100) / 100} PPS | ${Math.round(zStatistics.record.results.aggregatestats.apm * 100) / 100} APM
@@ -454,7 +455,7 @@ function formatZenithExpert(statistics, country) {
     }
     else if (statistics['zenithex'].best.record) {
         zenithText = `
-- <:quickplayexpert:1277351744413896724> Hasn't played Quick Play EXPERT this week
+- ${getEmoji('quickplayexpert')} Hasn't played Quick Play EXPERT this week
   - All-time best is ${formatNumber(Math.round(zStatistics.best.record.results.stats.zenith.altitude * 100) / 100)}m
   - Ranked #${formatNumber(zStatistics.best.rank)}
   - [Submitted ${reformatTimestamp(zStatistics.best.record.ts)}](https://tetr.io/#R:${zStatistics.best.record.replayid})`
@@ -468,7 +469,7 @@ function formatZen(statistics) {
     if (statistics['zen']) {
         let zenStatistics = statistics['zen'];
         return `
-- <:zen:1277364107883974676> **Level ${zenStatistics.level} in Zen**
+- ${getEmoji('zen')} **Level ${zenStatistics.level} in Zen**
   - ${formatNumber(Math.round(zenStatistics.score))} points`
     } else {
         return ""

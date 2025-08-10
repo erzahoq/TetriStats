@@ -1,8 +1,9 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, InteractionContextType, MessageFlags, ApplicationIntegrationType } = require('discord.js');
 import("node-fetch");
 
-const { formatNumber, escapeUnderscores, convertToTimeFormat, reformatTimestamp } = require('../../helpers/functions');
-const { getUser } = require('../../helpers/getuser')
+const { formatNumber, escapeUnderscores, convertToTimeFormat, reformatTimestamp, getModEmoji } = require('../../helpers/functions');
+const { getUser } = require('../../helpers/getuser');
+const { getEmoji } = require('../../helpers/emojis');
 
 const maxItems = 5;
 
@@ -78,7 +79,7 @@ module.exports = {
             // do the description
             let desc = "";
             if (fetched['top']) {
-                desc += `- <:news_lblocal:1280356184640983122> Personal best
+                desc += `- ${getEmoji('news_lblocal')} Personal best
   ${formatRecord(fetched['top'])}\n\n`
             }
             fetched['all'].forEach((rec) => {
@@ -86,7 +87,7 @@ module.exports = {
             })
 
             if (desc === '') {
-                desc = `<:ach_none:1278178486586048575> No ${gametypeMapping[category]} records yet...`
+                desc = `${getEmoji('ach_none')} No ${gametypeMapping[category]} records yet...`
             }
 
             // set description and push to list
@@ -208,29 +209,5 @@ function formatRecord(record) {
   - [${reformatTimestamp(record.ts)}](https://tetr.io/#R:${record.replayid})`;
 
     return formatted;
-}
-
-function getModEmoji(emoji) {
-    const mapping = {
-        "expert": "1284286589576675348",
-        "nohold": "1284286599319912468",
-        "messy": "1284286607754793031",
-        "gravity": "1284286616629809193",
-        "volatile": "1284286624523354163",
-        "doublehole": "1284286635118301245",
-        "invisible": "1284286644328988734",
-        "allspin": "1284286652759412899",
-        "duo": "1284286660800020620",
-        "expert_reversed": "1346671043883962492",
-        "nohold_reversed": "1346670935729770496",
-        "messy_reversed": "1346671003975290880",
-        "gravity_reversed": "1346670986648621139",
-        "volatile_reversed": "1346670955627282442",
-        "doublehole_reversed": "1346671018483253278",
-        "invisible_reversed": "1346671057586753536",
-        "allspin_reversed": "1346670971209121872",
-        "snowman": "1321711057034543175",
-    };
-    return `<:mod_${emoji}:${mapping[emoji]}>`;
 }
 

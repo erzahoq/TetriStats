@@ -5,6 +5,7 @@ const path = require('node:path');
 const { token } = require('./config.json');
 const { database } = require('./database.js');
 const { Op } = require('sequelize');
+const { initEmojis } = require('./helpers/emojis');
 
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
@@ -217,8 +218,9 @@ client.on(Events.InteractionCreate, async interaction => {
 // When the client is ready, run this code (only once).
 // The distinction between `client: Client<boolean>` and `readyClient: Client<true>` is important for TypeScript developers.
 // It makes some properties non-nullable.
-client.once(Events.ClientReady, readyClient => {
-	console.log(`Ready! Logged in as ${readyClient.user.tag}`);
+client.once(Events.ClientReady, async readyClient => {
+    console.log(`Ready! Logged in as ${readyClient.user.tag}`);
+    await initEmojis(readyClient); // Initialize emojis
     status();
     checkRdAlerts(); 
 });

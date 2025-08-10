@@ -2,7 +2,8 @@ const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, Butt
 import('node-fetch'); // Ensure 'node-fetch' is imported properly
 
 const { formatNumber, escapeUnderscores, getEmojiOfAch, reformatTimestamp } = require('../../helpers/functions');
-const { getUser } = require('../../helpers/getuser')
+const { getUser } = require('../../helpers/getuser');
+const { getEmoji } = require('../../helpers/emojis');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -85,7 +86,7 @@ module.exports = {
                 })
                 pages[cat] = ind;
             } else {
-                achDisplays[`${cat}0`] = `<:ach_none:1278178486586048575> No ${cat} achievements unlocked yet... :(`
+                achDisplays[`${cat}0`] = `${getEmoji(ach_none)} No ${cat} achievements unlocked yet... :(`
             }
         })
 
@@ -174,7 +175,7 @@ function formatAchievementListText(achlist) {
     achlist.forEach(ach => {
         var achText = ""
         achCount++;
-        //format thing because fuck your API OSK (OSK if you're reading this please change it)
+        //format thing because api silly
         let displayVal = formatNumber(Math.round(ach.v));
         if (ach.vt === 2) displayVal = `${formatNumber(Math.round((ach.v) / 100) / 10)}s`
         else if (ach.vt === 3) displayVal = `${formatNumber(-Math.round((ach.v) / 100) / 10)}s`
@@ -187,15 +188,15 @@ function formatAchievementListText(achlist) {
 
         //check for attributes and format
         if (ach.art === 0) {
-            achText += "<:au:1278179023188398211>"
+            achText += getEmoji('au')
         } else if (ach.art === 2) {
-            achText += "<:ac:1278179007468277770>"
+            achText += getEmoji('ac')
         }
         if (ach.hidden) {
-            achText += "<:ah:1278179015156432978>"
+            achText += getEmoji('ah')
         }
         if (ach.event) {
-            achText += "<:ae:1314829710550630501>"
+            achText += getEmoji('ae')
         }
         // i didn't like this formatting it was ugly imo
 

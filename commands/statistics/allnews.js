@@ -2,6 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, Butt
 import("node-fetch");
 
 const { convertToTimeFormat, getEmojiOfRank, reformatTimestamp, capitalizeFirstLetter } = require('../../helpers/functions');
+const { getEmoji } = require('../../helpers/emojis');
 
 
 //number of things on page (change if you wnat i dont care)
@@ -50,7 +51,7 @@ module.exports = {
 
             // Handle different types of stuff :3
             if (user.type === 'personalbest') {
-                message += `- <:news_lblocal:1280356184640983122> [${(userData.username).toUpperCase()}](https://ch.tetr.io/u/${userData.username}) got a new PB in ${gametypeMapping[userData.gametype]}!`
+                message += `- ${getEmoji("news_lblocal")} [${(userData.username).toUpperCase()}](https://ch.tetr.io/u/${userData.username}) got a new PB in ${gametypeMapping[userData.gametype]}!`
 
                 if (userData.gametype === 'zenith' || userData.gametype === 'zenithex') {
                     message += ` (${Math.round(userData.result * 10) / 10}m)`
@@ -58,7 +59,7 @@ module.exports = {
                     message += ` (${convertToTimeFormat(userData.result)})`
                 }
             } else if (user.type === 'supporter') {
-                message += `- <:supporter_star:1277300953111855231> [${(userData.username).toUpperCase()}](https://ch.tetr.io/u/${userData.username}) has become a Supporter!`
+                message += `- ${getEmoji(supporter_star)} [${(userData.username).toUpperCase()}](https://ch.tetr.io/u/${userData.username}) has become a Supporter!`
             } else if (user.type === 'rankup') {
                 message += `- ${getEmojiOfRank(userData.rank)} [${(userData.username).toUpperCase()}](https://ch.tetr.io/u/${userData.username}) achieved ${capitalizeFirstLetter(userData.rank) /*me when i reuse code :3*/} rank!`
             } else {
