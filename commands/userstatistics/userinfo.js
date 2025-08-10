@@ -109,7 +109,7 @@ ${formatOldUsernames(statData.oldusernames)}
 
 - Has ${countAchievements(statData.ar_counts)} achievements ${formatAchievementCounts(statData.ar_counts)} ${statData.ar > 0 ? `\n  - Totalling ${statData.ar} Achievement Rating` : ""} ${formatBadges(badgeArray)} ${formatDisplayedAchs(statData.achievements, summaryData.achievements)}
 
-${statData.gamesplayed >= 0 ? `- Played ${statData.gamesplayed} games${statData.gameswon >= 0 ? `\n  - Won ${statData.gameswon} of them (${Math.round(10000 * (statData.gameswon / statData.gamesplayed)) / 100}%)` : ""}${statData.gametime >= 0 ? `\n  - Has ${Math.round((statData.gametime/3600) * 10) / 10} hours of playtime` : ""}` : "- Has hidden games played"}
+${statData.gamesplayed >= 0 ? `- Played ${statData.gamesplayed} games${statData.gameswon >= 0 ? `\n  - Won ${statData.gameswon} of them (${isNaN(Math.round(10000 * (statData.gameswon / statData.gamesplayed)) / 100) ? 0 : Math.round(10000 * (statData.gameswon / statData.gamesplayed)) / 100}%)` : ""}${statData.gametime >= 0 ? `\n  - Has ${Math.round((statData.gametime/3600) * 10) / 10} hours of playtime` : ""}` : "- Has hidden games played"}
   `)
                 .setTimestamp(),
 

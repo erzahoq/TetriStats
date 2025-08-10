@@ -86,7 +86,7 @@ module.exports = {
                 })
                 pages[cat] = ind;
             } else {
-                achDisplays[`${cat}0`] = `${getEmoji(ach_none)} No ${cat} achievements unlocked yet... :(`
+                achDisplays[`${cat}0`] = `${getEmoji("ach_none")} No ${cat} achievements unlocked yet... :(`
             }
         })
 
