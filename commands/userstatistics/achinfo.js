@@ -19,17 +19,18 @@ module.exports = {
         ),
 
     async execute(interaction) {
+        // Defer reply immediately to avoid timeout
+        await interaction.deferReply();
+
         const user = await getUser(interaction.options.getString('user').toLowerCase());
 
         if (user === "no such user") {
-            return await interaction.reply({
-                    content: 'No such user found on TETR.IO! Either the account no longer exists, or this person has not linked their Discord with TETR.IO.',
-                    flags: MessageFlags.Ephemeral
+            return await interaction.editReply({
+                content: 'No such user found on TETR.IO! Either the account no longer exists, or this person has not linked their Discord with TETR.IO.',
             });
         } else if (user === "server error") {
-            return await interaction.reply({
-                    content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
-                    flags: MessageFlags.Ephemeral
+            return await interaction.editReply({
+                content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
             });
         }
 
@@ -126,7 +127,7 @@ module.exports = {
         }
 
         // Send the initial message with the first page and buttons
-        await interaction.reply({
+        await interaction.editReply({
             embeds: [textPages[0]],
             components: rows
         });
