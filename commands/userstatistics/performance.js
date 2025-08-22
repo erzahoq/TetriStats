@@ -21,7 +21,7 @@ module.exports = {
 
   async execute(interaction) {
     // Fetch user data from TETR.IO API using provided username/ID
-    const user = await getUser(interaction.options.getString('user').toLowerCase()); // calls API only once
+    const user = await getUser(interaction.options.getString('user').toLowerCase());
 
     // Handle user not found or server error cases
     if (user === 'no such user') {
@@ -36,99 +36,126 @@ module.exports = {
       });
     }
 
-    // grab league data to analyse performance
-    // i kinda want to like, average all gamemodes for this data but i feel like that is unnecessary for now..? 
-    // idk
-
-    // oh actually what i could do is analyse performace for each gamemode, and have buttons to switch between them
-    // but i dont wanna do that right now :3
-    let response = await fetch(`https://ch.tetr.io/api/users/${user._id}/summaries/league`);
+    // Fetch league data
+    let response = await fetch(`https://ch.tetr.io/api/users/${user._id}/summaries`);
     let userStats = await response.json();
-
     userStats = userStats.data;
 
-    if (userStats.gamesplayed === 0) {
-            return await interaction.reply({ content: `This user has not played any Tetra League games!`, flags: MessageFlags.Ephemeral });
-    }
+    delete userStats.zen;
+    delete userStats.achievements;
+    // maybe also expert qp but idk
+    // delete userStats.zenithex;
 
-    // fetch labs league data
+    let zenithData = userStats.zenith;
+    let leagueData = userStats.league;
+    let linesData = userStats['40l'];
+    let blitzData = userStats.blitz;
+
+    console.log(userStats)
+
+    /*
+    if (zenithData.gamesplayed === 0) {
+      return await interaction.reply({ content: `This user has not played any Tetra League games!`, flags: MessageFlags.Ephemeral });
+    }
+    */
+
+    // Fetch labs league data
     response = await fetch(`https://ch.tetr.io/api/labs/league_ranks`);
     let labsLeagueData = await response.json();
-
-    // get rank data from the response
     let rankData = labsLeagueData.data.data;
-    const totalUsers = rankData.total;
-    // explodes u cutely
+    // kills u
     delete rankData.total;
 
-    // ok so i want more than just apm/pps/vs score to analyse, but for now this is fine just as a proof of concept
-    let apm = userStats.apm;
-    let pps = userStats.pps;
-    let vsScore = userStats.vs;
-    let rank = userStats.rank;
-    let tr = userStats.tr;
 
-    // surely theres a better way to do this
-    let apmRank = 'd';
-    for (const [rank, data] of Object.entries(rankData)) {
-        if (apm >= data.apm) {
-            apmRank = rank;
-            break;
-        }
-    }
-
-    let ppsRank = 'd';
-    for (const [rank, data] of Object.entries(rankData)) {
-        if (pps >= data.pps) {
-            ppsRank = rank;
-            break;
-        }
-    }
-
-    let vsScoreRank = 'd';
-    for (const [rank, data] of Object.entries(rankData)) {
-        if (vsScore >= data.vs) {
-            vsScoreRank = rank;
-            break;
-        }
-    }
-
+    const leagueObj = league(leagueData, rankData);
 
     const ratingColours = {
-                "z": "#7d7d7d",
-                "d": "#846b83",
-                "d+": "#8a5d8b",
-                "c-": "#755188",
-                "c": "#733e8f", 
-                "c+": "#562a89",
-                "b-": "#5550c5",
-                "b": "#4f65cb",
-                "b+": "#4e99c0",
-                "a-": "#45ca7f",
-                "a": "#6bcb55",
-                "a+": "#4fca18",
-                "s-": "#c8b82d",
-                "s": "#e8b215",
-                "s+": "#ffec0e",
-                "ss": "#feaf1b",
-                "u": "#ff2713",
-                "x": "#fd73fc",
-                "x+": "#f018d0"
-    }
+      "z": "#7d7d7d", "d": "#846b83", "d+": "#8a5d8b", "c-": "#755188", "c": "#733e8f", "c+": "#562a89",
+      "b-": "#5550c5", "b": "#4f65cb", "b+": "#4e99c0", "a-": "#45ca7f", "a": "#6bcb55", "a+": "#4fca18",
+      "s-": "#c8b82d", "s": "#e8b215", "s+": "#ffec0e", "ss": "#feaf1b", "u": "#ff2713", "x": "#fd73fc", "x+": "#f018d0"
+    };
 
-    const embed = new EmbedBuilder()
-      .setColor(ratingColours[rank] || '#ff8c57')
-      .setDescription(tr < 0 ? `## Unranked ${getEmojiOfRank('z')}` : `## Ranked ${getEmojiOfRank(rank)}`)
+    const leagueEmbed = new EmbedBuilder()
+      .setColor(ratingColours[leagueData.rank] || '#ff8c57')
+      .setDescription(`### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${user.username}) -> Performance -> Tetra League__\n` + (leagueData.tr < 0 ? `## Unranked ${getEmojiOfRank('z')}` : `## Ranked ${getEmojiOfRank(leagueData.rank)}`))
       .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
       .setURL(`https://tetr.io/u/${user.username}`)
       .addFields(
-        { name: 'APM', value: `${formatNumber(apm)} APM (${getEmojiOfRank(apmRank)})`, inline: true },
-        { name: 'PPS', value: `${formatNumber(pps)} PPS (${getEmojiOfRank(ppsRank)})`, inline: true },
-        { name: 'VS Score', value: `${formatNumber(vsScore)} (${getEmojiOfRank(vsScoreRank)})`, inline: true },
+        { name: 'APM', value: `${formatNumber(leagueObj.apm)} APM (${getEmojiOfRank(leagueObj.apmRank)})`, inline: true },
+        { name: 'PPS', value: `${formatNumber(leagueObj.pps)} PPS (${getEmojiOfRank(leagueObj.ppsRank)})`, inline: true },
+        { name: 'VS Score', value: `${formatNumber(leagueObj.vsScore)} (${getEmojiOfRank(leagueObj.vsScoreRank)})`, inline: true },
       )
-      .setTimestamp()
+      .setTimestamp();
 
-    await interaction.reply({ embeds: [embed] });
+    // Create embeds for each gamemode (40 Lines, Blitz, Quick Play, Tetra League)
+    const linesEmbed = new EmbedBuilder()
+      .setColor('#ffd94f')
+      .setDescription('Performance data for 40 Lines will be shown here.')
+      .setTimestamp();
+
+    const blitzEmbed = new EmbedBuilder()
+      .setColor('#ff5410')
+      .setDescription('Performance data for Blitz will be shown here.')
+      .setTimestamp();
+
+    const quickplayEmbed = new EmbedBuilder()
+      .setColor('#ff7024')
+      .setDescription('Performance data for Quick Play will be shown here.')
+      .setTimestamp();
+
+    // Button labels and embeds in the new order
+    const buttonLabels = ['Tetra League', '40 Lines', 'Blitz', 'Quick Play'];
+    const embeds = [leagueEmbed, linesEmbed, blitzEmbed, quickplayEmbed];
+
+    // Create navigation buttons
+    const row = new ActionRowBuilder().addComponents(
+      ...buttonLabels.map((label, idx) =>
+        new ButtonBuilder()
+          .setCustomId(`performancepage_${idx}`)
+          .setLabel(label)
+          .setStyle(ButtonStyle.Primary)
+          .setDisabled(idx === 0)
+      )
+    );
+
+    // Send the first page as a reply, with navigation buttons
+    await interaction.reply({ embeds: [embeds[0]], components: [row] });
+
+    // Store page data for this interaction (for navigation handling elsewhere)
+    interaction.client.pageData = {
+      ...interaction.client.pageData,
+      [interaction.id]: {
+        pages: embeds,
+        currentPage: 0,
+        labels: buttonLabels
+      },
+    };
   },
 };
+
+function league(leagueData, rankData) {
+  if (!leagueData || leagueData.gamesplayed === 0) {
+    return null;
+  }
+  let apm = leagueData.apm;
+  let pps = leagueData.pps;
+  let vsScore = leagueData.vs;
+
+  let apmRank = getRank(apm, rankData, 'apm');
+  let ppsRank = getRank(pps, rankData, 'pps');
+  let vsScoreRank = getRank(vsScore, rankData, 'vs');
+
+  return { apm, pps, vsScore, apmRank, ppsRank, vsScoreRank };
+}
+
+function getRank(statValue, rankData, statKey) {
+  let rank = 'd';
+  for (const [r, data] of Object.entries(rankData)) {
+    if (statValue >= data[statKey]) {
+      rank = r;
+      break;
+    }
+  }
+  return rank;
+}
 
