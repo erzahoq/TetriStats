@@ -220,7 +220,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 interaction, buttonId, interactionId,
                 prefix: 'performancepage',
                 pageKey: 'pages',
-                labels: ['Tetra League', '40 Lines', 'Blitz', 'Quick Play'] // <-- FIXED ORDER
+                labels: ['Tetra League', '40 Lines', 'Blitz', 'Quick Play'] // <-- Correct order
             });
         }
     }

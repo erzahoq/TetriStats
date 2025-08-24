@@ -51,21 +51,12 @@ module.exports = {
     let linesData = userStats['40l'];
     let blitzData = userStats.blitz;
 
-    console.log(userStats)
-
-    /*
-    if (zenithData.gamesplayed === 0) {
-      return await interaction.reply({ content: `This user has not played any Tetra League games!`, flags: MessageFlags.Ephemeral });
-    }
-    */
-
     // Fetch labs league data
     response = await fetch(`https://ch.tetr.io/api/labs/league_ranks`);
     let labsLeagueData = await response.json();
     let rankData = labsLeagueData.data.data;
     // kills u
     delete rankData.total;
-
 
     const leagueObj = league(leagueData, rankData);
 
@@ -75,35 +66,98 @@ module.exports = {
       "s-": "#c8b82d", "s": "#e8b215", "s+": "#ffec0e", "ss": "#feaf1b", "u": "#ff2713", "x": "#fd73fc", "x+": "#f018d0"
     };
 
-    const leagueEmbed = new EmbedBuilder()
-      .setColor(ratingColours[leagueData.rank] || '#ff8c57')
-      .setDescription(`### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${user.username}) -> Performance -> Tetra League__\n` + (leagueData.tr < 0 ? `## Unranked ${getEmojiOfRank('z')}` : `## Ranked ${getEmojiOfRank(leagueData.rank)}`))
-      .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
-      .setURL(`https://tetr.io/u/${user.username}`)
-      .addFields(
-        { name: 'APM', value: `${formatNumber(leagueObj.apm)} APM (${getEmojiOfRank(leagueObj.apmRank)})`, inline: true },
-        { name: 'PPS', value: `${formatNumber(leagueObj.pps)} PPS (${getEmojiOfRank(leagueObj.ppsRank)})`, inline: true },
-        { name: 'VS Score', value: `${formatNumber(leagueObj.vsScore)} (${getEmojiOfRank(leagueObj.vsScoreRank)})`, inline: true },
-      )
-      .setTimestamp();
+    // Tetra League embed
+    let leagueEmbed;
+    if (leagueObj === null) {
+      leagueEmbed = new EmbedBuilder()
+        .setColor('#ff8c57')
+        .setDescription(`### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${user.username}) -> Performance -> Tetra League__\n### Hasn't played any Tetra League games yet!`)
+        .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
+        .setURL(`https://tetr.io/u/${user.username}`)
+        .setTimestamp();
+    } else {
+      leagueEmbed = new EmbedBuilder()
+        .setColor(ratingColours[leagueData.rank] || '#ff8c57')
+        .setDescription(`### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${user.username}) -> Performance -> Tetra League__\n` + (leagueData.tr < 0 ? `## Unranked ${getEmojiOfRank('z')}` : `## Ranked ${getEmojiOfRank(leagueData.rank)}`))
+        .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
+        .setURL(`https://tetr.io/u/${user.username}`)
+        .addFields(
+          { name: 'APM', value: `${formatNumber(leagueObj.apm)} APM (${getEmojiOfRank(leagueObj.apmRank)})`, inline: true },
+          { name: 'PPS', value: `${formatNumber(leagueObj.pps)} PPS (${getEmojiOfRank(leagueObj.ppsRank)})`, inline: true },
+          { name: 'VS Score', value: `${formatNumber(leagueObj.vsScore)} (${getEmojiOfRank(leagueObj.vsScoreRank)})`, inline: true },
+        )
+        .setTimestamp();
+    }
 
-    // Create embeds for each gamemode (40 Lines, Blitz, Quick Play, Tetra League)
-    const linesEmbed = new EmbedBuilder()
-      .setColor('#ffd94f')
-      .setDescription('Performance data for 40 Lines will be shown here.')
-      .setTimestamp();
+    // 40 Lines embed
+    let linesEmbed;
+    if (!linesData || !linesData.record) {
+      linesEmbed = new EmbedBuilder()
+        .setColor('#ffd94f')
+        .setDescription(`### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${user.username}) -> Performance -> 40 Lines__\n### Hasn't played any 40 Lines games yet!`)
+        .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
+        .setURL(`https://tetr.io/u/${user.username}`)
+        .setTimestamp();
+    } else {
+      const linesObj = linesData.record.results.aggregatestats;
+      linesEmbed = new EmbedBuilder()
+        .setColor('#ffd94f')
+        .setDescription(`### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${user.username}) -> Performance -> 40 Lines__\n`)
+        .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
+        .setURL(`https://tetr.io/u/${user.username}`)
+        .addFields(
+          { name: 'PPS', value: `${formatNumber(linesObj.pps.toFixed(2))} PPS (${getEmojiOfRank(getRank(linesObj.pps, rankData, "pps"))})`, inline: true },
+        )
+        .setTimestamp();
+    }
 
-    const blitzEmbed = new EmbedBuilder()
-      .setColor('#ff5410')
-      .setDescription('Performance data for Blitz will be shown here.')
-      .setTimestamp();
+    // Blitz embed
+    let blitzEmbed;
+    if (!blitzData || !blitzData.record) {
+      blitzEmbed = new EmbedBuilder()
+        .setColor('#ff5410')
+        .setDescription(`### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${user.username}) -> Performance -> Blitz__\n### Hasn't played any Blitz games yet!`)
+        .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
+        .setURL(`https://tetr.io/u/${user.username}`)
+        .setTimestamp();
+    } else {
+      const blitzObj = blitzData.record.results.aggregatestats;
+      blitzEmbed = new EmbedBuilder()
+        .setColor('#ff5410')
+        .setDescription(`### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${user.username}) -> Performance -> Blitz__\n`)
+        .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
+        .setURL(`https://tetr.io/u/${user.username}`)
+        .addFields(
+          { name: 'PPS', value: `${formatNumber(blitzObj.pps.toFixed(2))} PPS (${getEmojiOfRank(getRank(blitzObj.pps, rankData, "pps"))})`, inline: true },
+        )
+        .setTimestamp();
+    }
 
-    const quickplayEmbed = new EmbedBuilder()
-      .setColor('#ff7024')
-      .setDescription('Performance data for Quick Play will be shown here.')
-      .setTimestamp();
+    // Quick Play embed
+    let quickplayEmbed;
+    if (!zenithData || !zenithData.record) {
+      quickplayEmbed = new EmbedBuilder()
+        .setColor('#ff7024')
+        .setDescription(`### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${user.username}) -> Performance -> Quick Play__\n### Hasn't played any Quick Play games yet!`)
+        .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
+        .setURL(`https://tetr.io/u/${user.username}`)
+        .setTimestamp();
+    } else {
+      const zenithObj = zenithData.record.results.aggregatestats;
+      quickplayEmbed = new EmbedBuilder()
+        .setColor('#ff7024')
+        .setDescription(`### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${user.username}) -> Performance -> Quick Play__\n`)
+        .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
+        .setURL(`https://tetr.io/u/${user.username}`)
+        .addFields(
+          { name: 'APM', value: `${formatNumber(zenithObj.apm.toFixed(2))} APM (${getEmojiOfRank(getRank(zenithObj.apm, rankData, "apm"))})`, inline: true },
+          { name: 'PPS', value: `${formatNumber(zenithObj.pps.toFixed(2))} PPS (${getEmojiOfRank(getRank(zenithObj.pps, rankData, "pps"))})`, inline: true },
+          { name: 'VS Score', value: `${formatNumber(zenithObj.vsscore.toFixed(2))} (${getEmojiOfRank(getRank(zenithObj.vsscore, rankData, "vs"))})`, inline: true },
+        )
+        .setTimestamp();
+    }
 
-    // Button labels and embeds in the new order
+    // Button labels and embeds in the correct order
     const buttonLabels = ['Tetra League', '40 Lines', 'Blitz', 'Quick Play'];
     const embeds = [leagueEmbed, linesEmbed, blitzEmbed, quickplayEmbed];
 
