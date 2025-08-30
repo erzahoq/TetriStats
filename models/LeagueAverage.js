@@ -91,7 +91,7 @@ module.exports = (sequelize) => {
         zenithExBtb: {
             type: DataTypes.FLOAT
         },
-        zenithFinesse: {
+        zenithExFinesse: {
             type: DataTypes.FLOAT
         },
 

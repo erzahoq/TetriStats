@@ -8,7 +8,7 @@ async function run() {
 		dialect: 'sqlite',
 		logging: false,
 		// SQLite only
-		storage: 'database.sqlite',
+		storage: '../database.sqlite',
 	});
 
 	const modelsPath = path.join(__dirname, '/../models');

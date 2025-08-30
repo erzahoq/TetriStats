@@ -14,7 +14,7 @@ const RANKS = ['d', 'd+', 'c-', 'c', 'c+', 'b-', 'b', 'b+', 'a-', 'a', 'a+', 's-
 
 let userRankList = {};
 let userDataList = {};
-let lastRequestTime = Date.now() - REQUEST_COOLDOWN;
+let lastRequestTime = new Date(0);
 
 async function main() {
     console.log("starting... this'll take a while!")
@@ -266,11 +266,11 @@ async function calculateRankAverages() {
 // wow! pretty logging. very necessary
 function printPretty(progress, total, durationEach = null) {
     const barLen = Math.floor(progress * BAR_SIZE/total);
-    const precent = ((progress/total)*100).toFixed(2).padStart(5, '0');
+    const percent = ((progress/total)*100).toFixed(2).padStart(5, '0');
 
     let toLog = `[ #${'#'.repeat(barLen)}` + 
                 `${' '.repeat(BAR_SIZE - barLen)} ]` +
-                ` ${precent}%`;
+                ` ${percent}%`;
 
     if (durationEach) {
         toLog += ` (about ${(Math.ceil((total - progress) * 100 * durationEach) / 100).toFixed(2)}s left)`;
