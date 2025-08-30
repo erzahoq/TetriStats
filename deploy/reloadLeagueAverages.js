@@ -1,5 +1,6 @@
 const { database } = require('../database.js');
 const uuid = require('uuid');
+const fs = require('fs');
 
 let sessionId;
 
@@ -12,16 +13,47 @@ const MAX_ERRORS = 5;
 const BAR_SIZE = 35;
 const RANKS = ['d', 'd+', 'c-', 'c', 'c+', 'b-', 'b', 'b+', 'a-', 'a', 'a+', 's-', 's', 's+', 'ss', 'u', 'x', 'x+'];
 
-let userRankList = {};
+let rankUserList = {};
 let userDataList = {};
 let lastRequestTime = new Date(0);
 
 async function main() {
-    console.log("starting... this'll take a while!")
+    console.log("hi welcome to league average fetch machine thing")
+    console.log("what do you wanna do?")
+    console.log(`1. start running from scratch${fs.existsSync('userList.json') || fs.existsSync('rankData.json') ? " (SAVED DATA EXISTS!)" : ""}\n2. resume from last saved progress\n3. actually nvm\n`)
+
+    const choice = await new Promise((resolve) => {
+        process.stdin.once('data', (data) => {
+            resolve(data.toString().trim());
+        });
+    });
+
+    if (choice === '3') {
+        console.log("ok bye");
+        process.exit(0);
+    }
+    else if (choice === '2') {
+        if (fs.existsSync('userList.json')) {
+            rankUserList = JSON.parse(fs.readFileSync('userList.json'));
+            console.log("userList loaded")
+        }
+        if (fs.existsSync('rankData.json')) {
+            userDataList = JSON.parse(fs.readFileSync('rankData.json'));
+            console.log("rankData loaded")
+        }
+    } else {
+        console.log("starting from scratch");
+    }
+
     sessionId = uuid.v4();
 
-    await fetchAllLeagueUsers();
-    chooseRandomUsers();
+    if (Object.keys(rankUserList).length === 0) {
+        await fetchAllLeagueUsers();
+        chooseRandomUsers();
+        saveProgress();
+    } else {
+        console.log("skipping fetching league users, already have user list from resumed progress");
+    }
     
     sessionId = uuid.v4();
     await fetchUserAverages();
@@ -29,6 +61,12 @@ async function main() {
     await calculateRankAverages();
 
     console.log("all done!");
+    console.log("you may delete userList.json and rankData.json now if you want");
+}
+
+function saveProgress() {
+    if (Object.keys(rankUserList).length > 0) fs.writeFileSync('userList.json', JSON.stringify(rankUserList, null, 2));
+    if (Object.keys(userDataList).length > 0) fs.writeFileSync('rankData.json', JSON.stringify(userDataList, null, 2));
 }
 
 async function fetchAllLeagueUsers() {
@@ -49,7 +87,7 @@ async function fetchAllLeagueUsers() {
         console.log(`fetching all ${totalPlayers} league players...`);
         
         for (const rank of RANKS) {
-            userRankList[rank] = [];
+            rankUserList[rank] = [];
         }
 
     while (true) {
@@ -68,7 +106,7 @@ async function fetchAllLeagueUsers() {
         }
         
         for (const user of data.data.entries) {
-            userRankList[user.league.rank].push(user.username);
+            rankUserList[user.league.rank].push(user.username);
         }
         currentPlayers += data.data.entries.length;
 
@@ -88,33 +126,39 @@ async function fetchAllLeagueUsers() {
 }
 
 function chooseRandomUsers() {
-    let oldRankList = {...userRankList};
-    userRankList = {};
+    let oldRankList = {...rankUserList};
+    rankUserList = {};
 
     for (const rank of RANKS) {
-        userRankList[rank] = [];
+        rankUserList[rank] = [];
 
         if (oldRankList[rank].length <= USERS_PER_RANK) {
-            userRankList[rank] = oldRankList[rank];
+            rankUserList[rank] = oldRankList[rank];
             continue;
         }
 
-        while (userRankList[rank].length < USERS_PER_RANK) {
+        while (rankUserList[rank].length < USERS_PER_RANK) {
             const randomIndex = Math.floor(Math.random() * oldRankList[rank].length);
-            userRankList[rank].push(oldRankList[rank][randomIndex]);
+            rankUserList[rank].push(oldRankList[rank][randomIndex]);
             oldRankList[rank].splice(randomIndex, 1);
         }
     }
 
-    console.log(`selected ${USERS_PER_RANK} users from each rank, for a total of ${Object.values(userRankList).flat().length} users`);
+    console.log(`selected ${USERS_PER_RANK} users from each rank, for a total of ${Object.values(rankUserList).flat().length} users`);
 }
 
 async function fetchUserAverages() {
     console.log("fetching user data...");
-    const totalUsers = Object.values(userRankList).flat().length;
+    const totalUsers = Object.values(rankUserList).flat().length;
     let currentUsers = 0;
 
     for (const rank of RANKS) {
+        if (userDataList[rank] && userDataList[rank].length === rankUserList[rank].length) {
+            currentUsers += userDataList[rank].length;
+            console.log(`rank ${rank} is already fetched from resumed progress, skipping...`);
+            printPretty(currentUsers, totalUsers, USER_DATA_REQUEST_COOLDOWN);
+            continue;
+        }
         console.log(`working on rank ${rank}...`);
 
         // console.debug(`usernames: ${userRankList[rank].join(', ')}`);
@@ -122,7 +166,7 @@ async function fetchUserAverages() {
         userDataList[rank] = [];
         let totalErrors = 0;
 
-        for (const username of userRankList[rank]) {
+        for (const username of rankUserList[rank]) {
             let retryCount = 0;
             const maxRetries = 3;
             
@@ -158,6 +202,8 @@ async function fetchUserAverages() {
                 }
             }
         }
+
+        saveProgress();
     }
 
     console.log("all user data fetched");

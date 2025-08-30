@@ -1,4 +1,6 @@
 config.json
+rankData.json
+userList.json
 node_modules/*
 
 database.sqlite
