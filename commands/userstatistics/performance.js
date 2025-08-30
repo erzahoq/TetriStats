@@ -2,7 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, Butt
 import('node-fetch'); // Ensure 'node-fetch' is imported properly
 
 // Import helper functions for formatting and data processing
-const { formatNumber, escapeUnderscores, countryCodeToEmoji, convertToTimeFormat, playtimeConvert, getEmojiOfAch, getEmojiOfRank, reformatTimestamp, calculateLevel } = require('../../helpers/functions');
+const { formatNumber, escapeUnderscores, getEmojiOfRank, getLeagueRankColour } = require('../../helpers/functions');
 const { getUser } = require('../../helpers/getuser');
 const { getEmoji } = require('../../helpers/emojis');
 
@@ -60,12 +60,6 @@ module.exports = {
 
     const leagueObj = league(leagueData, rankData);
 
-    const ratingColours = {
-      "z": "#7d7d7d", "d": "#846b83", "d+": "#8a5d8b", "c-": "#755188", "c": "#733e8f", "c+": "#562a89",
-      "b-": "#5550c5", "b": "#4f65cb", "b+": "#4e99c0", "a-": "#45ca7f", "a": "#6bcb55", "a+": "#4fca18",
-      "s-": "#c8b82d", "s": "#e8b215", "s+": "#ffec0e", "ss": "#feaf1b", "u": "#ff2713", "x": "#fd73fc", "x+": "#f018d0"
-    };
-
     // Tetra League embed
     let leagueEmbed;
     if (leagueObj === null) {
@@ -77,7 +71,7 @@ module.exports = {
         .setTimestamp();
     } else {
       leagueEmbed = new EmbedBuilder()
-        .setColor(ratingColours[leagueData.rank] || '#ff8c57')
+        .setColor(getLeagueRankColour(leagueData.rank) || '#ff8c57')
         .setDescription(`### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${user.username}) -> Performance -> Tetra League__\n` + (leagueData.tr < 0 ? `## Unranked ${getEmojiOfRank('z')}` : `## Ranked ${getEmojiOfRank(leagueData.rank)}`))
         .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
         .setURL(`https://tetr.io/u/${user.username}`)

@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { EmbedBuilder, InteractionContextType, ApplicationIntegrationType, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
-const { formatNumber, countryCodeToEmoji, getEmojiOfRank, escapeUnderscores } = require('../../helpers/functions');
+const { formatNumber, getLeagueRankColour, getEmojiOfRank, escapeUnderscores } = require('../../helpers/functions');
 const { getUser } = require('../../helpers/getuser');
 const { getEmoji } = require('../../helpers/emojis');
 
@@ -54,29 +54,6 @@ module.exports = {
             const gamesPlayed = leagueData.gamesplayed || 0;
             const gamesWon = leagueData.gameswon || 0;
             const winRate = gamesPlayed > 0 ? ((gamesWon / gamesPlayed) * 100).toFixed(2) : 'N/A';
-
-            const ratingColours = {
-                "z": "#7d7d7d",
-                "d": "#846b83",
-                "d+": "#8a5d8b",
-                "c-": "#755188",
-                "c": "#733e8f", 
-                "c+": "#562a89",
-                "b-": "#5550c5",
-                "b": "#4f65cb",
-                "b+": "#4e99c0",
-                "a-": "#45ca7f",
-                "a": "#6bcb55",
-                "a+": "#4fca18",
-                "s-": "#c8b82d",
-                "s": "#e8b215",
-                "s+": "#ffec0e",
-                "ss": "#feaf1b",
-                "u": "#ff2713",
-                "x": "#fd73fc",
-                "x+": "#f018d0"
-            }
-
         
             // Calculate extra stats
 
@@ -162,7 +139,7 @@ module.exports = {
                 const embed = new EmbedBuilder()
                     .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
                     .setDescription(description)
-                    .setColor(ratingColours[rank] || '#ff8c57');
+                    .setColor(getLeagueRankColour(rank) || '#ff8c57');
                 await interaction.reply({
                     embeds: [embed]
                 });
@@ -172,7 +149,7 @@ module.exports = {
                     new EmbedBuilder()
                         .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
                         .setDescription(description)
-                        .setColor(ratingColours[rank] || '#ff8c57')
+                        .setColor(getLeagueRankColour(rank) || '#ff8c57')
                 ];
 
                 // Add a page for each season in order
@@ -217,7 +194,7 @@ module.exports = {
                     pages.push(
                         new EmbedBuilder()
                             .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
-                            .setColor(ratingColours[seasonData.rank] || '#ff8c57')
+                            .setColor(getLeagueRankColour(seasonData.rank) || '#ff8c57')
                             .setDescription(pastDescription)
                     );
                 }

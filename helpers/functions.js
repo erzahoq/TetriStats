@@ -86,6 +86,32 @@ function capitalizeFirstLetter(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
+function getLeagueRankColour(rank) {
+    const ratingColours = {
+        "z": "#7d7d7d",
+        "d": "#846b83",
+        "d+": "#8a5d8b",
+        "c-": "#755188",
+        "c": "#733e8f", 
+        "c+": "#562a89",
+        "b-": "#5550c5",
+        "b": "#4f65cb",
+        "b+": "#4e99c0",
+        "a-": "#45ca7f",
+        "a": "#6bcb55",
+        "a+": "#4fca18",
+        "s-": "#c8b82d",
+        "s": "#e8b215",
+        "s+": "#ffec0e",
+        "ss": "#feaf1b",
+        "u": "#ff2713",
+        "x": "#fd73fc",
+        "x+": "#f018d0"
+    }
+
+    return ratingColours[rank]
+}
+
 module.exports = {
     formatNumber,
     escapeUnderscores,
@@ -97,5 +123,6 @@ module.exports = {
     reformatTimestamp,
     calculateLevel,
     capitalizeFirstLetter,
-    getModEmoji
+    getModEmoji,
+    getLeagueRankColour
 }
