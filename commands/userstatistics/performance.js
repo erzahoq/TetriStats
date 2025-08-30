@@ -5,6 +5,9 @@ import('node-fetch'); // Ensure 'node-fetch' is imported properly
 const { formatNumber, escapeUnderscores, getEmojiOfRank, getLeagueRankColour } = require('../../helpers/functions');
 const { getUser } = require('../../helpers/getuser');
 const { getEmoji } = require('../../helpers/emojis');
+const { database } = require('../../database');
+
+let rankData;
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -43,117 +46,68 @@ module.exports = {
 
     delete userStats.zen;
     delete userStats.achievements;
-    // maybe also expert qp but idk
-    // delete userStats.zenithex;
 
-    let zenithData = userStats.zenith;
     let leagueData = userStats.league;
-    let linesData = userStats['40l'];
-    let blitzData = userStats.blitz;
+    let linesData = userStats['40l'].record?.results;
+    let blitzData = userStats.blitz.record?.results;
+    let zenithData = (userStats.zenith.best?.record || userStats.zenith.record)?.results;
+    let zenithExData = (userStats.zenithex.record || userStats.zenithex.best?.record)?.results;
 
-    // Fetch labs league data
-    response = await fetch(`https://ch.tetr.io/api/labs/league_ranks`);
-    let labsLeagueData = await response.json();
-    let rankData = labsLeagueData.data.data;
-    // kills u
-    delete rankData.total;
-
-    const leagueObj = league(leagueData, rankData);
-
-    // Tetra League embed
-    let leagueEmbed;
-    if (leagueObj === null) {
-      leagueEmbed = new EmbedBuilder()
-        .setColor('#ff8c57')
-        .setDescription(`### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${user.username}) -> Performance -> Tetra League__\n### Hasn't played any Tetra League games yet!`)
-        .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
-        .setURL(`https://tetr.io/u/${user.username}`)
-        .setTimestamp();
-    } else {
-      leagueEmbed = new EmbedBuilder()
-        .setColor(getLeagueRankColour(leagueData.rank) || '#ff8c57')
-        .setDescription(`### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${user.username}) -> Performance -> Tetra League__\n` + (leagueData.tr < 0 ? `## Unranked ${getEmojiOfRank('z')}` : `## Ranked ${getEmojiOfRank(leagueData.rank)}`))
-        .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
-        .setURL(`https://tetr.io/u/${user.username}`)
-        .addFields(
-          { name: 'APM', value: `${formatNumber(leagueObj.apm)} APM (${getEmojiOfRank(leagueObj.apmRank)})`, inline: true },
-          { name: 'PPS', value: `${formatNumber(leagueObj.pps)} PPS (${getEmojiOfRank(leagueObj.ppsRank)})`, inline: true },
-          { name: 'VS Score', value: `${formatNumber(leagueObj.vsScore)} (${getEmojiOfRank(leagueObj.vsScoreRank)})`, inline: true },
-        )
-        .setTimestamp();
+    const leagueEmbed = getEmbed(user.username, 'Tetra League', user._id, !leagueData || leagueData.played === 0);
+    if (leagueData) {
+      await addEmbedField(leagueEmbed, 'leaguePps', 'Pieces Per Second', leagueData.pps);
+      await addEmbedField(leagueEmbed, 'leagueApm', 'Attack Per Minute', leagueData.apm);
+      await addEmbedField(leagueEmbed, 'leagueVs', 'VS score', leagueData.vs);
     }
 
-    // 40 Lines embed
-    let linesEmbed;
-    if (!linesData || !linesData.record) {
-      linesEmbed = new EmbedBuilder()
-        .setColor('#ffd94f')
-        .setDescription(`### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${user.username}) -> Performance -> 40 Lines__\n### Hasn't played any 40 Lines games yet!`)
-        .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
-        .setURL(`https://tetr.io/u/${user.username}`)
-        .setTimestamp();
-    } else {
-      const linesObj = linesData.record.results.aggregatestats;
-      linesEmbed = new EmbedBuilder()
-        .setColor('#ffd94f')
-        .setDescription(`### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${user.username}) -> Performance -> 40 Lines__\n`)
-        .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
-        .setURL(`https://tetr.io/u/${user.username}`)
-        .addFields(
-          { name: 'PPS', value: `${formatNumber(linesObj.pps.toFixed(2))} PPS (${getEmojiOfRank(getRank(linesObj.pps, rankData, "pps"))})`, inline: true },
-        )
-        .setTimestamp();
+    const linesEmbed = getEmbed(user.username, '40 Lines', user._id, !linesData || linesData.played === 0);
+    if (linesData) {
+      await addEmbedField(linesEmbed, 'sprintTime', 'Time', linesData.stats.finaltime, { lowerIsBetter: true, isTime: true });
+      await addEmbedField(linesEmbed, 'sprintPps', 'Pieces Per Second', linesData.aggregatestats.pps);
+      await addEmbedField(linesEmbed, 'sprintKpp', 'Keys Per Piece', linesData.stats.inputs / linesData.stats.piecesplaced, { decimals: 3, lowerIsBetter: true });
+      await addEmbedField(linesEmbed, 'sprintKps', 'Keys Per Second', linesData.stats.inputs / (linesData.stats.finaltime / 1000), { decimals: 3 });
+
+      if (linesData.stats.finesse !== undefined) { // some replays don't have finesse data... very cool
+        await addEmbedField(linesEmbed, 'sprintFinesse', 'Finesse', (linesData.stats.finesse.perfectpieces / linesData.stats.piecesplaced), { isPercentage: true });
+      }
+    }
+      
+
+    const blitzEmbed = getEmbed(user.username, 'Blitz', user._id, !blitzData || blitzData.played === 0);
+    if (blitzData) {
+      await addEmbedField(blitzEmbed, 'blitzScore', 'Score', blitzData.stats.score, { decimals: 0 });
+      await addEmbedField(blitzEmbed, 'blitzPps', 'Pieces Per Second', blitzData.aggregatestats.pps);
+      await addEmbedField(blitzEmbed, 'blitzSpp', 'Score Per Piece', blitzData.stats.score / blitzData.stats.piecesplaced, { decimals: 3 });
+
+      if (blitzData.stats.finesse !== undefined) {
+        await addEmbedField(blitzEmbed, 'blitzFinesse', 'Finesse', (blitzData.stats.finesse.perfectpieces / blitzData.stats.piecesplaced), { isPercentage: true });
+      }
     }
 
-    // Blitz embed
-    let blitzEmbed;
-    if (!blitzData || !blitzData.record) {
-      blitzEmbed = new EmbedBuilder()
-        .setColor('#ff5410')
-        .setDescription(`### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${user.username}) -> Performance -> Blitz__\n### Hasn't played any Blitz games yet!`)
-        .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
-        .setURL(`https://tetr.io/u/${user.username}`)
-        .setTimestamp();
-    } else {
-      const blitzObj = blitzData.record.results.aggregatestats;
-      blitzEmbed = new EmbedBuilder()
-        .setColor('#ff5410')
-        .setDescription(`### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${user.username}) -> Performance -> Blitz__\n`)
-        .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
-        .setURL(`https://tetr.io/u/${user.username}`)
-        .addFields(
-          { name: 'PPS', value: `${formatNumber(blitzObj.pps.toFixed(2))} PPS (${getEmojiOfRank(getRank(blitzObj.pps, rankData, "pps"))})`, inline: true },
-        )
-        .setTimestamp();
+    const quickplayEmbed = getEmbed(user.username, 'Quick Play', user._id, !zenithData || zenithData.played === 0);
+    if (zenithData) {
+      await addEmbedField(quickplayEmbed, 'zenithHeight', 'Height', zenithData.stats.zenith.altitude);
+      await addEmbedField(quickplayEmbed, 'zenithPps', 'Pieces Per Second', zenithData.aggregatestats.pps);
+      await addEmbedField(quickplayEmbed, 'zenithApm', 'Attack Per Minute', zenithData.aggregatestats.apm);
+      await addEmbedField(quickplayEmbed, 'zenithClimbSpeed', 'Average Climb Speed', zenithData.stats.zenith.rank, { decimals: 3 });
+      await addEmbedField(quickplayEmbed, 'zenithBtb', 'Highest Back-to-Back', zenithData.stats.topbtb, { decimals: 0 });
+
+      // finesse is always here for zenith and expert
+      await addEmbedField(quickplayEmbed, 'zenithFinesse', 'Finesse', (zenithData.stats.finesse.perfectpieces / zenithData.stats.piecesplaced), { isPercentage: true });
     }
 
-    // Quick Play embed
-    let quickplayEmbed;
-    if (!zenithData || !zenithData.record) {
-      quickplayEmbed = new EmbedBuilder()
-        .setColor('#ff7024')
-        .setDescription(`### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${user.username}) -> Performance -> Quick Play__\n### Hasn't played any Quick Play games yet!`)
-        .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
-        .setURL(`https://tetr.io/u/${user.username}`)
-        .setTimestamp();
-    } else {
-      const zenithObj = zenithData.record.results.aggregatestats;
-      quickplayEmbed = new EmbedBuilder()
-        .setColor('#ff7024')
-        .setDescription(`### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${user.username}) -> Performance -> Quick Play__\n`)
-        .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
-        .setURL(`https://tetr.io/u/${user.username}`)
-        .addFields(
-          { name: 'APM', value: `${formatNumber(zenithObj.apm.toFixed(2))} APM (${getEmojiOfRank(getRank(zenithObj.apm, rankData, "apm"))})`, inline: true },
-          { name: 'PPS', value: `${formatNumber(zenithObj.pps.toFixed(2))} PPS (${getEmojiOfRank(getRank(zenithObj.pps, rankData, "pps"))})`, inline: true },
-          { name: 'VS Score', value: `${formatNumber(zenithObj.vsscore.toFixed(2))} (${getEmojiOfRank(getRank(zenithObj.vsscore, rankData, "vs"))})`, inline: true },
-        )
-        .setTimestamp();
+    const quickplayExEmbed = getEmbed(user.username, 'Quick Play EX', user._id, !zenithExData || zenithExData.played === 0);
+    if (zenithExData) {
+      await addEmbedField(quickplayExEmbed, 'zenithExHeight', 'Height', zenithExData.stats.zenith.altitude);
+      await addEmbedField(quickplayExEmbed, 'zenithExPps', 'Pieces Per Second', zenithExData.aggregatestats.pps);
+      await addEmbedField(quickplayExEmbed, 'zenithExApm', 'Attack Per Minute', zenithExData.aggregatestats.apm);
+      await addEmbedField(quickplayExEmbed, 'zenithExClimbSpeed', 'Average Climb Speed', zenithExData.stats.zenith.rank, { decimals: 3 });
+      await addEmbedField(quickplayExEmbed, 'zenithExBtb', 'Highest Back-to-Back', zenithExData.stats.topbtb, { decimals: 0 });
+      await addEmbedField(quickplayExEmbed, 'zenithExFinesse', 'Finesse', (zenithExData.stats.finesse.perfectpieces / zenithExData.stats.piecesplaced), { isPercentage: true });
     }
 
-    // Button labels and embeds in the correct order
-    const buttonLabels = ['Tetra League', '40 Lines', 'Blitz', 'Quick Play'];
-    const embeds = [leagueEmbed, linesEmbed, blitzEmbed, quickplayEmbed];
+    const buttonLabels = ['Tetra League', '40 Lines', 'Blitz', 'Quick Play', 'Quick Play EX'];
+    const embeds = [leagueEmbed, linesEmbed, blitzEmbed, quickplayEmbed, quickplayExEmbed];
 
     // Create navigation buttons
     const row = new ActionRowBuilder().addComponents(
@@ -181,29 +135,62 @@ module.exports = {
   },
 };
 
-function league(leagueData, rankData) {
-  if (!leagueData || leagueData.gamesplayed === 0) {
-    return null;
-  }
-  let apm = leagueData.apm;
-  let pps = leagueData.pps;
-  let vsScore = leagueData.vs;
-
-  let apmRank = getRank(apm, rankData, 'apm');
-  let ppsRank = getRank(pps, rankData, 'pps');
-  let vsScoreRank = getRank(vsScore, rankData, 'vs');
-
-  return { apm, pps, vsScore, apmRank, ppsRank, vsScoreRank };
+function getEmbed(username, mode, userId, recordExists) {
+  const embed = new EmbedBuilder()
+    .setDescription(`### __[${escapeUnderscores(username).toUpperCase()}](https://tetr.io/u/${username}) -> Performance -> ${mode}__\n${recordExists ? `Hasn't played any ${mode} games yet!` : ''}`)
+    .setThumbnail(`https://tetr.io/user-content/avatars/${userId}.png`)
+    .setURL(`https://tetr.io/u/${username}`)
+  
+  return embed;
 }
 
-function getRank(statValue, rankData, statKey) {
-  let rank = 'd';
-  for (const [r, data] of Object.entries(rankData)) {
-    if (statValue >= data[statKey]) {
-      rank = r;
-      break;
+async function addEmbedField(embed, dbStatKey, statName, statValue, extras = { lowerIsBetter: false, isTime: false, decimals: 2, isPercentage: false }) {
+  if (!statValue) return;
+
+  let rank = await getRank(statValue, dbStatKey, extras.lowerIsBetter);
+  let emoji = getEmojiOfRank(rank);
+  let value;
+
+  if (extras.isTime) {
+    value = (statValue / 1000).toFixed(2) + 's';
+    if (statValue >= 60000) value = `${Math.floor(statValue / 60000)}:${((statValue % 60000) / 1000).toFixed(2)}`;
+  } else if (extras.isPercentage) {
+    value = (statValue * 100).toFixed(2) + '%';
+  } else {
+    const d = 10 ** (extras.decimals);
+    value = formatNumber(Math.floor(statValue)) + '.' + (Math.floor(statValue * d) % d).toString().padStart(extras.decimals, '0');
+
+    if (extras.decimals === 0) {
+      value = formatNumber(Math.round(statValue)); // round instead of floor
     }
   }
+
+  embed.addFields({ name: `${statName}`, value: `**${value}** (Around ${emoji})`, inline: true });
+}
+
+async function getRank(statValue, statKey, lowerIsBetter = false) {
+  if (!rankData) {
+    await database.LeagueAverage.findAll().then((data) => {
+      rankData = [];
+      data.forEach((entry) => rankData.push({...entry.dataValues, rank: entry.rank}));
+    });
+  }
+
+  let rank = 'z';
+  for (let i = 0; i < rankData.length; i++) {
+    const betterThanRank = (statValue > rankData[i][statKey] && !lowerIsBetter) || (statValue < rankData[i][statKey] && lowerIsBetter)
+
+    if (!betterThanRank) {
+      if (i === 0) rank = 'd';
+      else rank = rankData[i - 1].rank || 'd';
+
+      break;
+    }
+    if (betterThanRank && i === rankData.length - 1) {
+      rank = rankData[i].rank;
+    }
+  }
+
   return rank;
 }
 
