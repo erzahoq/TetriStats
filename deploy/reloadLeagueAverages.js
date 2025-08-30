@@ -62,6 +62,8 @@ async function main() {
 
     console.log("all done!");
     console.log("you may delete userList.json and rankData.json now if you want");
+
+    process.exit(0);
 }
 
 function saveProgress() {
@@ -255,7 +257,9 @@ async function calculateRankAverages() {
                 rankTotals.sprintPps += recordResults.aggregatestats.pps;
                 rankTotals.sprintKpp += recordResults.stats.inputs / recordResults.stats.piecesplaced;
                 rankTotals.sprintKps += recordResults.stats.inputs / (recordResults.stats.finaltime / 1000);
-                rankTotals.sprintFinesse += recordResults.stats.finesse.perfectpieces / recordResults.stats.piecesplaced;
+
+                
+                if (recordResults.stats.finesse) rankTotals.sprintFinesse += recordResults.stats.finesse.perfectpieces / recordResults.stats.piecesplaced;
             }
 
             if (userData.blitz?.record) {
@@ -264,7 +268,8 @@ async function calculateRankAverages() {
                 rankTotals.blitzScore += recordResults.stats.score;
                 rankTotals.blitzPps += recordResults.aggregatestats.pps;
                 rankTotals.blitzSpp += recordResults.stats.score / recordResults.stats.piecesplaced;
-                rankTotals.blitzFinesse += recordResults.stats.finesse.perfectpieces / recordResults.stats.piecesplaced;
+
+                if (recordResults.stats.finesse) rankTotals.blitzFinesse += recordResults.stats.finesse.perfectpieces / recordResults.stats.piecesplaced;
             }
 
             if (userData.zenith && (userData.zenith.best?.record || userData.zenith.record)) {
