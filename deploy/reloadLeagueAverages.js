@@ -3,7 +3,10 @@ const uuid = require('uuid');
 
 let sessionId;
 
-const REQUEST_COOLDOWN = 1.25; // in seconds
+// request cooldowns (in seconds)
+const USER_DATA_REQUEST_COOLDOWN = 1.05;
+const LEAGUE_USERS_REQUEST_COOLDOWN = 1.35;
+
 const USERS_PER_RANK = 150;
 const MAX_ERRORS = 5;
 const BAR_SIZE = 35;
@@ -50,7 +53,7 @@ async function fetchAllLeagueUsers() {
         }
 
     while (true) {
-        const response = await fetchWithCooldown(`https://ch.tetr.io/api/users/by/league?after=${pageTR}&limit=100`);
+        const response = await fetchWithCooldown(`https://ch.tetr.io/api/users/by/league?after=${pageTR}&limit=100`, LEAGUE_USERS_REQUEST_COOLDOWN);
         const data = await response.json();
         
         if (!data.success) {
@@ -72,7 +75,7 @@ async function fetchAllLeagueUsers() {
         const lastUser = data.data.entries[data.data.entries.length - 1];
         pageTR = `${lastUser.p.pri}:${lastUser.p.sec}:${lastUser.p.ter}`; // very cool pagination system
         
-        printPretty(currentPlayers, totalPlayers, REQUEST_COOLDOWN/100);
+        printPretty(currentPlayers, totalPlayers, LEAGUE_USERS_REQUEST_COOLDOWN/100);
         
         if (currentPlayers >= totalPlayers) {
             break;
@@ -126,7 +129,7 @@ async function fetchUserAverages() {
             while (retryCount <= maxRetries) {
                 try {
                     // console.debug(`fetching data for ${username}...`);
-                    const response = await fetchWithCooldown(`https://ch.tetr.io/api/users/${username}/summaries`);
+                    const response = await fetchWithCooldown(`https://ch.tetr.io/api/users/${username}/summaries`, USER_DATA_REQUEST_COOLDOWN);
                     const data = await response.json();
 
                     if (!data.success) {
@@ -135,7 +138,7 @@ async function fetchUserAverages() {
 
                     userDataList[rank].push(data.data);
                     currentUsers++;
-                    printPretty(currentUsers, totalUsers, REQUEST_COOLDOWN);
+                    printPretty(currentUsers, totalUsers, USER_DATA_REQUEST_COOLDOWN);
                     break;
                     
                 } catch (error) {
@@ -281,7 +284,7 @@ async function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function fetchWithCooldown(url, cooldown = REQUEST_COOLDOWN) {
+async function fetchWithCooldown(url, cooldown) {
     cooldown *= 1000; // convert to ms
 
     const timeSinceLastRequest = Date.now() - lastRequestTime;
