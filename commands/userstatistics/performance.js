@@ -62,51 +62,53 @@ module.exports = {
     const quickplayEmbed = getEmbed(user.username, 'Quick Play',  user._id, !zenithData || zenithData.played === 0, userLeagueRank, leagueData?.percentile_rank);
     const quickplayExEmbed = getEmbed(user.username, 'Expert Quick Play', user._id, !zenithExData || zenithExData.played === 0, userLeagueRank, leagueData?.percentile_rank);
 
+    const effectiveRank = leagueData?.rank || leagueData?.percentile_rank || null;
+
     if (leagueData) {
-      await addEmbedField(leagueEmbed, 'leaguePps', 'Pieces Per Second', leagueData.pps,        { userRank: userLeagueRank, userPercentile: leagueData?.percentile_rank });
-      await addEmbedField(leagueEmbed, 'leagueApm', 'Attack Per Minute',  leagueData.apm,       { userRank: userLeagueRank, userPercentile: leagueData?.percentile_rank });
-      await addEmbedField(leagueEmbed, 'leagueVs',  'VS score',           leagueData.vs,        { userRank: userLeagueRank, userPercentile: leagueData?.percentile_rank });
+      await addEmbedField(leagueEmbed, 'leaguePps', 'Pieces Per Second', leagueData.pps, effectiveRank, { decimals: 3 });
+      await addEmbedField(leagueEmbed, 'leagueApm', 'Attack Per Minute',  leagueData.apm, effectiveRank);
+      await addEmbedField(leagueEmbed, 'leagueVs',  'VS score',           leagueData.vs, effectiveRank);
     }
 
     if (linesData) {
-      await addEmbedField(linesEmbed,  'sprintTime','' /*yeag*/,               linesData.stats.finaltime, { lowerIsBetter: true, isTime: true, userRank: userLeagueRank, userPercentile: leagueData?.percentile_rank });
-      await addEmbedField(linesEmbed,  'sprintPps', 'Pieces Per Second',  linesData.aggregatestats.pps, { userRank: userLeagueRank, userPercentile: leagueData?.percentile_rank });
-      await addEmbedField(linesEmbed,  'sprintKpp', 'Keys Per Piece',     linesData.stats.inputs / linesData.stats.piecesplaced, { decimals: 3, lowerIsBetter: true, userRank: userLeagueRank, userPercentile: leagueData?.percentile_rank });
-      await addEmbedField(linesEmbed,  'sprintKps', 'Keys Per Second',    linesData.stats.inputs / (linesData.stats.finaltime / 1000), { decimals: 3, userRank: userLeagueRank, userPercentile: leagueData?.percentile_rank });
+      await addEmbedField(linesEmbed,  'sprintTime','' /*yeag*/,               linesData.stats.finaltime, effectiveRank, { lowerIsBetter: true, isTime: true });
+      await addEmbedField(linesEmbed,  'sprintPps', 'Pieces Per Second',  linesData.aggregatestats.pps, effectiveRank, { decimals: 3 } );
+      await addEmbedField(linesEmbed,  'sprintKpp', 'Keys Per Piece',     linesData.stats.inputs / linesData.stats.piecesplaced, effectiveRank, { decimals: 3, lowerIsBetter: true });
+      await addEmbedField(linesEmbed,  'sprintKps', 'Keys Per Second',    linesData.stats.inputs / (linesData.stats.finaltime / 1000), effectiveRank, { decimals: 3 });
 
       if (linesData.stats.finesse !== undefined) { // some replays don't have finesse data... very cool
-        await addEmbedField(linesEmbed,  'sprintFinesse','Finesse',         (linesData.stats.finesse.perfectpieces / linesData.stats.piecesplaced), { isPercentage: true, userRank: userLeagueRank, userPercentile: leagueData?.percentile_rank });
+        await addEmbedField(linesEmbed,  'sprintFinesse','Finesse',  (linesData.stats.finesse.perfectpieces / linesData.stats.piecesplaced), effectiveRank, { isPercentage: true });
       }
     }
       
     if (blitzData) {
-      await addEmbedField(blitzEmbed,  'blitzScore','Score',              blitzData.stats.score, { decimals: 0, userRank: userLeagueRank, userPercentile: leagueData?.percentile_rank });
-      await addEmbedField(blitzEmbed,  'blitzPps',  'Pieces Per Second',  blitzData.aggregatestats.pps, { userRank: userLeagueRank, userPercentile: leagueData?.percentile_rank });
-      await addEmbedField(blitzEmbed,  'blitzSpp',  'Score Per Piece',    blitzData.stats.score / blitzData.stats.piecesplaced, { decimals: 3, userRank: userLeagueRank, userPercentile: leagueData?.percentile_rank });
+      await addEmbedField(blitzEmbed,  'blitzScore','Score',              blitzData.stats.score, effectiveRank, { decimals: 0 });
+      await addEmbedField(blitzEmbed,  'blitzPps',  'Pieces Per Second',  blitzData.aggregatestats.pps, effectiveRank, { decimals: 3 });
+      await addEmbedField(blitzEmbed,  'blitzSpp',  'Score Per Piece',    blitzData.stats.score / blitzData.stats.piecesplaced, effectiveRank);
 
       if (blitzData.stats.finesse !== undefined) {
-        await addEmbedField(blitzEmbed,  'blitzFinesse','Finesse',          (blitzData.stats.finesse.perfectpieces / blitzData.stats.piecesplaced), { isPercentage: true, userRank: userLeagueRank, userPercentile: leagueData?.percentile_rank });
+        await addEmbedField(blitzEmbed,  'blitzFinesse','Finesse',          (blitzData.stats.finesse.perfectpieces / blitzData.stats.piecesplaced), effectiveRank, { isPercentage: true });
       }
     }
 
     if (zenithData) {
-      await addEmbedField(quickplayEmbed, 'zenithHeight','Height',        zenithData.stats.zenith.altitude, { userRank: userLeagueRank, userPercentile: leagueData?.percentile_rank });
-      await addEmbedField(quickplayEmbed, 'zenithPps',   'Pieces Per Second', zenithData.aggregatestats.pps, { userRank: userLeagueRank, userPercentile: leagueData?.percentile_rank });
-      await addEmbedField(quickplayEmbed, 'zenithApm',   'Attack Per Minute',  zenithData.aggregatestats.apm, { userRank: userLeagueRank, userPercentile: leagueData?.percentile_rank });
-      await addEmbedField(quickplayEmbed, 'zenithClimbSpeed','Average Climb Speed', zenithData.stats.zenith.rank, { decimals: 3, userRank: userLeagueRank, userPercentile: leagueData?.percentile_rank });
-      await addEmbedField(quickplayEmbed, 'zenithBtb',   'Highest Back-to-Back', zenithData.stats.topbtb, { decimals: 0, userRank: userLeagueRank, userPercentile: leagueData?.percentile_rank });
+      await addEmbedField(quickplayEmbed, 'zenithHeight','Height',        zenithData.stats.zenith.altitude, effectiveRank);
+      await addEmbedField(quickplayEmbed, 'zenithPps',   'Pieces Per Second', zenithData.aggregatestats.pps, effectiveRank, { decimals: 3 });
+      await addEmbedField(quickplayEmbed, 'zenithApm',   'Attack Per Minute',  zenithData.aggregatestats.apm, effectiveRank);
+      await addEmbedField(quickplayEmbed, 'zenithClimbSpeed','Average Climb Speed', zenithData.stats.zenith.rank, effectiveRank, { decimals: 3 });
+      await addEmbedField(quickplayEmbed, 'zenithBtb',   'Highest Back-to-Back', zenithData.stats.topbtb, effectiveRank, { decimals: 0 });
 
       // finesse is always here for zenith and expert
-      await addEmbedField(quickplayEmbed, 'zenithFinesse','Finesse',      (zenithData.stats.finesse.perfectpieces / zenithData.stats.piecesplaced), { isPercentage: true, userRank: userLeagueRank, userPercentile: leagueData?.percentile_rank });
+      await addEmbedField(quickplayEmbed, 'zenithFinesse','Finesse',      (zenithData.stats.finesse.perfectpieces / zenithData.stats.piecesplaced), effectiveRank, { isPercentage: true });
     }
 
     if (zenithExData) {
-      await addEmbedField(quickplayExEmbed, 'zenithExHeight','Height',    zenithExData.stats.zenith.altitude, { userRank: userLeagueRank, userPercentile: leagueData?.percentile_rank });
-      await addEmbedField(quickplayExEmbed, 'zenithExPps',   'Pieces Per Second', zenithExData.aggregatestats.pps, { userRank: userLeagueRank, userPercentile: leagueData?.percentile_rank });
-      await addEmbedField(quickplayExEmbed, 'zenithExApm',   'Attack Per Minute',  zenithExData.aggregatestats.apm, { userRank: userLeagueRank, userPercentile: leagueData?.percentile_rank });
-      await addEmbedField(quickplayExEmbed, 'zenithExClimbSpeed','Average Climb Speed', zenithExData.stats.zenith.rank, { decimals: 3, userRank: userLeagueRank, userPercentile: leagueData?.percentile_rank });
-      await addEmbedField(quickplayExEmbed, 'zenithExBtb',   'Highest Back-to-Back', zenithExData.stats.topbtb, { decimals: 0, userRank: userLeagueRank, userPercentile: leagueData?.percentile_rank });
-      await addEmbedField(quickplayExEmbed, 'zenithExFinesse','Finesse',  (zenithExData.stats.finesse.perfectpieces / zenithExData.stats.piecesplaced), { isPercentage: true, userRank: userLeagueRank, userPercentile: leagueData?.percentile_rank });
+      await addEmbedField(quickplayExEmbed, 'zenithExHeight','Height',    zenithExData.stats.zenith.altitude, effectiveRank);
+      await addEmbedField(quickplayExEmbed, 'zenithExPps',   'Pieces Per Second', zenithExData.aggregatestats.pps, effectiveRank, { decimals: 3 });
+      await addEmbedField(quickplayExEmbed, 'zenithExApm',   'Attack Per Minute',  zenithExData.aggregatestats.apm, effectiveRank);
+      await addEmbedField(quickplayExEmbed, 'zenithExClimbSpeed','Average Climb Speed', zenithExData.stats.zenith.rank, effectiveRank, { decimals: 3 });
+      await addEmbedField(quickplayExEmbed, 'zenithExBtb',   'Highest Back-to-Back', zenithExData.stats.topbtb, effectiveRank, { decimals: 0 });
+      await addEmbedField(quickplayExEmbed, 'zenithExFinesse','Finesse',  (zenithExData.stats.finesse.perfectpieces / zenithExData.stats.piecesplaced), effectiveRank, { isPercentage: true });
     }
 
     //create pages dynamically
@@ -185,7 +187,6 @@ function getEmbed(username, mode, userId, recordExists, userRank, userPercentile
   } else if (userRank && userRank !== 'z') {
     statusLine = `-# Ranked ${getEmojiOfRank(userRank)}`;
   } else if (typeof userPercentile === 'string' && userPercentile && userPercentile !== 'z') {
-    // percentile_rank is a rank letter like 's', 'ss', 'u', etc.
     statusLine = `-# Unranked ~ Around ${getEmojiOfRank(userPercentile)}`;
   } else {
     statusLine = `-# Unranked`;
@@ -235,8 +236,6 @@ async function getRank(statValue, statKey, lowerIsBetter = false) {
       bestDiff = diff;
     } else if (diff === bestDiff) {
       // tie-breaker: bias toward the "better" rank
-      // if higher is better, prefer the row with the larger ref (closer upward)
-      // if lower is better, prefer the row with the smaller ref (closer downward)
       const better =
         (!lowerIsBetter && ref > Number(best[statKey])) ||
         ( lowerIsBetter && ref < Number(best[statKey]));
@@ -253,7 +252,8 @@ async function addEmbedField(
   dbStatKey,
   statName,
   statValue,
-  extras = { lowerIsBetter: false, isTime: false, decimals: 2, isPercentage: false, userRank: null, userPercentile: null }
+  effectiveRank,
+  extras = { lowerIsBetter: false, isTime: false, decimals: 2, isPercentage: false }
 ) {
   if (statValue == null) return;
 
@@ -271,10 +271,11 @@ async function addEmbedField(
   // helper to find a row by rank letter
   const findRow = (rankLetter) => rankData?.find((r) => r.rank === rankLetter) || null;
   const delta = (x, ref) => (lowerIsBetter ? (ref - x) : (x - ref));
+
   const fmtValue = (v) => {
     if (extras.isTime) {
       // v is ms; display as s with 2 decimals (or mm:ss.xx if >= 60s)
-      if (v >= 60000) return `${Math.floor(v / 60000)}:${((v % 60000) / 1000).toFixed(2)}`;
+      if (v >= 60000) return `${Math.floor(v / 60000)}:${((v % 60000) / 1000).toFixed(2).padStart(5, '0')}`;
       return (v / 1000).toFixed(2) + 's';
     }
     if (extras.isPercentage) return (v * 100).toFixed(2) + '%';
@@ -282,6 +283,7 @@ async function addEmbedField(
     const d = 10 ** decimals;
     return formatNumber(Math.floor(v)) + '.' + (Math.floor(v * d) % d).toString().padStart(decimals, '0');
   };
+
   const fmtDelta = (dVal) => {
     const sign = dVal >= 0 ? '+' : '';
     if (extras.isTime) return `${sign}${(dVal / 1000).toFixed(2)}s`;
@@ -299,19 +301,12 @@ async function addEmbedField(
   let userBaselineRow = null;
   let userRankLabel = null;
 
-  if (extras.userRank && extras.userRank !== 'z') {
-    userBaselineRow = findRow(extras.userRank);
-    userRankLabel = getEmojiOfRank(extras.userRank);
-  } else if (typeof extras.userPercentile === 'string' && extras.userPercentile && extras.userPercentile !== 'z') {
-    // percentile_rank is a rank letter; use it directly
-    userBaselineRow = findRow(extras.userPercentile);
-    userRankLabel = getEmojiOfRank(extras.userPercentile);
+  if (effectiveRank && effectiveRank !== 'z') {
+    userBaselineRow = findRow(effectiveRank);
+    userRankLabel = getEmojiOfRank(effectiveRank);
   } else {
     userRankLabel = 'Unranked';
   }
-
-
-
 
   const deltaToUser =
     userBaselineRow && userBaselineRow[dbStatKey] != null
@@ -335,12 +330,7 @@ async function addEmbedField(
 
 
   // only show “around …” if avgRank is different from user rank
-  const userRankLetter =
-    (extras.userRank && extras.userRank !== 'z')
-      ? extras.userRank
-      : (typeof extras.userPercentile === 'string' && extras.userPercentile && extras.userPercentile !== 'z'
-          ? extras.userPercentile
-          : null);
+  const userRankLetter = effectiveRank || null;
 
   if (avgRank && deltaToAvg !== null && avgRank !== userRankLetter) {
     lines.push(`- around ${getEmojiOfRank(avgRank)} (${fmtDelta(deltaToAvg)})`);
@@ -360,7 +350,7 @@ async function addEmbedField(
       if (nextRow && !isTop) {
         const nextAvg = nextRow[dbStatKey];
         if (nextAvg != null && isFinite(Number(nextAvg))) {
-          lines.push(`- rank above (${getEmojiOfRank(nextRow.rank)}) has ${fmtValue(Number(nextAvg))} ${statName}`);
+          lines.push(`- ${fmtDelta(delta(statValue, Number(nextAvg)))} compared to next rank (${getEmojiOfRank(nextRow.rank)})`);
         }
       }
     }
