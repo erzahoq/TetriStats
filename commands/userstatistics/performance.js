@@ -324,12 +324,15 @@ async function addEmbedField(
   // first line: bold value + stat name
   const lines = [`**${displayValue} ${statName}**`];
 
-  // “compared to …”
-  if (deltaToUser !== null) {
+  // “+Δ compared to …”
+  if (deltaToUser !== null && userRankLabel !== 'Unranked') {
     lines.push(`- ${fmtDelta(deltaToUser)} compared to ${userRankLabel}`);
-  } else {
+  } else if (userRankLabel !== 'Unranked') {
+    // keep structure if rank is valid but delta is null
     lines.push(`- compared to ${userRankLabel}`);
   }
+  // else: skip completely if Unranked
+
 
   // only show “around …” if avgRank is different from user rank
   const userRankLetter =
