@@ -214,13 +214,13 @@ client.on(Events.InteractionCreate, async interaction => {
         }
 
         // Performance pages
-        let performancePageRegex = /^performancepage_[0-3]$/;
+        let performancePageRegex = /^performancepage_[0-4]$/;
         if (performancePageRegex.test(buttonId)) {
             await handlePageButtons({
                 interaction, buttonId, interactionId,
                 prefix: 'performancepage',
                 pageKey: 'pages',
-                labels: ['Tetra League', '40 Lines', 'Blitz', 'Quick Play'] // <-- Correct order
+                labels: ['Tetra League', '40 Lines', 'Blitz', 'Quick Play', 'Quick Play Ex'] // <-- Correct order
             });
         }
     }
