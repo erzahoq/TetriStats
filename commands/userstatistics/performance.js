@@ -62,7 +62,12 @@ module.exports = {
     const quickplayEmbed = getEmbed(user.username, 'Quick Play',  user._id, !zenithData || zenithData.played === 0, userLeagueRank, leagueData?.percentile_rank);
     const quickplayExEmbed = getEmbed(user.username, 'Expert Quick Play', user._id, !zenithExData || zenithExData.played === 0, userLeagueRank, leagueData?.percentile_rank);
 
-    const effectiveRank = leagueData?.rank || leagueData?.percentile_rank || null;
+    // Prefer percentile_rank if the user is unranked ('z') or rank is missing
+    const effectiveRank =
+      (leagueData?.rank && leagueData.rank !== 'z')
+        ? leagueData.rank
+        : (leagueData?.percentile_rank || null);
+
 
     if (leagueData) {
       await addEmbedField(leagueEmbed, 'leaguePps', 'Pieces Per Second', leagueData.pps, effectiveRank, { decimals: 3 });
@@ -92,7 +97,7 @@ module.exports = {
     }
 
     if (zenithData) {
-      await addEmbedField(quickplayEmbed, 'zenithHeight','Height',        zenithData.stats.zenith.altitude, effectiveRank);
+      await addEmbedField(quickplayEmbed, 'zenithHeight','Meters',        zenithData.stats.zenith.altitude, effectiveRank);
       await addEmbedField(quickplayEmbed, 'zenithPps',   'Pieces Per Second', zenithData.aggregatestats.pps, effectiveRank, { decimals: 3 });
       await addEmbedField(quickplayEmbed, 'zenithApm',   'Attack Per Minute',  zenithData.aggregatestats.apm, effectiveRank);
       await addEmbedField(quickplayEmbed, 'zenithClimbSpeed','Average Climb Speed', zenithData.stats.zenith.rank, effectiveRank, { decimals: 3 });
@@ -103,7 +108,7 @@ module.exports = {
     }
 
     if (zenithExData) {
-      await addEmbedField(quickplayExEmbed, 'zenithExHeight','Height',    zenithExData.stats.zenith.altitude, effectiveRank);
+      await addEmbedField(quickplayExEmbed, 'zenithExHeight','Meters',    zenithExData.stats.zenith.altitude, effectiveRank);
       await addEmbedField(quickplayExEmbed, 'zenithExPps',   'Pieces Per Second', zenithExData.aggregatestats.pps, effectiveRank, { decimals: 3 });
       await addEmbedField(quickplayExEmbed, 'zenithExApm',   'Attack Per Minute',  zenithExData.aggregatestats.apm, effectiveRank);
       await addEmbedField(quickplayExEmbed, 'zenithExClimbSpeed','Average Climb Speed', zenithExData.stats.zenith.rank, effectiveRank, { decimals: 3 });
@@ -269,7 +274,10 @@ async function addEmbedField(
   const decimals = Number.isInteger(extras.decimals) ? extras.decimals : 2;
 
   // helper to find a row by rank letter
-  const findRow = (rankLetter) => rankData?.find((r) => r.rank === rankLetter) || null;
+  const norm = (s) => (s == null ? s : String(s).toLowerCase());
+  const findRow = (rankLetter) =>
+    rankData?.find((r) => norm(r.rank) === norm(rankLetter)) || null;
+
   const delta = (x, ref) => (lowerIsBetter ? (ref - x) : (x - ref));
 
   const fmtValue = (v) => {
@@ -323,10 +331,10 @@ async function addEmbedField(
   if (deltaToUser !== null && userRankLabel !== 'Unranked') {
     lines.push(`- ${fmtDelta(deltaToUser)} compared to ${userRankLabel}`);
   } else if (userRankLabel !== 'Unranked') {
-    // keep structure if rank is valid but delta is null
     lines.push(`- compared to ${userRankLabel}`);
   }
   // else: skip completely if Unranked
+
 
 
   // only show “around …” if avgRank is different from user rank
@@ -339,22 +347,27 @@ async function addEmbedField(
   // "rank above" relative to the around-rank
   try {
     if (avgRank && Array.isArray(rankData) && rankData.length > 0) {
-      const order = rankData.map(r => r.rank);
-      const avgIdx = order.indexOf(avgRank);
-      const nextIdx = avgIdx >= 0 ? avgIdx + 1 : -1;
-      const nextRow = nextIdx >= 0 && nextIdx < rankData.length ? rankData[nextIdx] : null;
+      // if the around-rank itself is top (x+), there's nothing above -> skip
+      if (norm(avgRank) !== 'x+') {
+        const order = rankData.map((r) => r.rank);
+        const avgIdx = order.findIndex((rk) => norm(rk) === norm(avgRank));
+        const nextIdx = avgIdx >= 0 ? avgIdx + 1 : -1;
+        const nextRow =
+          nextIdx >= 0 && nextIdx < rankData.length ? rankData[nextIdx] : null;
 
-      // skip x+ ranks
-      const isTop = nextRow && String(nextRow.rank).toLowerCase() === 'x+';
-
-      if (nextRow && !isTop) {
-        const nextAvg = nextRow[dbStatKey];
-        if (nextAvg != null && isFinite(Number(nextAvg))) {
-          lines.push(`- ${fmtDelta(delta(statValue, Number(nextAvg)))} compared to next rank (${getEmojiOfRank(nextRow.rank)})`);
+        if (nextRow) {
+          const nextAvg = nextRow[dbStatKey];
+          if (nextAvg != null && isFinite(Number(nextAvg))) {
+            // show value for the next rank (even if that next rank happens to be x+)
+            lines.push(
+              `- ${fmtDelta(delta(statValue, Number(nextAvg)))} compared to next rank (${getEmojiOfRank(nextRow.rank)})`
+            );
+          }
         }
       }
     }
   } catch {}
+
 
 
   embed.addFields({ name: '\u200b', value: lines.join('\n'), inline: false });
