@@ -117,7 +117,7 @@ module.exports = (sequelize) => {
         sequelize,
         modelName: 'LeagueAverage',
         tableName: 'league_averages',
-        timestamps: false
+        timestamps: true
     });
     
     return LeagueAverage;
