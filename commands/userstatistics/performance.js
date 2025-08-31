@@ -96,7 +96,7 @@ module.exports = {
       await addEmbedField(quickplayEmbed, 'zenithFinesse', 'Finesse', (zenithData.stats.finesse.perfectpieces / zenithData.stats.piecesplaced), { isPercentage: true });
     }
 
-    const quickplayExEmbed = getEmbed(user.username, 'Quick Play EX', user._id, !zenithExData || zenithExData.played === 0);
+    const quickplayExEmbed = getEmbed(user.username, 'Expert Quick Play', user._id, !zenithExData || zenithExData.played === 0);
     if (zenithExData) {
       await addEmbedField(quickplayExEmbed, 'zenithExHeight', 'Height', zenithExData.stats.zenith.altitude);
       await addEmbedField(quickplayExEmbed, 'zenithExPps', 'Pieces Per Second', zenithExData.aggregatestats.pps);
@@ -106,10 +106,30 @@ module.exports = {
       await addEmbedField(quickplayExEmbed, 'zenithExFinesse', 'Finesse', (zenithExData.stats.finesse.perfectpieces / zenithExData.stats.piecesplaced), { isPercentage: true });
     }
 
-    const buttonLabels = ['Tetra League', '40 Lines', 'Blitz', 'Quick Play', 'Quick Play EX'];
-    const embeds = [leagueEmbed, linesEmbed, blitzEmbed, quickplayEmbed, quickplayExEmbed];
+    // data for all possible modes i guess
+    const modes = [
+      { label: 'Tetra League',     data: leagueData,  embed: leagueEmbed },
+      { label: '40 Lines',         data: linesData,   embed: linesEmbed },
+      { label: 'Blitz',            data: blitzData,   embed: blitzEmbed },
+      { label: 'Quick Play',       data: zenithData,  embed: quickplayEmbed },
+      { label: 'Expert Quick Play',data: zenithExData,embed: quickplayExEmbed },
+    ];
 
-    // Create navigation buttons
+    // if user hasnt played a mode ignore it
+    const availableModes = modes.filter(m => m.data && m.data.played !== 0);
+
+    // if they've played literally nothing :gladeline:
+    if (availableModes.length === 0) {
+      return await interaction.reply({
+        content: `- **No recorded games yet...**`,
+      });
+    }
+
+    // if not, build labels & embeds from the modes given
+    const buttonLabels = availableModes.map(m => m.label);
+    const embeds = availableModes.map(m => m.embed);
+
+    // add buttons for each mode
     const row = new ActionRowBuilder().addComponents(
       ...buttonLabels.map((label, idx) =>
         new ButtonBuilder()
@@ -120,18 +140,19 @@ module.exports = {
       )
     );
 
-    // Send the first page as a reply, with navigation buttons
+    // send the first page
     await interaction.reply({ embeds: [embeds[0]], components: [row] });
 
-    // Store page data for this interaction (for navigation handling elsewhere)
+    // store page data for this interaction (for navigation handling)
     interaction.client.pageData = {
       ...interaction.client.pageData,
       [interaction.id]: {
         pages: embeds,
         currentPage: 0,
-        labels: buttonLabels
+        labels: buttonLabels,
       },
     };
+
   },
 };
 
