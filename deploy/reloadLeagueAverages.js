@@ -280,7 +280,7 @@ async function calculateRankAverages() {
                 rankTotals.zenithApm += recordResults.aggregatestats.apm;
                 rankTotals.zenithClimbSpeed += recordResults.stats.zenith.rank;
                 rankTotals.zenithBtb += recordResults.stats.topbtb;
-                rankTotals.zenithFinesse += recordResults.stats.finesse.perfectpieces / (recordResults.stats.piecesplaced || 1);
+                if (recordResults.stats.finesse) rankTotals.zenithFinesse += recordResults.stats.finesse.perfectpieces / (recordResults.stats.piecesplaced || 1);
             }
 
             if (userData.zenithex && (userData.zenithex.best?.record || userData.zenithex.record)) {
@@ -291,7 +291,7 @@ async function calculateRankAverages() {
                 rankTotals.zenithExApm += recordResults.aggregatestats.apm;
                 rankTotals.zenithExClimbSpeed += recordResults.stats.zenith.rank;
                 rankTotals.zenithExBtb += recordResults.stats.topbtb;
-                rankTotals.zenithExFinesse += recordResults.stats.finesse.perfectpieces / (recordResults.stats.piecesplaced || 1);
+                if (recordResults.stats.finesse) rankTotals.zenithExFinesse += recordResults.stats.finesse.perfectpieces / (recordResults.stats.piecesplaced || 1);
             }
 
             // league is guaranteed
