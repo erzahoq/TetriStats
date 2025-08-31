@@ -323,28 +323,28 @@ async function addEmbedField(
 
   // text time or sometghuing
   const displayValue = fmtValue(statValue);
-
+    
   // first line: bold value + stat name
   const lines = [`**${displayValue} ${statName}**`];
 
-  // “+Δ compared to …”
-  if (deltaToUser !== null && userRankLabel !== 'Unranked') {
-    lines.push(`- ${fmtDelta(deltaToUser)} compared to ${userRankLabel}`);
-  } else if (userRankLabel !== 'Unranked') {
-    lines.push(`- compared to ${userRankLabel}`);
-  }
-  // else: skip completely if Unranked
-
-
-
-  // only show “around …” if avgRank is different from user rank
+  // we'll need the user's baseline rank letter for comparisons
   const userRankLetter = effectiveRank || null;
 
+  // 1) show “around …” first (only if different from the user's baseline rank)
   if (avgRank && deltaToAvg !== null && avgRank !== userRankLetter) {
     lines.push(`- around ${getEmojiOfRank(avgRank)} (${fmtDelta(deltaToAvg)})`);
   }
 
-  // "rank above" relative to the around-rank
+  // 2) then show “± compared to [current rank]” (skip entirely if Unranked)
+  if (userRankLabel !== 'Unranked') {
+    if (deltaToUser !== null) {
+      lines.push(`- ${fmtDelta(deltaToUser)} compared to ${userRankLabel}`);
+    } else {
+      lines.push(`- compared to ${userRankLabel}`);
+    }
+  }
+
+  // 3) optional: “compared to next rank …” based on the around-rank
   try {
     if (avgRank && Array.isArray(rankData) && rankData.length > 0) {
       // if the around-rank itself is top (x+), there's nothing above -> skip
@@ -355,10 +355,12 @@ async function addEmbedField(
         const nextRow =
           nextIdx >= 0 && nextIdx < rankData.length ? rankData[nextIdx] : null;
 
-        if (nextRow) {
+        // NEW: skip if next rank equals the user's baseline rank (would duplicate the previous line)
+        const isRedundant = nextRow && norm(nextRow.rank) === norm(userRankLetter);
+
+        if (nextRow && !isRedundant) {
           const nextAvg = nextRow[dbStatKey];
           if (nextAvg != null && isFinite(Number(nextAvg))) {
-            // show value for the next rank (even if that next rank happens to be x+)
             lines.push(
               `- ${fmtDelta(delta(statValue, Number(nextAvg)))} compared to next rank (${getEmojiOfRank(nextRow.rank)})`
             );
@@ -366,7 +368,8 @@ async function addEmbedField(
         }
       }
     }
-  } catch {}
+} catch {}
+
 
 
 
