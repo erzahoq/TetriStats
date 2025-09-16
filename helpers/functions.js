@@ -30,17 +30,19 @@ function countryCodeToEmoji(countryCode) {
     return String.fromCodePoint(...codePoints);
 }
 
-function convertToTimeFormat(inputSeconds) {
-    const totalSeconds = inputSeconds / 1000
+// functions.js
+function convertToTimeFormat(inputMs) {
+    const ms = Math.abs(inputMs);           // normalize to positive
+    const totalSeconds = ms / 1000;
     const minutes = Math.floor(totalSeconds / 60);
-    const seconds = (totalSeconds % 60).toFixed(3); // Keep milliseconds as part of seconds
+    const seconds = (totalSeconds % 60).toFixed(3); // keep milliseconds
 
-    // Format seconds to ensure two digits before decimal
     const [intSeconds, fracSeconds] = seconds.split('.');
     const formattedSeconds = intSeconds.padStart(2, '0') + '.' + (fracSeconds || '000').padEnd(3, '0');
 
-    return `${minutes}:${formattedSeconds}`;
+    return `${minutes}:${formattedSeconds}`; // e.g., 0:40.597
 }
+
 
 function playtimeConvert(playtime) {
     if (playtime === 'Hidden') {

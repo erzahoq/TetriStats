@@ -326,7 +326,12 @@ function formatDisplayedAchs(displayed = [], all = []) {
     if (a.vt === 4) {
       out += ` **${a.name}** - **Floor ${Math.floor(a.a)}** (${formatNumber(Math.round(a.v * 100) / 100)}m) ${a.object || ''}`;
     } else if (a.rank !== 100) {
-      out += ` **${a.name}** - **${formatNumber(Math.round(a.v))}** ${a.object || ''}`;
+      // If value is negative, it's probably a time in ms (e.g., Sprint 40L)
+      const prettyValue = a.v < 0
+        ? convertToTimeFormat(Math.abs(a.v))     // -40597 -> "0:40.597"
+        : formatNumber(Math.round(a.v));         // normal numbers stay formatted
+
+      out += ` **${a.name}** - **${prettyValue}** ${a.object || ''}`;
     } else if (a.vt === 5) {
       out += ` **${a.name}** - Obtained ${reformatTimestamp(-a.v)} ${a.object || ''}`;
     } else if (a.vt === 6) {
