@@ -17,8 +17,6 @@ module.exports = {
                 .setRequired(true)),
 
     async execute(interaction) {
-        return interaction.reply({content: 'This command is still under construction! Thanks for your patience.', flags: MessageFlags.Ephemeral})
-
         const replayAttachment = interaction.options.getAttachment('replay');
 
         if (!replayAttachment.name.endsWith('.ttr')) {
@@ -43,31 +41,23 @@ module.exports = {
 
             console.log(replayData.replay.results.stats);
 
+            //check the gamemode
+            let gamemode = "Quick Play";
+            if (replayData.gamemode === 'zenithex') gamemode = "Quick Play EX";
+
+
+            
+
             //=== For each gamemode, create a list of pages ===
             // Zenith gamemode :3
             // expert and normal are together because their stats are extremely similar
-            if (replayData.gamemode === "zenith" || replayData.gamemode === "zenithex") {
-
-                //check the gamemode
-                let gamemode = "Quick Play"
-                if (replayData.gamemode === 'zenithex') gamemode = "Expert Quick Play"
-                
+            if (replayData.gamemode === "zenith" || replayData.gamemode === "zenithex") {      
 
                 pages = [
-                    new EmbedBuilder().setTitle('Replay Analysis - General')
-                        .setColor('#ff9747')
-                        .setDescription(`**Here\'s the summary of your replay:**
-Gamemode: ${gamemode}
-Player: ${escapeUnderscores(replayData.users?.[0]?.username.toUpperCase())} (${countryCodeToEmoji(replayData.users?.[0]?.country)})
-Playtime: ${framesToTime(replayData.replay?.frames)} (${(replayData.replay?.frames / 60).toFixed(2)}s)
-Mods Used: ${formatModList(replayData.replay.options.zenith_mods)}
-
--# i can probably add more here but`),
-                    new EmbedBuilder()
-                        .setTitle('Replay Analysis - Statistics')
-                        .setColor('#ff9747').setDescription(`**Here are some statistics of your replay:**
-APM: ${(replayData.replay.results.aggregatestats.apm).toFixed(2)} | PPS: ${(replayData.replay.results.aggregatestats.pps).toFixed(2)} | VS: ${(replayData.replay.results.aggregatestats.vsscore).toFixed(2)}`),
-                    new EmbedBuilder().setTitle('page3'), new EmbedBuilder().setTitle('page4')
+                    new EmbedBuilder().setTitle(`Replay ${replayAttachment.name}`),
+                    new EmbedBuilder().setTitle('page2'),
+                    new EmbedBuilder().setTitle('page3'),
+                    new EmbedBuilder().setTitle('page4')
                 ]
                 
             } else {
