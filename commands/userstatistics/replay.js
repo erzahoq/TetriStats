@@ -1,9 +1,8 @@
-//ill work on this one day i swear
-
-//i really should do this huh
-
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, InteractionContextType, ApplicationIntegrationType, MessageFlags } = require('discord.js');
+
+const { formatNumber, escapeUnderscores, countryCodeToEmoji, convertToTimeFormat, playtimeConvert, getEmojiOfAch, getEmojiOfRank, reformatTimestamp, calculateLevel } = require('../../helpers/functions');
+const { getEmoji } = require('../../helpers/emojis');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -34,56 +33,79 @@ module.exports = {
             const replayDataBuffer = Buffer.from(arrayBuffer);
 
             // Parse the file as JSON
-            const replayData = JSON.parse(replayDataBuffer.toString());
+            const replay = JSON.parse(replayDataBuffer.toString());
+
+            let replayData = replay.replay;
+
+            let replayStats = replayData.results.stats;
 
             //initially define list of pages 
             let pages = [];
 
-            console.log(replayData.replay.results.stats);
+            console.log(replayStats);
 
             //check the gamemode
-            let gamemode = "Quick Play";
-            if (replayData.gamemode === 'zenithex') gamemode = "Quick Play EX";
+            let gamemode = "Unknown";
+            if (replay.gamemode === 'zenith') gamemode = "Quick Play";
+            if (replay.gamemode === 'zenithex') gamemode = "Quick Play EX";
+            if (replay.gamemode === '40l') gamemode = "40 Lines";
+            if (replay.gamemode === 'blitz') gamemode = "Blitz";
 
+            let row; //for buttons
 
-            
+            //general stats
+            const date = new Date(replay.ts);
+            const formattedDate = `<t:${Math.floor(date.getTime() / 1000)}:F>`;
+
 
             //=== For each gamemode, create a list of pages ===
             // Zenith gamemode :3
             // expert and normal are together because their stats are extremely similar
-            if (replayData.gamemode === "zenith" || replayData.gamemode === "zenithex") {      
+            if (replay.gamemode === "zenith" || replay.gamemode === "zenithex") {      
 
                 pages = [
-                    new EmbedBuilder().setTitle(`Replay ${replayAttachment.name}`),
-                    new EmbedBuilder().setTitle('page2'),
-                    new EmbedBuilder().setTitle('page3'),
-                    new EmbedBuilder().setTitle('page4')
+                    new EmbedBuilder()
+                    .setDescription(`### __[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id}) -> Overview__
+**[${escapeUnderscores(replay.users[0].username).toUpperCase()}](https://ch.tetr.io/u/${replay.users[0].username}) ${countryCodeToEmoji(replay.users[0].country)}**
+${formattedDate}
+__**General**__
+- Time: ${framesToTime(replayData.frames)} | Pieces Placed: ${formatNumber(replayStats.piecesplaced)} | Lines Cleared: ${formatNumber(replayStats.lines)}
+- PPS: ${replayData.results.aggregatestats.pps.toFixed(2)} | APM: ${replayData.results.aggregatestats.apm.toFixed(2)} | VS: ${replayData.results.aggregatestats.vsscore.toFixed(2)}\n
+__**Stats**__
+- Altitude: ${replayStats.zenith.altitude} (Floor ${replayStats.zenith.floor})
+- Avg. Climb Speed: ${replayStats.zenith.rank} | Max Climb Speed: ${replayStats.zenith.peakrank}
+- B2B: \n
+__**Garbage**__
+                        `),
+
+                    new EmbedBuilder(),
+                    new EmbedBuilder(),
+                    new EmbedBuilder(),
                 ]
                 
+                // Initial row of buttons
+                row = new ActionRowBuilder().addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('replaypage_0')
+                        .setLabel('Overview')
+                        .setStyle(ButtonStyle.Primary)
+                        .setDisabled(true), // Disable the first button initially
+                    new ButtonBuilder()
+                        .setCustomId('replaypage_1')
+                        .setLabel('Full')
+                        .setStyle(ButtonStyle.Primary),
+                    new ButtonBuilder()
+                        .setCustomId('replaypage_2')
+                        .setLabel('Splits')
+                        .setStyle(ButtonStyle.Primary),
+                    new ButtonBuilder()
+                        .setCustomId('replaypage_3')
+                        .setLabel('Performance')
+                        .setStyle(ButtonStyle.Primary)
+                );
             } else {
                 return interaction.reply({content: 'This type of replay file has not been accounted for yet, please contact the developers if you believe this is a mistake.', flags: MessageFlags.Ephemeral})
             }
-
-            // Initial row of buttons
-            const row = new ActionRowBuilder().addComponents(
-                new ButtonBuilder()
-                    .setCustomId('replaypage_0')
-                    .setLabel('General')
-                    .setStyle(ButtonStyle.Primary)
-                    .setDisabled(true), // Disable the first button initially
-                new ButtonBuilder()
-                    .setCustomId('replaypage_1')
-                    .setLabel('Stats')
-                    .setStyle(ButtonStyle.Primary),
-                new ButtonBuilder()
-                    .setCustomId('replaypage_2')
-                    .setLabel('Tetra League')
-                    .setStyle(ButtonStyle.Primary),
-                new ButtonBuilder()
-                    .setCustomId('replaypage_3')
-                    .setLabel('4')
-                    .setStyle(ButtonStyle.Primary)
-            );
 
             // Send the initial message with the first page and buttons
             await interaction.reply({
@@ -105,18 +127,6 @@ module.exports = {
         }
     }
 };
-
-// Convert country code to flag emoji
-function countryCodeToEmoji(countryCode) {
-    if (countryCode === 'XM') return ("<:flag_xm:1310891739078328374>");
-    if (!countryCode) return ("❔"); //if a country isn't set i guess
-    const codePoints = countryCode
-        .toUpperCase() // Make sure the code is uppercase
-        .split('')     // Split the letters
-        .map(char => 127397 + char.charCodeAt()); // Convert to regional indicator symbol
-
-    return String.fromCodePoint(...codePoints);
-}
 
 function framesToTime(frames) {
     const fps = 60; // frames per second
@@ -165,13 +175,3 @@ function formatModList(mods) {
     return formattedWords.join(", ");
 }
 
-function escapeUnderscores(input) {
-    const underscoreCount = (input.match(/_/g) || []).length;
-    
-    // Only escape if the count is a multiple of 2
-    if (underscoreCount % 2 === 0 && underscoreCount > 0) {
-        return input.replace(/_/g, '\\_');
-    }
-    
-    return input;
-}
