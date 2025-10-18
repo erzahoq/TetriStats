@@ -72,8 +72,8 @@ __**General**__
 - Time: ${framesToTime(replayData.frames)} | Pieces Placed: ${formatNumber(replayStats.piecesplaced)} | Lines Cleared: ${formatNumber(replayStats.lines)}
 - PPS: ${replayData.results.aggregatestats.pps.toFixed(2)} | APM: ${replayData.results.aggregatestats.apm.toFixed(2)} | VS: ${replayData.results.aggregatestats.vsscore.toFixed(2)}\n
 __**Stats**__
-- Altitude: ${replayStats.zenith.altitude} (Floor ${replayStats.zenith.floor})
-- Avg. Climb Speed: ${replayStats.zenith.rank} | Max Climb Speed: ${replayStats.zenith.peakrank}
+- Altitude: ${replayStats.zenith.altitude.toFixed(1)} (Floor ${replayStats.zenith.floor})
+- Avg. Climb Speed: ${replayStats.zenith.rank.toFixed(2)} | Max Climb Speed: ${replayStats.zenith.peakrank.toFixed(2)}
 - B2B: \n
 __**Garbage**__
                         `),
