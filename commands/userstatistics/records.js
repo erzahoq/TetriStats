@@ -68,8 +68,6 @@ module.exports = {
             const embed = new EmbedBuilder()
                 .setColor(colourMapping[category])
                 .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
-                .setTitle(`${escapeUnderscores(user.username.toUpperCase())}'s ${gametypeMapping[category]} Records:`)
-                .setURL(`https://ch.tetr.io/u/${user.username}`)
             const button = new ButtonBuilder()
                 .setCustomId(`recordspage_${category}_${buttons.length}`)
                 .setDisabled(buttons.length === 0)
@@ -77,7 +75,7 @@ module.exports = {
                 .setStyle(ButtonStyle.Primary)
 
             // do the description
-            let desc = "";
+            let desc = `### __[${escapeUnderscores(user.username.toUpperCase())}](https://ch.tetr.io/u/${user.username}) -> Records -> ${gametypeMapping[category]}__\n`;
             if (fetched['top']) {
                 desc += `- ${getEmoji('news_lblocal')} Personal best
   ${formatRecord(fetched['top'])}\n\n`
