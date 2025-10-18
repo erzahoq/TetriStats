@@ -4,15 +4,9 @@ module.exports = (sequelize) => {
     class LeagueStat extends Model {}
 
     LeagueStat.init({
-        id: {
-            type: DataTypes.INTEGER,
-            primaryKey: true,
-            autoIncrement: true,
-        },
-
         stat: {
             type: DataTypes.STRING,
-            allowNull: false,
+            primaryKey: true,
         },
 
         statGroup: {

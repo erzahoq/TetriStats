@@ -1,22 +1,17 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
-
-// Import helper functions for formatting and data processing
 const { formatNumber, escapeUnderscores, getEmojiOfRank, getLeagueRankColour } = require('../../helpers/functions');
 const { getUser } = require('../../helpers/getuser');
-const { getEmoji } = require('../../helpers/emojis');
 const { database } = require('../../database');
 
-let rankData;
+let statRankData = {};
 
-// ---------- Quick Play helpers ----------
-// Safely read altitude from a zenith record.results object
 const getAltitude = (res) => Number(res?.stats?.zenith?.altitude ?? -Infinity);
 
-// Prefer the higher of current-week record vs career best.record
+// sometimes new records for the week are better than the career best, so pick the best of the two
 const pickBestZenithResults = (summaryObj) => {
   if (!summaryObj) return null;
   const current = summaryObj.record?.results || null;       // this week
-  const best    = summaryObj.best?.record?.results || null; // career best
+  const best = summaryObj.best?.record?.results || null; // career best
 
   if (current && !best) return current;
   if (!current && best) return best;
@@ -24,7 +19,6 @@ const pickBestZenithResults = (summaryObj) => {
 
   return getAltitude(current) > getAltitude(best) ? current : best;
 };
-// ---------------------------------------
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -40,10 +34,8 @@ module.exports = {
     ),
 
   async execute(interaction) {
-    // Fetch user data from TETR.IO API using provided username/ID
     const user = await getUser(interaction.options.getString('user').toLowerCase());
 
-    // Handle user not found or server error cases
     if (user === 'no such user') {
       return await interaction.reply({
         content: 'No such user found on TETR.IO! Either the account no longer exists, or this person has not linked their Discord with TETR.IO.',
@@ -56,7 +48,6 @@ module.exports = {
       });
     }
 
-    // Fetch summaries data
     let response = await fetch(`https://ch.tetr.io/api/users/${user._id}/summaries`);
     let userStats = await response.json();
     userStats = userStats.data;
@@ -64,98 +55,98 @@ module.exports = {
     delete userStats.zen;
     delete userStats.achievements;
 
-    let leagueData   = userStats.league;
-    let linesData    = userStats['40l'].record?.results;
-    let blitzData    = userStats.blitz.record?.results;
+    let leagueData = userStats.league;
+    let linesData = userStats['40l'].record?.results;
+    let blitzData = userStats.blitz.record?.results;
 
-    // *** NEW: choose the better of weekly record vs all-time best for QP/Expert ***
-    let zenithData   = pickBestZenithResults(userStats.zenith);
+    let zenithData = pickBestZenithResults(userStats.zenith);
     let zenithExData = pickBestZenithResults(userStats.zenithex);
 
-    // remember the user's league rank (may be null/undefined)
     const userLeagueRank = leagueData?.rank ?? null;
 
-    const leagueEmbed      = getEmbed(user.username, 'Tetra League',       user._id, !leagueData || leagueData.played === 0, userLeagueRank, leagueData?.percentile_rank);
-    const linesEmbed       = getEmbed(user.username, '40 Lines',           user._id, !linesData  || linesData.played  === 0, userLeagueRank, leagueData?.percentile_rank);
-    const blitzEmbed       = getEmbed(user.username, 'Blitz',              user._id, !blitzData  || blitzData.played  === 0, userLeagueRank, leagueData?.percentile_rank);
-    const quickplayEmbed   = getEmbed(user.username, 'Quick Play',         user._id, !zenithData,                      userLeagueRank, leagueData?.percentile_rank);
-    const quickplayExEmbed = getEmbed(user.username, 'Expert Quick Play',  user._id, !zenithExData,                    userLeagueRank, leagueData?.percentile_rank);
+    const leagueEmbed = getEmbed(user.username, 'Tetra League', user._id, !leagueData || leagueData.played === 0, userLeagueRank, leagueData?.percentile_rank);
+    const linesEmbed = getEmbed(user.username, '40 Lines', user._id, !linesData || linesData.played === 0, userLeagueRank, leagueData?.percentile_rank);
+    const blitzEmbed = getEmbed(user.username, 'Blitz', user._id, !blitzData || blitzData.played === 0, userLeagueRank, leagueData?.percentile_rank);
+    const quickplayEmbed = getEmbed(user.username, 'Quick Play', user._id, !zenithData, userLeagueRank, leagueData?.percentile_rank);
+    const quickplayExEmbed = getEmbed(user.username, 'Expert Quick Play', user._id, !zenithExData, userLeagueRank, leagueData?.percentile_rank);
 
     // Prefer percentile_rank if the user is unranked ('z') or rank is missing
     const effectiveRank = (leagueData?.rank && leagueData.rank !== 'z')
       ? leagueData.rank
       : (leagueData?.percentile_rank || null);
 
+    
+    // add all the embed fields
+
     if (leagueData) {
-      await addEmbedField(leagueEmbed, 'leaguePps', 'Pieces Per Second', leagueData.pps, effectiveRank, { decimals: 3 });
-      await addEmbedField(leagueEmbed, 'leagueApm', 'Attack Per Minute',  leagueData.apm, effectiveRank);
-      await addEmbedField(leagueEmbed, 'leagueVs',  'VS score',           leagueData.vs,  effectiveRank);
+      await addEmbedField(leagueEmbed, 'league/pps', 'Pieces Per Second', leagueData.pps, effectiveRank, { decimals: 3 });
+      await addEmbedField(leagueEmbed, 'league/apm', 'Attack Per Minute', leagueData.apm, effectiveRank);
+      await addEmbedField(leagueEmbed, 'league/vs', 'VS score', leagueData.vs, effectiveRank);
     }
 
     if (linesData) {
-      await addEmbedField(linesEmbed,  'sprintTime','',                      linesData.stats.finaltime,                              effectiveRank, { lowerIsBetter: true, isTime: true });
-      await addEmbedField(linesEmbed,  'sprintPps',  'Pieces Per Second',    linesData.aggregatestats.pps,                           effectiveRank, { decimals: 3 } );
+      await addEmbedField(linesEmbed, 'sprint/time', '', linesData.stats.finaltime, effectiveRank, { lowerIsBetter: true, isTime: true });
+      await addEmbedField(linesEmbed, 'sprint/pps', 'Pieces Per Second', linesData.aggregatestats.pps, effectiveRank, { decimals: 3 });
       if (Number(linesData.stats.piecesplaced) > 0) {
-        await addEmbedField(linesEmbed,'sprintKpp','Keys Per Piece',         linesData.stats.inputs / linesData.stats.piecesplaced,   effectiveRank, { decimals: 3, lowerIsBetter: true });
+        await addEmbedField(linesEmbed, 'sprint/kpp', 'Keys Per Piece', linesData.stats.inputs / linesData.stats.piecesplaced, effectiveRank, { decimals: 3, lowerIsBetter: true });
       }
       if (Number(linesData.stats.finaltime) > 0) {
-        await addEmbedField(linesEmbed,'sprintKps','Keys Per Second',        linesData.stats.inputs / (linesData.stats.finaltime / 1000), effectiveRank, { decimals: 3 });
+        await addEmbedField(linesEmbed, 'sprint/kps', 'Keys Per Second', linesData.stats.inputs / (linesData.stats.finaltime / 1000), effectiveRank, { decimals: 3 });
       }
       if (linesData.stats.finesse !== undefined && Number(linesData.stats.piecesplaced) > 0) {
-        await addEmbedField(linesEmbed,  'sprintFinesse','Finesse',  (linesData.stats.finesse.perfectpieces / linesData.stats.piecesplaced), effectiveRank, { isPercentage: true });
+        await addEmbedField(linesEmbed, 'sprint/finesse', 'Finesse', (linesData.stats.finesse.perfectpieces / linesData.stats.piecesplaced), effectiveRank, { isPercentage: true });
       }
     }
 
     if (blitzData) {
-      await addEmbedField(blitzEmbed,  'blitzScore','Score',              blitzData.stats.score,                                          effectiveRank, { decimals: 0 });
-      await addEmbedField(blitzEmbed,  'blitzPps',  'Pieces Per Second',  blitzData.aggregatestats.pps,                                   effectiveRank, { decimals: 3 });
+      await addEmbedField(blitzEmbed, 'blitz/score', 'Score', blitzData.stats.score, effectiveRank, { decimals: 0 });
+      await addEmbedField(blitzEmbed, 'blitz/pps', 'Pieces Per Second', blitzData.aggregatestats.pps, effectiveRank, { decimals: 3 });
       if (Number(blitzData.stats.piecesplaced) > 0) {
-        await addEmbedField(blitzEmbed,'blitzSpp',  'Score Per Piece',    blitzData.stats.score / blitzData.stats.piecesplaced,           effectiveRank);
+        await addEmbedField(blitzEmbed, 'blitz/spp', 'Score Per Piece', blitzData.stats.score / blitzData.stats.piecesplaced, effectiveRank);
       }
       if (blitzData.stats.finesse !== undefined && Number(blitzData.stats.piecesplaced) > 0) {
-        await addEmbedField(blitzEmbed,'blitzFinesse','Finesse',          (blitzData.stats.finesse.perfectpieces / blitzData.stats.piecesplaced), effectiveRank, { isPercentage: true });
+        await addEmbedField(blitzEmbed, 'blitz/finesse', 'Finesse', (blitzData.stats.finesse.perfectpieces / blitzData.stats.piecesplaced), effectiveRank, { isPercentage: true });
       }
     }
 
     if (zenithData) {
-      await addEmbedField(quickplayEmbed, 'zenithHeight',    'Meters',                 zenithData.stats.zenith.altitude,            effectiveRank);
-      await addEmbedField(quickplayEmbed, 'zenithPps',       'Pieces Per Second',      zenithData.aggregatestats.pps,               effectiveRank, { decimals: 3 });
-      await addEmbedField(quickplayEmbed, 'zenithApm',       'Attack Per Minute',      zenithData.aggregatestats.apm,               effectiveRank);
-      await addEmbedField(quickplayEmbed, 'zenithClimbSpeed','Average Climb Speed',    zenithData.stats.zenith.rank,                effectiveRank, { decimals: 3 });
-      await addEmbedField(quickplayEmbed, 'zenithBtb',       'Highest Back-to-Back',   zenithData.stats.topbtb,                     effectiveRank, { decimals: 0 });
-      await addEmbedField(quickplayEmbed, 'zenithFinesse',   'Finesse',                (zenithData.stats.finesse.perfectpieces / zenithData.stats.piecesplaced), effectiveRank, { isPercentage: true });
+      await addEmbedField(quickplayEmbed, 'zenith/height', 'Meters', zenithData.stats.zenith.altitude, effectiveRank);
+      await addEmbedField(quickplayEmbed, 'zenith/pps', 'Pieces Per Second', zenithData.aggregatestats.pps, effectiveRank, { decimals: 3 });
+      await addEmbedField(quickplayEmbed, 'zenith/apm', 'Attack Per Minute', zenithData.aggregatestats.apm, effectiveRank);
+      await addEmbedField(quickplayEmbed, 'zenith/climbSpeed', 'Average Climb Speed', zenithData.stats.zenith.rank, effectiveRank, { decimals: 3 });
+      await addEmbedField(quickplayEmbed, 'zenith/btb', 'Highest Back-to-Back', zenithData.stats.topbtb, effectiveRank, { decimals: 0 });
+      await addEmbedField(quickplayEmbed, 'zenith/finesse', 'Finesse', (zenithData.stats.finesse.perfectpieces / zenithData.stats.piecesplaced), effectiveRank, { isPercentage: true });
     }
 
     if (zenithExData) {
-      await addEmbedField(quickplayExEmbed, 'zenithExHeight',    'Meters',                 zenithExData.stats.zenith.altitude,            effectiveRank);
-      await addEmbedField(quickplayExEmbed, 'zenithExPps',       'Pieces Per Second',      zenithExData.aggregatestats.pps,               effectiveRank, { decimals: 3 });
-      await addEmbedField(quickplayExEmbed, 'zenithExApm',       'Attack Per Minute',      zenithExData.aggregatestats.apm,               effectiveRank);
-      await addEmbedField(quickplayExEmbed, 'zenithExClimbSpeed','Average Climb Speed',    zenithExData.stats.zenith.rank,                effectiveRank, { decimals: 3 });
-      await addEmbedField(quickplayExEmbed, 'zenithExBtb',       'Highest Back-to-Back',   zenithExData.stats.topbtb,                     effectiveRank, { decimals: 0 });
-      await addEmbedField(quickplayExEmbed, 'zenithExFinesse',   'Finesse',                (zenithExData.stats.finesse.perfectpieces / zenithExData.stats.piecesplaced), effectiveRank, { isPercentage: true });
+      await addEmbedField(quickplayExEmbed, 'zenithEx/height', 'Meters', zenithExData.stats.zenith.altitude, effectiveRank);
+      await addEmbedField(quickplayExEmbed, 'zenithEx/pps', 'Pieces Per Second', zenithExData.aggregatestats.pps, effectiveRank, { decimals: 3 });
+      await addEmbedField(quickplayExEmbed, 'zenithEx/apm', 'Attack Per Minute', zenithExData.aggregatestats.apm, effectiveRank);
+      await addEmbedField(quickplayExEmbed, 'zenithEx/climbSpeed', 'Average Climb Speed', zenithExData.stats.zenith.rank, effectiveRank, { decimals: 3 });
+      await addEmbedField(quickplayExEmbed, 'zenithEx/btb', 'Highest Back-to-Back', zenithExData.stats.topbtb, effectiveRank, { decimals: 0 });
+      await addEmbedField(quickplayExEmbed, 'zenithEx/finesse', 'Finesse', (zenithExData.stats.finesse.perfectpieces / zenithExData.stats.piecesplaced), effectiveRank, { isPercentage: true });
     }
 
-    // ---------- Page availability (based on the picked records) ----------
-    const playedLeague  = !!(leagueData && (
+    const playedLeague = !!(leagueData && (
       Number(leagueData.played) > 0 ||
       leagueData.pps != null ||
       leagueData.apm != null ||
-      leagueData.vs  != null
+      leagueData.vs != null
     ));
 
-    const played40L      = !!(linesData && (Number(linesData.played) > 0 || Number(linesData?.stats?.finaltime) > 0));
-    const playedBlitz    = !!(blitzData && (Number(blitzData.played) > 0 || Number(blitzData?.stats?.score) > 0));
+    const played40L = !!(linesData && (Number(linesData.played) > 0 || Number(linesData?.stats?.finaltime) > 0));
+    const playedBlitz = !!(blitzData && (Number(blitzData.played) > 0 || Number(blitzData?.stats?.score) > 0));
 
     // For zenith/zenithex results objects, use altitude > 0 as the signal of a meaningful run
-    const playedZenith   = !!(zenithData   && (Number(zenithData?.stats?.zenith?.altitude) > 0));
+    const playedZenith = !!(zenithData && (Number(zenithData?.stats?.zenith?.altitude) > 0));
     const playedZenithEx = !!(zenithExData && (Number(zenithExData?.stats?.zenith?.altitude) > 0));
 
     const modes = [
-      { label: 'Tetra League',       embed: leagueEmbed,      played: playedLeague },
-      { label: '40 Lines',           embed: linesEmbed,       played: played40L },
-      { label: 'Blitz',              embed: blitzEmbed,       played: playedBlitz },
-      { label: 'Quick Play',         embed: quickplayEmbed,   played: playedZenith },
-      { label: 'Expert Quick Play',  embed: quickplayExEmbed, played: playedZenithEx },
+      { label: 'Tetra League', embed: leagueEmbed, played: playedLeague },
+      { label: '40 Lines', embed: linesEmbed, played: played40L },
+      { label: 'Blitz', embed: blitzEmbed, played: playedBlitz },
+      { label: 'Quick Play', embed: quickplayEmbed, played: playedZenith },
+      { label: 'Expert Quick Play', embed: quickplayExEmbed, played: playedZenithEx },
     ];
 
     const availableModes = modes.filter(m => m.played);
@@ -177,7 +168,6 @@ module.exports = {
     const buttonLabels = availableModes.map(m => m.label);
     const embeds = availableModes.map(m => m.embed);
 
-    // make navigation buttons
     const row = new ActionRowBuilder().addComponents(
       ...buttonLabels.map((label, idx) =>
         new ButtonBuilder()
@@ -188,7 +178,6 @@ module.exports = {
       )
     );
 
-    // send the first page as a reply, with navigation buttons
     await interaction.reply({ embeds: [embeds[0]], components: [row] });
 
     // store page data for this interaction (for navigation handling elsewhere)
@@ -204,9 +193,9 @@ module.exports = {
   },
 };
 
-function getEmbed(username, mode, userId, recordExists, userRank, userPercentile) {
+function getEmbed(username, mode, userId, recordNotExists, userRank, userPercentile) {
   let statusLine = '';
-  if (recordExists) {
+  if (recordNotExists) {
     statusLine = `Hasn't played any ${mode} games yet!`;
   } else if (userRank && userRank !== 'z') {
     statusLine = `-# Ranked ${getEmojiOfRank(userRank)}`;
@@ -231,43 +220,30 @@ function getEmbed(username, mode, userId, recordExists, userRank, userPercentile
   return embed;
 }
 
-async function getRank(statValue, statKey, lowerIsBetter = false) {
-  if (!rankData) {
-    await database.LeagueAverage.findAll().then((data) => {
-      rankData = [];
-      data.forEach((entry) => rankData.push({ ...entry.dataValues, rank: entry.rank }));
-    });
+async function getClosestRank(userValue, statKey, lowerIsBetter = false) {
+  if (!statRankData[statKey]) {
+    statRankData[statKey] = (await database.LeagueStat.findByPk(statKey)).values;
   }
 
-  // filter out rows that don't have this stat
-  const rows = rankData.filter(r => r[statKey] != null && isFinite(Number(r[statKey])));
-  if (rows.length === 0 || !isFinite(Number(statValue))) {
-    // fallback
-    return 'd';
-  }
-
-  // find the closest by absolute difference
-  let best = rows[0];
-  let bestDiff = Math.abs(Number(statValue) - Number(rows[0][statKey]));
-
-  // loop over all rows to find the closest
-  for (let i = 1; i < rows.length; i++) {
-    const ref = Number(rows[i][statKey]);
-    const diff = Math.abs(Number(statValue) - ref);
+  let bestRank = 'd';
+  let bestDiff = Infinity;
+  for (const [rank, value] of Object.entries(statRankData[statKey])) {
+    if (!value) continue;
+    const diff = Math.abs(Number(userValue) - value);
 
     if (diff < bestDiff) {
-      best = rows[i];
+      bestRank = rank;
       bestDiff = diff;
     } else if (diff === bestDiff) {
       // tie-breaker: bias toward the "better" rank
       const better =
-        (!lowerIsBetter && ref > Number(best[statKey])) ||
-        ( lowerIsBetter && ref < Number(best[statKey]));
-      if (better) best = rows[i];
+        (!lowerIsBetter && value > statRankData[statKey][bestRank]) ||
+        (lowerIsBetter && value < statRankData[statKey][bestRank]);
+      if (better) bestRank = rank;
     }
   }
 
-  return best.rank || 'd';
+  return bestRank;
 }
 
 
@@ -281,63 +257,54 @@ async function addEmbedField(
 ) {
   if (statValue == null || !isFinite(Number(statValue))) return;
 
-  // make sure rankdata is loaded
-  if (!rankData) {
-    await database.LeagueAverage.findAll().then((data) => {
-      rankData = [];
-      data.forEach((entry) => rankData.push({ ...entry.dataValues, rank: entry.rank }));
-    });
-  }
-
   const lowerIsBetter = !!extras.lowerIsBetter;
   const decimals = Number.isInteger(extras.decimals) ? extras.decimals : 2;
 
-  // helper to find a row by rank letter
-  const norm = (s) => (s == null ? s : String(s).toLowerCase());
-  const findRow = (rankLetter) =>
-    rankData?.find((r) => norm(r.rank) === norm(rankLetter)) || null;
-
+  // a bunch of helper functions for formatting
   const delta = (x, ref) => (lowerIsBetter ? (ref - x) : (x - ref));
 
-  const fmtValue = (v) => {
+  const fmtValue = (value) => {
     if (extras.isTime) {
-      // v is ms; display as s with 2 decimals (or mm:ss.xx if >= 60s)
-      if (v >= 60000) return `${Math.floor(v / 60000)}:${((v % 60000) / 1000).toFixed(2).padStart(5, '0')}`;
-      return (v / 1000).toFixed(2) + 's';
+      const seconds = value / 1000;
+      if (value >= 60000) return `${Math.floor(seconds / 60)}:${(seconds % 60).toFixed(2).padStart(5, '0')}`;
+      return seconds.toFixed(2) + 's';
     }
-    if (extras.isPercentage) return (v * 100).toFixed(2) + '%';
-    if (decimals === 0) return formatNumber(Math.round(v));
-    const d = 10 ** decimals;
-    return formatNumber(Math.floor(v)) + '.' + (Math.floor(v * d) % d).toString().padStart(decimals, '0');
+
+    if (extras.isPercentage) return (value * 100).toFixed(2) + '%';
+    if (decimals === 0) return formatNumber(Math.round(value));
+    
+    const decimalShift = 10 ** decimals;
+    return formatNumber(Math.floor(value)) + '.' + (Math.floor(value * decimalShift) % decimalShift).toString().padStart(decimals, '0');
   };
 
-  const fmtDelta = (dVal) => {
-    const sign = dVal >= 0 ? '+' : '';
-    if (extras.isTime) return `${sign}${(dVal / 1000).toFixed(2)}s`;
-    if (extras.isPercentage) return `${sign}${(dVal * 100).toFixed(2)}%`;
-    if (decimals === 0) return `${sign}${formatNumber(Math.round(dVal))}`;
-    return `${sign}${Number(dVal).toFixed(decimals)}`;
+  const fmtDelta = (deltaValue) => {
+    const sign = deltaValue > 0 ? '+' : deltaValue === 0 ? '±' : '';
+
+    if (extras.isTime) return `${sign}${(deltaValue / 1000).toFixed(2)}s`;
+    if (extras.isPercentage) return `${sign}${(deltaValue * 100).toFixed(2)}%`;
+    if (decimals === 0) return `${sign}${formatNumber(Math.round(deltaValue))}`;
+
+    return `${sign}${Number(deltaValue).toFixed(decimals)}`;
   };
 
   // 1. determine the "average rank" for this stat value
-  const avgRank = await getRank(statValue, dbStatKey, lowerIsBetter);
-  const avgRow = findRow(avgRank);
-  const deltaToAvg = avgRow && avgRow[dbStatKey] != null ? delta(statValue, Number(avgRow[dbStatKey])) : null;
+  const avgRank = await getClosestRank(statValue, dbStatKey, lowerIsBetter);
+  const deltaToAvg = delta(statValue, Number(statRankData[dbStatKey][avgRank]));
 
   // 2. determine the "user rank baseline": ranked letter OR percentile_rank letter 
-  let userBaselineRow = null;
   let userRankLabel = null;
+  let userRankValue = null;
 
   if (effectiveRank && effectiveRank !== 'z') {
-    userBaselineRow = findRow(effectiveRank);
     userRankLabel = getEmojiOfRank(effectiveRank);
+    userRankValue = statRankData[dbStatKey][effectiveRank];
   } else {
     userRankLabel = 'Unranked';
   }
 
   const deltaToUser =
-    userBaselineRow && userBaselineRow[dbStatKey] != null
-      ? delta(statValue, Number(userBaselineRow[dbStatKey]))
+    userRankValue != null
+      ? delta(statValue, userRankValue)
       : null;
 
   const displayValue = fmtValue(statValue);
@@ -359,29 +326,25 @@ async function addEmbedField(
     }
   }
 
-  // 3) optional: “compared to next rank …” based on the around-rank
-  try {
-    if (avgRank && Array.isArray(rankData) && rankData.length > 0) {
-      if (norm(avgRank) !== 'x+') {
-        const order = rankData.map((r) => r.rank);
-        const avgIdx = order.findIndex((rk) => norm(rk) === norm(avgRank));
-        const nextIdx = avgIdx >= 0 ? avgIdx + 1 : -1;
-        const nextRow =
-          nextIdx >= 0 && nextIdx < rankData.length ? rankData[nextIdx] : null;
+  // 3) show “compared to next rank …” based on the around-rank, if the rank is different
 
-        const isRedundant = nextRow && norm(nextRow.rank) === norm(userRankLetter);
+  if (avgRank && avgRank !== "x+") {
+    const order = Object.keys(statRankData[dbStatKey]);
+    const avgIdx = order.findIndex((rk) => rk === avgRank);
+    const nextIdx = avgIdx >= 0 ? avgIdx + 1 : -1;
+    const nextRow =
+      nextIdx >= 0 && nextIdx < order.length ? order[nextIdx] : null;
+    const isRedundant = nextRow && nextRow === userRankLetter;
 
-        if (nextRow && !isRedundant) {
-          const nextAvg = nextRow[dbStatKey];
-          if (nextAvg != null && isFinite(Number(nextAvg))) {
-            lines.push(
-              `- ${fmtDelta(delta(statValue, Number(nextAvg)))} compared to next rank (${getEmojiOfRank(nextRow.rank)})`
-            );
-          }
-        }
+    if (nextRow && !isRedundant) {
+      const nextAvg = statRankData[dbStatKey][nextRow];
+      if (nextAvg != null && isFinite(Number(nextAvg))) {
+        lines.push(
+          `- ${fmtDelta(delta(statValue, Number(nextAvg)))} compared to next rank (${getEmojiOfRank(nextRow)})`
+        );
       }
     }
-  } catch {}
+  }
 
   embed.addFields({ name: '\u200b', value: lines.join('\n'), inline: false });
 }

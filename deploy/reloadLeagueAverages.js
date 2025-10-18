@@ -261,14 +261,14 @@ async function calculateRankAverages() {
         dbObjects[group] = {};
         for (const stat of Object.keys(BASE_RANK_TOTAL[group])) {
             dbObjects[group][stat] = await database.LeagueStat.create({
-                stat: stat,
+                stat: `${group}/${stat}`,
                 statGroup: group,
             });
         }
     }
     for (const ach of allAches) {
         dbObjects.achievements[ach.name] = await database.LeagueStat.create({
-            stat: ach.name,
+            stat: `achievements/${ach.name}`,
             statGroup: "achievements",
         });
     }
@@ -390,7 +390,7 @@ async function calculateRankAverages() {
 
                 if (!dbObjects[statGroup][stat]) {
                     dbObjects[statGroup][stat] = await database.LeagueStat.create({
-                        stat: stat,
+                        stat: `${statGroup}/${stat}`,
                         statGroup: statGroup,
                     });
                 }
