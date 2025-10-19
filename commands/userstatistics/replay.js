@@ -9,7 +9,7 @@ module.exports = {
         .setName('analyzereplay')
         .setContexts(InteractionContextType.BotDM, InteractionContextType.Guild, InteractionContextType.PrivateChannel)
         .setIntegrationTypes(ApplicationIntegrationType.UserInstall)
-        .setDescription('(WIP) Analyzes a Tetr.io replay file uploaded by the user.')
+        .setDescription('Analyzes a TETR.IO replay file uploaded by the user.')
         .addAttachmentOption(option =>
             option.setName('replay')
                 .setDescription('The replay file to analyze (.ttr format).')
@@ -42,7 +42,7 @@ module.exports = {
             //initially define list of pages 
             let pages = [];
 
-            console.log(replayData);
+            console.log(replayStats);
 
             //check the gamemode
             let gamemode = "Unknown";
@@ -117,9 +117,12 @@ ${modString}
 -# [${escapeUnderscores(replay.users[0].username).toUpperCase()}](https://ch.tetr.io/u/${replay.users[0].username}) ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}
 `),
 
-                    new EmbedBuilder(),
-                    new EmbedBuilder(),
-                    new EmbedBuilder(),
+                    new EmbedBuilder().setTitle("Full"),
+                    new EmbedBuilder().setColor('#ff80d9')
+                    .setDescription(`### __[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id}) -> Splits__
+${splitFormat(replayStats.zenith.splits)}
+-# [${escapeUnderscores(replay.users[0].username).toUpperCase()}](https://ch.tetr.io/u/${replay.users[0].username}) ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}                        `),
+                    new EmbedBuilder().setTitle("Performance"),
                 ]
                 
                 // Initial row of buttons
@@ -178,4 +181,46 @@ function framesToTime(frames) {
     // Format as MM:SS.MSMS
     const formattedTime = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(milliseconds).padStart(3, '0')}`;
     return formattedTime;
+}
+
+function splitFormat(splits) {
+    if (!Array.isArray(splits) || splits.length === 0) return 'No splits available';
+
+    const fmt = (ms) => {
+        if (typeof ms !== 'number' || ms <= 0) return '0:00.000';
+        const totalMs = Math.max(0, Math.floor(ms));
+        const hours = Math.floor(totalMs / 3600000);
+        const minutes = Math.floor((totalMs % 3600000) / 60000);
+        const seconds = Math.floor((totalMs % 60000) / 1000);
+        const milliseconds = totalMs % 1000;
+        if (hours > 0) {
+            return `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(milliseconds).padStart(3, '0')}`;
+        }
+        return `${minutes}:${String(seconds).padStart(2, '0')}.${String(milliseconds).padStart(3, '0')}`;
+    };
+
+    const floors = [
+        "Floor 1: Hall of Beginnings -----",
+        "Floor 2: The Hotel --------------",
+        "Floor 3: The Casino -------------",
+        "Floor 4: The Arena --------------",
+        "Floor 5: The Museum -------------",
+        "Floor 6: Abandoned Offices ------",
+        "Floor 7: The Laboratory ---------",
+        "Floor 8: The Core ---------------",
+        "Floor 9: Corruption -------------",
+        "Floor 10: Platform of the Gods --"
+    ]
+
+    const lines = splits.map((totalMs, idx) => {
+        const floor = idx + 1; // splits[0] is time to finish floor 1
+        if (!totalMs || typeof totalMs !== 'number' || totalMs <= 0) {
+            return `\`${floors[floor]} x:xx:xxx\``;
+        }
+        const prevTime = idx === 0 ? 0 : (splits[idx - 1] || 0);
+        const delta = totalMs - prevTime;
+        return `\`${floors[floor]} ${fmt(delta)}\` \`${fmt(totalMs)}\``;
+    });
+
+    return lines.join('\n');
 }

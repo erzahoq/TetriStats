@@ -188,7 +188,7 @@ client.on(Events.InteractionCreate, async interaction => {
                 interaction, buttonId, interactionId,
                 prefix: 'replaypage',
                 pageKey: 'pages',
-                labels: ['General', 'Stats', 'Tetra League', '4']
+                labels: ['Overview', 'Full', 'Splits', 'Performace']
             });
         }
 
