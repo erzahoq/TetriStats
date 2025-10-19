@@ -180,6 +180,28 @@ function formatModList(mods) {
         { name: "The Tyrant", mods: ["expert_reversed"] },
     ];
 
+    const flavourTexts = {
+        "Deadlock": "\"Escape has become a distant dream, yet still we struggle...\"",
+        "The Starving Artist": "Creativity cultivated through limitation.",
+        "The Grandmaster": "When the world descends into chaos, the grandmaster remains at peace.",
+        "The Con Artist": "Would the perfect lie not be an art worthy of admiration?",
+        "Divine Mastery": "The universe is yours.",
+        "A Modern Classic": "Times were different back then...",
+        "The Escape Artist": "\"An impossible situation! A daring illusionist! Will he make it out alive?\"",
+        "Block Rationing": "Adversity favours the resourceful.",
+        "Emperor's Decadence": "The Devil's lesson in humility.",
+        "Swamp Water Lite": "Comes in 8 different flavors!",
+        "Swamp Water": "The worst of all worlds.",
+        "Asceticism": "A detachment from even that which is moderate.",
+        "Freefall": "In retrospect, the ground you stood on never existed in the first place.",
+        "The Exile": "Never underestimate blind faith.",
+        "Loaded Dice": "In a rigged game, your mind is the only fair advantage.",
+        "The Warlock": "Into realms beyond heaven and earth.",
+        "Damnation": "Neither the freedom of life or peace of death.",
+        "Last Stand": "Strength isn't necessary for those with nothing to lose.",
+        "The Tyrant": "Fear, oppression, and limitless ambition.",
+    }
+
     const modsSet = new Set(mods);
 
     for (const entry of combos) {
@@ -198,11 +220,17 @@ function formatModList(mods) {
         }
     }
 
-    const formattedWords = mods
+    const emojis = mods
         .map(mod => getEmoji("mod_" + mod))
-        .reverse(); // reverse the list :thubm_up:
+        .reverse()
+        .join(""); // reverse the list and join
 
-    // If a combo was detected, prepend its name
-    return (combo ? `${combo} ` : '') + formattedWords.join("");
+    if (combo) {
+        const flavour = flavourTexts[combo] ? `${flavourTexts[combo]}` : "";
+        // bold combo name, include flavour text on same line, then newline before mod icons
+        return `${emojis} **${combo}**\n-# *${flavour}*`;
+    }
+
+    return formattedWords;
 }
 
