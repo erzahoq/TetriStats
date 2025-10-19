@@ -42,15 +42,17 @@ module.exports = {
             //initially define list of pages 
             let pages = [];
 
-            console.log(replayStats);
+            console.log(replayData);
 
             //check the gamemode
             let gamemode = "Unknown";
             if (replay.gamemode === 'zenith') gamemode = "Quick Play";
             if (replay.gamemode === 'zenithex') gamemode = "Quick Play EX";
-            if (replay.gamemode === '40l') gamemode = "40 Lines";
-            if (replay.gamemode === 'blitz') gamemode = "Blitz";
 
+            // choose emoji for quickplay vs quickplay expert (zenithex)
+            let quickplayEmoji = 'quickplay';
+            if (replay.gamemode === 'zenithex') quickplayEmoji = 'quickplayexpert';
+            
             let row; //for buttons
 
             //general stats
@@ -64,19 +66,23 @@ module.exports = {
             if (replay.gamemode === "zenith" || replay.gamemode === "zenithex") {      
 
                 pages = [
-                    new EmbedBuilder()
+                    new EmbedBuilder().setColor('#80ff80')
                     .setDescription(`### __[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id}) -> Overview__
-**[${escapeUnderscores(replay.users[0].username).toUpperCase()}](https://ch.tetr.io/u/${replay.users[0].username}) ${countryCodeToEmoji(replay.users[0].country)}**
-${formattedDate}
-__**General**__
-- Time: ${framesToTime(replayData.frames)} | Pieces Placed: ${formatNumber(replayStats.piecesplaced)} | Lines Cleared: ${formatNumber(replayStats.lines)}
-- PPS: ${replayData.results.aggregatestats.pps.toFixed(2)} | APM: ${replayData.results.aggregatestats.apm.toFixed(2)} | VS: ${replayData.results.aggregatestats.vsscore.toFixed(2)}\n
-__**Stats**__
-- Altitude: ${replayStats.zenith.altitude.toFixed(1)} (Floor ${replayStats.zenith.floor})
-- Avg. Climb Speed: ${replayStats.zenith.rank.toFixed(2)} | Max Climb Speed: ${replayStats.zenith.peakrank.toFixed(2)}
-- B2B: \n
-__**Garbage**__
-                        `),
+${formatModList(replayData.options.zenith_mods)}
+- **Finished in ${framesToTime(replayData.frames)}**
+  - ${replayData.results.aggregatestats.pps.toFixed(2)} PPS
+  - ${replayData.results.aggregatestats.apm.toFixed(2)} APM
+  - ${replayData.results.aggregatestats.vsscore.toFixed(2)} VS Score
+  - ${((replayStats.finesse.perfectpieces/replayStats.piecesplaced)*100).toFixed(2)}% Finesse | ${replayStats.finesse.faults} Faults
+- **Climbed ${replayStats.zenith.altitude.toFixed(1)}m (Floor ${replayStats.zenith.floor})**
+  - Reached ${replayStats.zenith.peakrank.toFixed(2)} climb speed, averaged ${replayStats.zenith.rank.toFixed(2)}
+  - Reached ${replayStats.topbtb} B2B
+- **KO'd ${replayStats.kills} players**
+  - Sent ${formatNumber(replayStats.garbage.sent)} lines 
+  - Received ${formatNumber(replayStats.garbage.received)} lines
+
+-# [${escapeUnderscores(replay.users[0].username).toUpperCase()}](https://ch.tetr.io/u/${replay.users[0].username}) ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}
+`),
 
                     new EmbedBuilder(),
                     new EmbedBuilder(),
@@ -142,36 +148,61 @@ function framesToTime(frames) {
 }
 
 function formatModList(mods) {
-    if (mods.length === 0) {
-        return "None";
+    if (!mods || mods.length === 0) {
+        return "";
     }
 
-    //special combos of mods check
-    //A Modern Classic
-    if (JSON.stringify(mods.map(mod => mod.toLowerCase())) === JSON.stringify(["gravity", "nohold"])) {
-        return "A Modern Classic (No Hold, Gravity)"; // Return a specific message
-    }
-    //Deadlock
-    else if (JSON.stringify(mods.map(mod => mod.toLowerCase())) === JSON.stringify(["doublehole", "messy", "nohold"])) {
-        return "Deadlock (No Hold, Double Hole Garbage, Messier Garbage)"; // Return a specific message
-    }
+    let combo = "";
 
-    //TODO ADD THE REST OF THE SPECIAL MODS
-    //VERY IMPORTANT !!!
+    // define combos: entries either list exact mods, or specify allowedMods + count (for "any N of M" rules)
+    const combos = [
+        { name: "Deadlock", mods: ['nohold', 'doublehole', 'messy'] },
+        { name: "The Starving Artist", mods: ['nohold', 'allspin'] },
+        { name: "The Grandmaster", mods: ['gravity', 'invisible'] },
+        { name: "The Con Artist", mods: ['expert', 'volatile', 'allspin'] },
+        { name: "Divine Mastery", mods: ['expert', 'doublehole', 'volatile', 'messy'] },
+        { name: "A Modern Classic", mods: ['nohold', 'gravity'] },
+        { name: "The Escape Artist", mods: ['doublehole', 'messy', 'allspin'] },
+        { name: "Block Rationing", mods: ['expert', 'messy'] },
+        { name: "Emperor's Decadence", mods: ['expert', 'doublehole', 'nohold'] },
+        //any 7 of the 8 mods
+        { name: "Swamp Water Lite", allowedMods: ['nohold', 'doublehole', 'messy', 'allspin', 'gravity', 'invisible', 'expert', 'volatile'], count: 7 },
+        { name: "Swamp Water", mods: ['nohold', 'doublehole', 'messy', 'allspin', 'gravity', 'invisible', 'expert', 'volatile'] },
 
+        //reversed mods
+        { name: "Asceticism", mods: ["nohold_reversed"] },
+        { name: "Freefall", mods: ["gravity_reversed"] },
+        { name: "The Exile", mods: ["invisible_reversed"] },
+        { name: "Loaded Dice", mods: ["messy_reversed"] },
+        { name: "The Warlock", mods: ["allspin_reversed"] },
+        { name: "Damnation", mods: ["doublehole_reversed"] },
+        { name: "Last Stand", mods: ["volatile_reversed"] },
+        { name: "The Tyrant", mods: ["expert_reversed"] },
+    ];
+
+    const modsSet = new Set(mods);
+
+    for (const entry of combos) {
+        if (entry.mods) {
+            const reqSet = new Set(entry.mods);
+            if (modsSet.size === reqSet.size && entry.mods.every(m => modsSet.has(m))) {
+                combo = entry.name;
+                break;
+            }
+        } else if (entry.allowedMods && Number.isInteger(entry.count)) {
+            // match when mods contains exactly `count` items and all are within allowedMods
+            if (modsSet.size === entry.count && [...modsSet].every(m => entry.allowedMods.includes(m))) {
+                combo = entry.name;
+                break;
+            }
+        }
+    }
 
     const formattedWords = mods
-    .map(mod => {
-        if (mod.toLowerCase() === 'doublehole') return "Double Hole"
-        else if (mod.toLowerCase() === 'nohold') return "No Hold"
-        else if (mod.toLowerCase() === 'messy') return "Messier Garbage"
- 
-        return mod.charAt(0).toUpperCase() + mod.slice(1).toLowerCase(); //capitals (of cities)
-    })
-    .reverse(); // reverse the list :thubm_up:
+        .map(mod => getEmoji("mod_" + mod))
+        .reverse(); // reverse the list :thubm_up:
 
-
-    // Join the formatted mods
-    return formattedWords.join(", ");
+    // If a combo was detected, prepend its name
+    return (combo ? `${combo} ` : '') + formattedWords.join("");
 }
 
