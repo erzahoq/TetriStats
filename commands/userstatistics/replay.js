@@ -79,8 +79,23 @@ module.exports = {
                     modString = ``
                 }
 
+                 // human-friendly mod names
+                const modNames = {
+                    nohold: 'No Hold',
+                    doublehole: 'Double Hole',
+                    messy: 'Messy',
+                    allspin: 'All-Spin',
+                    gravity: 'Gravity',
+                    invisible: 'Invisible',
+                    expert: 'Expert',
+                    volatile: 'Volatile'
+                }
+
+                const modNamesList = mods.slice().reverse().map(m => modNames[m] || m).join(', ');
+
+
                 if (mods.length > 0 && !foundEntry) {
-                    modString = `${emojis}`
+                    modString = `${emojis}\n-# ${modNamesList}`
                 }
 
                 pages = [
