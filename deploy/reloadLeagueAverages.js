@@ -115,7 +115,7 @@ async function fetchAllLeagueUsers() {
         const lastUser = data.data.entries[data.data.entries.length - 1];
         pageTR = `${lastUser.p.pri}:${lastUser.p.sec}:${lastUser.p.ter}`; // very cool pagination system
         
-        printPretty(currentPlayers, totalPlayers, LEAGUE_USERS_REQUEST_COOLDOWN/100);
+        printBar(currentPlayers, totalPlayers, LEAGUE_USERS_REQUEST_COOLDOWN/100);
         
         if (currentPlayers >= totalPlayers) {
             break;
@@ -158,7 +158,7 @@ async function fetchUserAverages() {
         if (userDataList[rank] && userDataList[rank].length === rankUserList[rank].length) {
             currentUsers += userDataList[rank].length;
             console.log(`rank ${rank} is already fetched from resumed progress, skipping...`);
-            printPretty(currentUsers, totalUsers, USER_DATA_REQUEST_COOLDOWN);
+            printBar(currentUsers, totalUsers, USER_DATA_REQUEST_COOLDOWN);
             continue;
         }
         console.log(`working on rank ${rank}...`);
@@ -184,7 +184,7 @@ async function fetchUserAverages() {
 
                     userDataList[rank].push(data.data);
                     currentUsers++;
-                    printPretty(currentUsers, totalUsers, USER_DATA_REQUEST_COOLDOWN);
+                    printBar(currentUsers, totalUsers, USER_DATA_REQUEST_COOLDOWN);
                     break;
                     
                 } catch (error) {
@@ -213,38 +213,81 @@ async function fetchUserAverages() {
 
 // horrific looking function that i could *probably* softcode but it's... fine
 async function calculateRankAverages() {
+    await database.LeagueStat.destroy({ where: {} });
+    
+    let dbObjects = {};
+    const BASE_RANK_TOTAL = {
+      sprint: {
+        time: 0,
+        pps: 0,
+        kpp: 0,
+        kps: 0,
+        finesse: 0,
+      },
+      blitz: {
+        score: 0,
+        pps: 0,
+        spp: 0,
+        finesse: 0,
+      },
+      zenith: {
+        height: 0,
+        pps: 0,
+        apm: 0,
+        climbSpeed: 0,
+        btb: 0,
+        finesse: 0,
+      },
+      zenithEx: {
+        height: 0,
+        pps: 0,
+        apm: 0,
+        climbSpeed: 0,
+        btb: 0,
+        finesse: 0,
+      },
+      league: {
+        pps: 0,
+        vs: 0,
+        apm: 0,
+      },
+      achievements: {},
+    };
+
+    console.log("prepping database...");
+    const allAches = userDataList[RANKS[RANKS.length-1]][0].achievements || [];
+
+    for (const group of Object.keys(BASE_RANK_TOTAL)) {
+        dbObjects[group] = {};
+        for (const stat of Object.keys(BASE_RANK_TOTAL[group])) {
+            dbObjects[group][stat] = await database.LeagueStat.create({
+                stat: `${group}/${stat}`,
+                statGroup: group,
+            });
+        }
+    }
+    for (const ach of allAches) {
+        dbObjects.achievements[ach.name] = await database.LeagueStat.create({
+            stat: `achievements/${ach.name}`,
+            statGroup: "achievements",
+        });
+    }
+    printBar(1, RANKS.length+2);
+
+
     for (const rank of RANKS) {
         console.log(`calculating averages for rank ${rank}...`);
 
-        const rankTotals = {
-            sprintTime: 0,
-            sprintPps: 0,
-            sprintKpp: 0,
-            sprintKps: 0,
-            sprintFinesse: 0,
+        const rankTotals = JSON.parse(JSON.stringify(BASE_RANK_TOTAL));
 
-            blitzScore: 0,
-            blitzPps: 0,
-            blitzSpp: 0,
-            blitzFinesse: 0,
-
-            zenithHeight: 0,
-            zenithPps: 0,
-            zenithApm: 0,
-            zenithClimbSpeed: 0,
-            zenithBtb: 0,
-            zenithFinesse: 0,
-
-            zenithExHeight: 0,
-            zenithExPps: 0,
-            zenithExApm: 0,
-            zenithExClimbSpeed: 0,
-            zenithExBtb: 0,
-            zenithExFinesse: 0,
-
-            leaguePps: 0,
-            leagueVs: 0,
-            leagueApm: 0
+        // count finesse seperately because some replays don't have it for some reason
+        const dataSeenCount = {
+            "sprint": { overall: 0, finesse: 0 },
+            "blitz": { overall: 0, finesse: 0 },
+            "zenith": { overall: 0, finesse: 0 },
+            "zenithEx": { overall: 0, finesse: 0 },
+            "league": { overall: userDataList[rank].length },
+            "achievements": {} // each achievement will be counted separately
         }
 
         for (const userData of userDataList[rank]) {
@@ -252,70 +295,124 @@ async function calculateRankAverages() {
 
             if (userData["40l"]?.record) {
                 recordResults = userData["40l"].record.results;
+                dataSeenCount.sprint.overall += 1;
 
-                rankTotals.sprintTime += recordResults.stats.finaltime;
-                rankTotals.sprintPps += recordResults.aggregatestats.pps;
-                rankTotals.sprintKpp += recordResults.stats.inputs / recordResults.stats.piecesplaced;
-                rankTotals.sprintKps += recordResults.stats.inputs / (recordResults.stats.finaltime / 1000);
+                rankTotals.sprint.time += recordResults.stats.finaltime;
+                rankTotals.sprint.pps += recordResults.aggregatestats.pps;
+                rankTotals.sprint.kpp += recordResults.stats.inputs / recordResults.stats.piecesplaced;
+                rankTotals.sprint.kps += recordResults.stats.inputs / (recordResults.stats.finaltime / 1000);
 
                 
-                if (recordResults.stats.finesse) rankTotals.sprintFinesse += recordResults.stats.finesse.perfectpieces / recordResults.stats.piecesplaced;
+                if (recordResults.stats.finesse) {
+                    dataSeenCount.sprint.finesse += 1;
+                    rankTotals.sprint.finesse += recordResults.stats.finesse.perfectpieces / recordResults.stats.piecesplaced
+                };
             }
 
             if (userData.blitz?.record) {
                 recordResults = userData.blitz.record.results;
+                dataSeenCount.blitz.overall += 1;
 
-                rankTotals.blitzScore += recordResults.stats.score;
-                rankTotals.blitzPps += recordResults.aggregatestats.pps;
-                rankTotals.blitzSpp += recordResults.stats.score / recordResults.stats.piecesplaced;
+                rankTotals.blitz.score += recordResults.stats.score;
+                rankTotals.blitz.pps += recordResults.aggregatestats.pps;
+                rankTotals.blitz.spp += recordResults.stats.score / recordResults.stats.piecesplaced;
 
-                if (recordResults.stats.finesse) rankTotals.blitzFinesse += recordResults.stats.finesse.perfectpieces / (recordResults.stats.piecesplaced || 1);
+                if (recordResults.stats.finesse) {
+                    dataSeenCount.blitz.finesse += 1;
+                    rankTotals.blitz.finesse += recordResults.stats.finesse.perfectpieces / (recordResults.stats.piecesplaced || 1)
+                };
             }
 
             if (userData.zenith && (userData.zenith.best?.record || userData.zenith.record)) {
                 recordResults = (userData.zenith.best?.record || userData.zenith.record).results;
+                dataSeenCount.zenith.overall += 1;
 
-                rankTotals.zenithHeight += recordResults.stats.zenith.altitude;
-                rankTotals.zenithPps += recordResults.aggregatestats.pps;
-                rankTotals.zenithApm += recordResults.aggregatestats.apm;
-                rankTotals.zenithClimbSpeed += recordResults.stats.zenith.rank;
-                rankTotals.zenithBtb += recordResults.stats.topbtb;
-                if (recordResults.stats.finesse) rankTotals.zenithFinesse += recordResults.stats.finesse.perfectpieces / (recordResults.stats.piecesplaced || 1);
+                rankTotals.zenith.height += recordResults.stats.zenith.altitude;
+                rankTotals.zenith.pps += recordResults.aggregatestats.pps;
+                rankTotals.zenith.apm += recordResults.aggregatestats.apm;
+                rankTotals.zenith.climbSpeed += recordResults.stats.zenith.rank;
+                rankTotals.zenith.btb += recordResults.stats.topbtb;
+
+                if (recordResults.stats.finesse) {
+                    dataSeenCount.zenith.finesse += 1;
+                    rankTotals.zenith.finesse += recordResults.stats.finesse.perfectpieces / (recordResults.stats.piecesplaced || 1);
+                }
             }
 
             if (userData.zenithex && (userData.zenithex.best?.record || userData.zenithex.record)) {
                 recordResults = (userData.zenithex.best?.record || userData.zenithex.record).results;
+                dataSeenCount.zenithEx.overall += 1;
 
-                rankTotals.zenithExHeight += recordResults.stats.zenith.altitude;
-                rankTotals.zenithExPps += recordResults.aggregatestats.pps;
-                rankTotals.zenithExApm += recordResults.aggregatestats.apm;
-                rankTotals.zenithExClimbSpeed += recordResults.stats.zenith.rank;
-                rankTotals.zenithExBtb += recordResults.stats.topbtb;
-                if (recordResults.stats.finesse) rankTotals.zenithExFinesse += recordResults.stats.finesse.perfectpieces / (recordResults.stats.piecesplaced || 1);
+                rankTotals.zenithEx.height += recordResults.stats.zenith.altitude;
+                rankTotals.zenithEx.pps += recordResults.aggregatestats.pps;
+                rankTotals.zenithEx.apm += recordResults.aggregatestats.apm;
+                rankTotals.zenithEx.climbSpeed += recordResults.stats.zenith.rank;
+                rankTotals.zenithEx.btb += recordResults.stats.topbtb;
+
+                if (recordResults.stats.finesse) {
+                    dataSeenCount.zenithEx.finesse += 1;
+                    rankTotals.zenithEx.finesse += recordResults.stats.finesse.perfectpieces / (recordResults.stats.piecesplaced || 1)
+                };
             }
 
             // league is guaranteed
-            rankTotals.leaguePps += userData.league.pps;
-            rankTotals.leagueVs += userData.league.vs;
-            rankTotals.leagueApm += userData.league.apm;
+            rankTotals.league.pps += userData.league.pps;
+            rankTotals.league.vs += userData.league.vs;
+            rankTotals.league.apm += userData.league.apm;
+            
+            for (const achievement of userData.achievements || []) {
+                if (!rankTotals.achievements[achievement.name]) {
+                    rankTotals.achievements[achievement.name] = 0;
+                    dataSeenCount.achievements[achievement.name] = 0;
+                }
+
+                if (achievement.rank === 100) {
+                    // issued achievement; calculate for percentage instead
+                    if (achievement.pos) {
+                        rankTotals.achievements[achievement.name]++;
+                    }
+
+                    dataSeenCount.achievements[achievement.name]++;
+                    continue;
+                }
+
+                if (!achievement.v) achievement.v = 0;
+
+                rankTotals.achievements[achievement.name] += achievement.v;
+                dataSeenCount.achievements[achievement.name] += 1;
+            }
+        }
+        
+        for (const statGroup in rankTotals) {
+            for (const stat in rankTotals[statGroup]) {
+                let seenCount = dataSeenCount[statGroup][stat] || dataSeenCount[statGroup].overall;
+                rankTotals[statGroup][stat] /= (seenCount || 1);
+
+                if (!dbObjects[statGroup][stat]) {
+                    dbObjects[statGroup][stat] = await database.LeagueStat.create({
+                        stat: `${statGroup}/${stat}`,
+                        statGroup: statGroup,
+                    });
+                }
+                dbObjects[statGroup][stat].values[rank] = rankTotals[statGroup][stat];
+            }
         }
 
-        const numUsers = userDataList[rank].length;
-        for (const k of Object.keys(rankTotals)) {
-            rankTotals[k] /= numUsers;
-        }
-
-        await database.LeagueAverage.upsert({
-            rank: rank,
-            ...rankTotals
-        });
-
-        printPretty(RANKS.indexOf(rank)+1, RANKS.length);
+        printBar(RANKS.indexOf(rank)+1, RANKS.length+2);
     }
+
+    console.log("saving to database...");
+    for (const group of Object.keys(dbObjects)) {
+        for (const stat of Object.keys(dbObjects[group])) {
+            dbObjects[group][stat].changed('values', true);
+            await dbObjects[group][stat].save();
+        }
+    }
+    printBar(RANKS.length+2, RANKS.length+2);
 }
 
 // wow! pretty logging. very necessary
-function printPretty(progress, total, durationEach = null) {
+function printBar(progress, total, durationEach = null) {
     const barLen = Math.floor(progress * BAR_SIZE/total);
     const percent = ((progress/total)*100).toFixed(2).padStart(5, '0');
 
