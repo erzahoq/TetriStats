@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, InteractionContextType, ApplicationIntegrationType, MessageFlags } = require('discord.js');
 
-const { formatNumber, escapeUnderscores, countryCodeToEmoji, convertToTimeFormat, playtimeConvert, getEmojiOfAch, getEmojiOfRank, reformatTimestamp, calculateLevel } = require('../../helpers/functions');
+const { formatNumber, escapeUnderscores, countryCodeToEmoji, convertToTimeFormat, playtimeConvert, getEmojiOfAch, getEmojiOfRank, reformatTimestamp, calculateLevel, getModCombos } = require('../../helpers/functions');
 const { getEmoji } = require('../../helpers/emojis');
 
 module.exports = {
@@ -63,12 +63,30 @@ module.exports = {
             //=== For each gamemode, create a list of pages ===
             // Zenith gamemode :3
             // expert and normal are together because their stats are extremely similar
-            if (replay.gamemode === "zenith" || replay.gamemode === "zenithex") {      
+            if (replay.gamemode === "zenith" || replay.gamemode === "zenithex") {     
+                
+                
+                let combos = getModCombos(replayData.options.zenith_mods)
+
+                let emojis = combos.emojis || "";
+                let flavour = combos.flavour || "";
+                let foundEntry = combos.name || "";
+                let mods = combos.mods || [];
+
+                let modString = `${emojis} **${foundEntry}**\n-# *${flavour}*`
+
+                if (mods.length === 0) {
+                    modString = ``
+                }
+
+                if (mods.length > 0 && !foundEntry) {
+                    modString = `${emojis}`
+                }
 
                 pages = [
                     new EmbedBuilder().setColor('#80ff80')
                     .setDescription(`### __[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id}) -> Overview__
-${formatModList(replayData.options.zenith_mods)}
+${modString}
 - **Finished in ${framesToTime(replayData.frames)}**
   - ${replayData.results.aggregatestats.pps.toFixed(2)} PPS
   - ${replayData.results.aggregatestats.apm.toFixed(2)} APM
@@ -146,91 +164,3 @@ function framesToTime(frames) {
     const formattedTime = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(milliseconds).padStart(3, '0')}`;
     return formattedTime;
 }
-
-function formatModList(mods) {
-    if (!mods || mods.length === 0) {
-        return "";
-    }
-
-    let combo = "";
-
-    // define combos: entries either list exact mods, or specify allowedMods + count (for "any N of M" rules)
-    const combos = [
-        { name: "Deadlock", mods: ['nohold', 'doublehole', 'messy'] },
-        { name: "The Starving Artist", mods: ['nohold', 'allspin'] },
-        { name: "The Grandmaster", mods: ['gravity', 'invisible'] },
-        { name: "The Con Artist", mods: ['expert', 'volatile', 'allspin'] },
-        { name: "Divine Mastery", mods: ['expert', 'doublehole', 'volatile', 'messy'] },
-        { name: "A Modern Classic", mods: ['nohold', 'gravity'] },
-        { name: "The Escape Artist", mods: ['doublehole', 'messy', 'allspin'] },
-        { name: "Block Rationing", mods: ['expert', 'messy'] },
-        { name: "Emperor's Decadence", mods: ['expert', 'doublehole', 'nohold'] },
-        //any 7 of the 8 mods
-        { name: "Swamp Water Lite", allowedMods: ['nohold', 'doublehole', 'messy', 'allspin', 'gravity', 'invisible', 'expert', 'volatile'], count: 7 },
-        { name: "Swamp Water", mods: ['nohold', 'doublehole', 'messy', 'allspin', 'gravity', 'invisible', 'expert', 'volatile'] },
-
-        //reversed mods
-        { name: "Asceticism", mods: ["nohold_reversed"] },
-        { name: "Freefall", mods: ["gravity_reversed"] },
-        { name: "The Exile", mods: ["invisible_reversed"] },
-        { name: "Loaded Dice", mods: ["messy_reversed"] },
-        { name: "The Warlock", mods: ["allspin_reversed"] },
-        { name: "Damnation", mods: ["doublehole_reversed"] },
-        { name: "Last Stand", mods: ["volatile_reversed"] },
-        { name: "The Tyrant", mods: ["expert_reversed"] },
-    ];
-
-    const flavourTexts = {
-        "Deadlock": "\"Escape has become a distant dream, yet still we struggle...\"",
-        "The Starving Artist": "Creativity cultivated through limitation.",
-        "The Grandmaster": "When the world descends into chaos, the grandmaster remains at peace.",
-        "The Con Artist": "Would the perfect lie not be an art worthy of admiration?",
-        "Divine Mastery": "The universe is yours.",
-        "A Modern Classic": "Times were different back then...",
-        "The Escape Artist": "\"An impossible situation! A daring illusionist! Will he make it out alive?\"",
-        "Block Rationing": "Adversity favours the resourceful.",
-        "Emperor's Decadence": "The Devil's lesson in humility.",
-        "Swamp Water Lite": "Comes in 8 different flavors!",
-        "Swamp Water": "The worst of all worlds.",
-        "Asceticism": "A detachment from even that which is moderate.",
-        "Freefall": "In retrospect, the ground you stood on never existed in the first place.",
-        "The Exile": "Never underestimate blind faith.",
-        "Loaded Dice": "In a rigged game, your mind is the only fair advantage.",
-        "The Warlock": "Into realms beyond heaven and earth.",
-        "Damnation": "Neither the freedom of life or peace of death.",
-        "Last Stand": "Strength isn't necessary for those with nothing to lose.",
-        "The Tyrant": "Fear, oppression, and limitless ambition.",
-    }
-
-    const modsSet = new Set(mods);
-
-    for (const entry of combos) {
-        if (entry.mods) {
-            const reqSet = new Set(entry.mods);
-            if (modsSet.size === reqSet.size && entry.mods.every(m => modsSet.has(m))) {
-                combo = entry.name;
-                break;
-            }
-        } else if (entry.allowedMods && Number.isInteger(entry.count)) {
-            // match when mods contains exactly `count` items and all are within allowedMods
-            if (modsSet.size === entry.count && [...modsSet].every(m => entry.allowedMods.includes(m))) {
-                combo = entry.name;
-                break;
-            }
-        }
-    }
-
-    const emojis = mods
-        .map(mod => getEmoji("mod_" + mod))
-        .reverse()
-        .join(""); // reverse the list and join
-
-    if (combo) {
-        const flavour = flavourTexts[combo] ? `${flavourTexts[combo]}` : "";
-        // bold combo name, include flavour text on same line, then newline before mod icons
-        return `${emojis} **${combo}**\n-# *${flavour}*`;
-    }
-
-    return emojis;
-}
-
