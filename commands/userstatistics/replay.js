@@ -231,6 +231,6 @@ function formatModList(mods) {
         return `${emojis} **${combo}**\n-# *${flavour}*`;
     }
 
-    return formattedWords;
+    return emojis;
 }
 
