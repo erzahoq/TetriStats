@@ -200,26 +200,26 @@ function splitFormat(splits) {
     };
 
     const floors = [
-        "Floor 1: Hall of Beginnings -----",
-        "Floor 2: The Hotel --------------",
-        "Floor 3: The Casino -------------",
-        "Floor 4: The Arena --------------",
-        "Floor 5: The Museum -------------",
-        "Floor 6: Abandoned Offices ------",
-        "Floor 7: The Laboratory ---------",
-        "Floor 8: The Core ---------------",
-        "Floor 9: Corruption -------------",
-        "Floor 10: Platform of the Gods --"
+        "`Floor 1: Hall of Beginnings` `-----`",
+        "`Floor 2: The Hotel` `--------------`",
+        "`Floor 3: The Casino` `-------------`",
+        "`Floor 4: The Arena` `--------------`",
+        "`Floor 5: The Museum` `-------------`",
+        "`Floor 6: Abandoned Offices` `------`",
+        "`Floor 7: The Laboratory` `---------`",
+        "`Floor 8: The Core` `---------------`",
+        "`Floor 9: Corruption` `-------------`",
+        "`Floor 10: Platform of the Gods` `--`"
     ]
 
     const lines = splits.map((totalMs, idx) => {
         const floor = idx + 1; // splits[0] is time to finish floor 1
         if (!totalMs || typeof totalMs !== 'number' || totalMs <= 0) {
-            return `\`${floors[floor]} x:xx:xxx\``;
+            return `${floors[floor]} \`x:xx:xxx\``;
         }
         const prevTime = idx === 0 ? 0 : (splits[idx - 1] || 0);
         const delta = totalMs - prevTime;
-        return `\`${floors[floor]} ${fmt(delta)}\` \`${fmt(totalMs)}\``;
+        return `${floors[floor]} \`${fmt(delta)}\` \`${fmt(totalMs)}\``;
     });
 
     return lines.join('\n');
