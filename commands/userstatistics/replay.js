@@ -64,14 +64,13 @@ module.exports = {
             const formattedDate = `<t:${Math.floor(date.getTime() / 1000)}:F>`;
 
 
+            const finesse = (replayStats.finesse.perfectpieces / replayStats.piecesplaced) ?? -1;
+
+
             //=== For each gamemode, create a list of pages ===
             // Zenith gamemode :3
             // expert and normal are together because their stats are extremely similar
             if (replay.gamemode === "zenith" || replay.gamemode === "zenithex") {     
-
-                console.log(replayData);
-                
-                
                 let combos = getModCombos(replayData.options.zenith_mods)
 
                 let emojis = combos.emojis || "";
@@ -110,7 +109,6 @@ module.exports = {
                 const apm = replayData.results.aggregatestats.apm;
                 const climbSpeed = replayStats.zenith.rank;
                 const btb = replayStats.topbtb;
-                const finesse = replayStats.finesse.perfectpieces / replayStats.piecesplaced;
 
 
                 // the function will just skip the "compared to [rank]" line.
@@ -257,6 +255,15 @@ module.exports = {
             const garbageStats = replayStats.garbage;
             const handling = replayData.options.handling;
 
+            let inputCounts = {};
+            for (const h of ["hardDrop", "softDrop", "hold", "moveLeft", "moveRight", "rotateCW", "rotateCCW", "rotate180"]) inputCounts[h] = 0;
+            for (const frameEvent of replayData.events) {
+                if (frameEvent.type === 'keydown') {
+                    inputCounts[frameEvent.data.key]++;
+                }
+            }
+            console.log(inputCounts)
+
                 pages = [
                     new EmbedBuilder().setColor('#80ff80')
                     .setDescription(`### __[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id}) -> Overview__
@@ -277,17 +284,30 @@ ${modString}
 `),
 
                     new EmbedBuilder().setColor('#ffb980').setDescription(`### __[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id}) -> Full__
-**${stats.piecesplaced} pieces placed, ${stats.holds} pieces held with ${stats.inputs} inputs over ${framesToTime(replayData.frames)}**
-- ${formatNumber(stats.score)} Points
-
-**${stats.clears.singles} singles (${stats.clears.tspinsingles ?? 0} T-spins), ${stats.clears.doubles} doubles (${stats.clears.tspindoubles ?? 0} T-spins), ${stats.clears.triples} triples (${stats.clears.tspintriples ?? 0} T-spins), ${stats.clears.quads} quads**
-
-**${formatNumber(garbageStats.sent)} lines sent, ${formatNumber(garbageStats.received)} lines received**
-- **${formatNumber(garbageStats.attack)}** total attack generated, with a **${formatNumber(garbageStats.maxspike)}** spike
-- ${formatNumber(garbageStats.cleared)} garbage cleared
-
-Got a **${stats.topcombo} combo** and a **${stats.topbtb} Back-to-Back chain**
-**Handling**: ${handling.arr} ARR, ${handling.das} DAS, ${handling.dcd} DCD, ${handling.sdf} SDF
+- **Placed ${stats.piecesplaced} pieces**
+  - Held ${stats.holds} pieces
+  - Pressed ${stats.inputs} inputs
+    - ⇊ ${inputCounts.hardDrop} | ⇃ ${inputCounts.softDrop} | ⇄ ${inputCounts.hold}
+    - ← ${inputCounts.moveLeft} | → ${inputCounts.moveRight}
+    - ↶ ${inputCounts.rotateCCW} | ↷ ${inputCounts.rotateCW} | ⟳ ${inputCounts.rotate180}
+  - ${handling.arr}F ARR | ${handling.das}F DAS | ${handling.sdf === 41 ? "∞" : handling.sdf}x SDF
+- **Cleared ${stats.lines} lines**
+  - ${stats.clears.singles} singles (${stats.clears.tspinsingles ?? 0} spins) 
+  - ${stats.clears.doubles} doubles (${stats.clears.tspindoubles ?? 0} spins) 
+  - ${stats.clears.triples} triples (${stats.clears.tspintriples ?? 0} spins), 
+  - ${stats.clears.quads} quads
+- **Sent ${formatNumber(garbageStats.sent)} garbage lines**
+  - Recieved ${formatNumber(garbageStats.received)}
+  - Cleared ${formatNumber(garbageStats.cleared)}
+  - Generated ${formatNumber(garbageStats.attack)} total attack
+  - Sent a ${formatNumber(garbageStats.maxspike)} spike${finesse === -1 ? '' : `
+- **Had ${(finesse * 100).toFixed(2)}% finesse**
+  - Reached a ${stats.finesse.combo} chain
+  - Made ${stats.finesse.faults} faults
+  - Placed ${stats.finesse.perfectpieces} pieces perfectly`}
+- **Scored ${formatNumber(stats.score)} points**
+  - Reached a ${stats.topcombo} combo
+  - Reached a ${stats.topbtb} Back-to-Back chain
 
 -# [${escapeUnderscores(replay.users[0].username).toUpperCase()}](https://ch.tetr.io/u/${replay.users[0].username}) ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}`),
                     new EmbedBuilder().setColor('#ff80d9')
