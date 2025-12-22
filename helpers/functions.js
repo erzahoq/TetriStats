@@ -133,6 +133,8 @@ function getModCombos(mods) {
         { name: "The Devil", mods: ['doublehole'], flavour: "Redefine your limits or succumb to his chains." },
         { name: "Strength", mods: ['volatile'], flavour: "Match great obstacles with greater determination." },
         { name: "The Emperor", mods: ['expert'], flavour: "A display of power for those willing to bear its burden." },
+        { name: "Rolling the Snowman", mods: ['snowman'], flavour: "\"No matter how many times you've rolled, we all melt in the end.\" - Snowcrates" },
+
 
         //mod combos
         { name: "Deadlock", mods: ['nohold', 'doublehole', 'messy'], flavour: "\"Escape has become a distant dream, yet still we struggle...\"" },
@@ -157,6 +159,7 @@ function getModCombos(mods) {
         { name: "Damnation", mods: ["doublehole_reversed"], flavour: "Neither the freedom of life or peace of death." },
         { name: "Last Stand", mods: ["volatile_reversed"], flavour: "Strength isn't necessary for those with nothing to lose." },
         { name: "The Tyrant", mods: ["expert_reversed"], flavour: "Fear, oppression, and limitless ambition." },
+        { name: "Permafrost Board", mods: ["snowman_reversed"], flavour: "Immortality achieved through a refusal to melt." },
     ];
 
     const modsSet = new Set(mods);
