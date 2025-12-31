@@ -420,7 +420,7 @@ ${perfStatBlock}
                 pages = [
                     new EmbedBuilder().setColor('#80ff80')
                 .setDescription(`### __[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id}) -> Overview__
-- **Finished in ${time} ms**
+- **Finished in ${convertToTimeFormat(time)}**
   - ${pps.toFixed(2)} PPS
   - ${kpp.toFixed(2)} Keys Per Piece
   - ${kps.toFixed(2)} Keys Per Second
@@ -431,6 +431,21 @@ ${perfStatBlock}
 
                     new EmbedBuilder().setColor('#ffb980').setDescription(`### __[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id}) -> Full__
 - **Placed ${replayStats.piecesplaced} pieces**
+  - Held ${replayStats.holds} pieces
+  - Pressed ${replayStats.inputs} inputs
+    - ⇊ ${inputCounts.hardDrop} | ⇃ ${inputCounts.softDrop} | ⇄ ${inputCounts.hold}
+    - ← ${inputCounts.moveLeft} | → ${inputCounts.moveRight}
+    - ↶ ${inputCounts.rotateCCW} | ↷ ${inputCounts.rotateCW} | ⟳ ${inputCounts.rotate180}
+  - ${handling.arr}F ARR | ${handling.das}F DAS | ${handling.sdf === 41 ? "∞" : handling.sdf}x SDF
+- **Cleared ${replayStats.lines} lines**
+  - ${replayStats.clears.singles} singles (${replayStats.clears.tspinsingles ?? 0} spins) 
+  - ${replayStats.clears.doubles} doubles (${replayStats.clears.tspindoubles ?? 0} spins) 
+  - ${replayStats.clears.triples} triples (${replayStats.clears.tspintriples ?? 0} spins), 
+  - ${replayStats.clears.quads} quads${finesse === -1 ? '' : `
+- **Had ${(finesse * 100).toFixed(2)}% finesse**
+  - Reached a ${replayStats.finesse.combo} chain
+  - Made ${replayStats.finesse.faults} faults
+  - Placed ${replayStats.finesse.perfectpieces} pieces perfectly`}
 
 -# [${escapeUnderscores(replay.users[0].username).toUpperCase()}](https://ch.tetr.io/u/${replay.users[0].username}) ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}`),
                     new EmbedBuilder().setColor('#80ffc4').setDescription(`### __[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id}) -> Performance__

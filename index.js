@@ -184,11 +184,20 @@ client.on(Events.InteractionCreate, async interaction => {
 
         // Replay pages
         else if (replayPageRegex.test(buttonId)) {
+            const pageData = interaction.client.pageData?.[interactionId];
+            if (!pageData) return;
+
+            // derive labels from number of pages (40l uses 3, zenith uses 4)
+            // this is probably stupid but whatever
+            const labels = pageData.pages && pageData.pages.length === 3
+                ? ['Overview', 'Full', 'Performance']
+                : ['Overview', 'Full', 'Splits', 'Performance'];
+
             await handlePageButtons({
                 interaction, buttonId, interactionId,
                 prefix: 'replaypage',
                 pageKey: 'pages',
-                labels: ['Overview', 'Full', 'Splits', 'Performace']
+                labels
             });
         }
 
