@@ -294,7 +294,7 @@ async function status() {
         let totalAccounts = responseData.data.usercount;
 
         // console.log('Successfully fetched player count!');
-        client.user.setActivity(`${formatNumber(totalAccounts)} players`, { type: ActivityType.Watching });
+        client.user.setActivity(`${formatNumber(totalAccounts)} TETR.IO players`, { type: ActivityType.Watching });
     } catch (error) {
         console.log(`Couldn't fetch player count! ${error.message}`);
     }
