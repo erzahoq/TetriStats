@@ -486,7 +486,7 @@ ${perfStatBlock}
                     'Score',
                     score,
                     effectiveRank,             // player baseline rank
-                    { }            // extras
+                    { decimals: 0 }            // extras
                 );
 
                 ppsString = await buildReplayStatComparisonString(
