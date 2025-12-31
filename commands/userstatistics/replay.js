@@ -469,10 +469,6 @@ ${perfStatBlock}
                 );
 
             } else if (replay.gamemode === 'blitz') {
-                console.log(replayData)
-                console.log("==================")
-                console.log(replayStats)
-
                 const score = replayStats.score;
                 const pps = replayData.results.aggregatestats.pps;
                 const spp = score / replayStats.piecesplaced;
