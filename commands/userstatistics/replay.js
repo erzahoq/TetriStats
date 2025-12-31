@@ -53,6 +53,7 @@ module.exports = {
             if (replay.gamemode === 'zenith') gamemode = "Quick Play";
             if (replay.gamemode === 'zenithex') gamemode = "Quick Play EX";
             if (replay.gamemode === '40l') gamemode = "40 Lines";
+            if (replay.gamemode === 'blitz') gamemode = "Blitz";
 
             // choose emoji for quickplay vs quickplay expert (zenithex)
             let quickplayEmoji = 'quickplay';
@@ -104,11 +105,14 @@ module.exports = {
                     modString = `${emojis}\n-# ${modNamesList}`
                 }
 
+                const zenithStats = replayStats.zenith;
+
+
                 // silly performance stuff idk
-                const height = replayStats.zenith.altitude;
+                const height = zenithStats.altitude;
                 const pps = replayData.results.aggregatestats.pps;
                 const apm = replayData.results.aggregatestats.apm;
-                const climbSpeed = replayStats.zenith.rank;
+                const climbSpeed = zenithStats.rank;
                 const btb = replayStats.topbtb;
 
 
@@ -252,7 +256,6 @@ module.exports = {
 
             //full page
             const stats = replayStats;
-            const zenithStats = replayStats.zenith;
             const garbageStats = replayStats.garbage;
             const handling = replayData.options.handling;
 
@@ -263,7 +266,6 @@ module.exports = {
                     inputCounts[frameEvent.data.key]++;
                 }
             }
-            console.log(inputCounts)
 
                 pages = [
                     new EmbedBuilder().setColor('#80ff80')
@@ -274,8 +276,8 @@ ${modString}
   - ${replayData.results.aggregatestats.apm.toFixed(2)} APM
   - ${replayData.results.aggregatestats.vsscore.toFixed(2)} VS Score
   - ${((replayStats.finesse.perfectpieces/replayStats.piecesplaced)*100).toFixed(2)}% Finesse | ${replayStats.finesse.faults} Faults
-- **Climbed ${replayStats.zenith.altitude.toFixed(1)}m (Floor ${replayStats.zenith.floor})**
-  - Reached ${replayStats.zenith.peakrank.toFixed(2)} climb speed, averaged ${replayStats.zenith.rank.toFixed(2)}
+- **Climbed ${zenithStats.altitude.toFixed(1)}m (Floor ${zenithStats.floor})**
+  - Reached ${zenithStats.peakrank.toFixed(2)} climb speed, averaged ${zenithStats.rank.toFixed(2)}
   - Reached ${replayStats.topbtb} B2B
 - **KO'd ${replayStats.kills} players**
   - Sent ${formatNumber(replayStats.garbage.sent)} lines 
@@ -313,7 +315,7 @@ ${modString}
 -# [${escapeUnderscores(replay.users[0].username).toUpperCase()}](https://ch.tetr.io/u/${replay.users[0].username}) ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}`),
                     new EmbedBuilder().setColor('#ff80d9')
                     .setDescription(`### __[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id}) -> Splits__
-${splitFormat(replayStats.zenith.splits)}
+${splitFormat(zenithStats.splits)}
 -# [${escapeUnderscores(replay.users[0].username).toUpperCase()}](https://ch.tetr.io/u/${replay.users[0].username}) ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}                        `),
                     new EmbedBuilder().setColor('#80ffc4').setDescription(`### __[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id}) -> Performance__${disclamer}
 ${perfStatBlock}
@@ -341,7 +343,6 @@ ${perfStatBlock}
                         .setStyle(ButtonStyle.Primary)
                 );
             } else if (replay.gamemode === '40l') {
-                console.log(replay.replay.results.stats);
 
                 // silly performance stuff idk
                 const time = replayStats.finaltime;
@@ -404,8 +405,6 @@ ${perfStatBlock}
                     .join('\n');
 
                 //full page
-                const zenithStats = replayStats.zenith;
-                const garbageStats = replayStats.garbage;
                 const handling = replayData.options.handling;
 
                 let inputCounts = {};
@@ -415,7 +414,6 @@ ${perfStatBlock}
                         inputCounts[frameEvent.data.key]++;
                     }
                 }
-                console.log(inputCounts)
 
                 pages = [
                     new EmbedBuilder().setColor('#80ff80')
@@ -470,6 +468,123 @@ ${perfStatBlock}
                         .setStyle(ButtonStyle.Primary)
                 );
 
+            } else if (replay.gamemode === 'blitz') {
+                console.log(replayData)
+                console.log("==================")
+                console.log(replayStats)
+
+                const score = replayStats.score;
+                const pps = replayData.results.aggregatestats.pps;
+                const spp = score / replayStats.piecesplaced;
+
+                // the function will just skip the "compared to [rank]" line.
+                const effectiveRank = null; // or whatever idk
+
+                let scoreString = "";
+                let ppsString = "";
+                let sppString = "";
+                let finesseString = "";
+
+                scoreString = await buildReplayStatComparisonString(
+                    'blitz/score',              // same db key as in /performance
+                    'Score',
+                    score,
+                    effectiveRank,             // player baseline rank
+                    { }            // extras
+                );
+
+                ppsString = await buildReplayStatComparisonString(
+                    'blitz/pps',              // same db key as in /performance
+                    'Pieces Per Second',
+                    pps,                      
+                    effectiveRank,             // player baseline rank
+                    { decimals: 3 }            // extras
+                );
+
+                sppString = await buildReplayStatComparisonString(
+                    'blitz/spp',              // same db key as in /performance
+                    'Score Per Piece',
+                    spp,
+                    effectiveRank,             // player baseline rank
+                    { decimals: 2 }            // extras
+                );
+
+
+                finesseString = await buildReplayStatComparisonString(
+                    'blitz/finesse',              // same db key as in /performance
+                    'Finesse',
+                    finesse,
+                    effectiveRank,             // player baseline rank
+                    { decimals: 4, isPercentage: true }            // extras
+                );
+
+                // build performance block without empty lines
+                const perfStatBlock = [scoreString, ppsString, sppString, finesseString]
+                    .filter(s => typeof s === 'string' ? s.trim().length > 0 : Boolean(s))
+                    .join('\n');
+
+                //full page
+                const handling = replayData.options.handling;
+
+                let inputCounts = {};
+                for (const h of ["hardDrop", "softDrop", "hold", "moveLeft", "moveRight", "rotateCW", "rotateCCW", "rotate180"]) inputCounts[h] = 0;
+                for (const frameEvent of replayData.events) {
+                    if (frameEvent.type === 'keydown') {
+                        inputCounts[frameEvent.data.key]++;
+                    }
+                }
+
+                pages = [
+                    new EmbedBuilder().setColor('#80ff80')
+                .setDescription(`### __[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id}) -> Overview__
+- **Scored ${formatNumber(score)} points**
+  - ${pps.toFixed(2)} PPS
+  - ${spp.toFixed(2)} Points Per Piece
+  - ${((finesse)*100).toFixed(2)}% Finesse | ${replayStats.finesse.faults} Faults
+
+-# [${escapeUnderscores(replay.users[0].username).toUpperCase()}](https://ch.tetr.io/u/${replay.users[0].username}) ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}
+`),
+
+                    new EmbedBuilder().setColor('#ffb980').setDescription(`### __[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id}) -> Full__
+- **Placed ${replayStats.piecesplaced} pieces**
+  - Held ${replayStats.holds} pieces
+  - Pressed ${replayStats.inputs} inputs
+    - ⇊ ${inputCounts.hardDrop} | ⇃ ${inputCounts.softDrop} | ⇄ ${inputCounts.hold}
+    - ← ${inputCounts.moveLeft} | → ${inputCounts.moveRight}
+    - ↶ ${inputCounts.rotateCCW} | ↷ ${inputCounts.rotateCW} | ⟳ ${inputCounts.rotate180}
+  - ${handling.arr}F ARR | ${handling.das}F DAS | ${handling.sdf === 41 ? "∞" : handling.sdf}x SDF
+- **Cleared ${replayStats.lines} lines**
+  - ${replayStats.clears.singles} singles (${replayStats.clears.tspinsingles ?? 0} spins) 
+  - ${replayStats.clears.doubles} doubles (${replayStats.clears.tspindoubles ?? 0} spins) 
+  - ${replayStats.clears.triples} triples (${replayStats.clears.tspintriples ?? 0} spins), 
+  - ${replayStats.clears.quads} quads${finesse === -1 ? '' : `
+- **Had ${(finesse * 100).toFixed(2)}% finesse**
+  - Reached a ${replayStats.finesse.combo} chain
+  - Made ${replayStats.finesse.faults} faults
+  - Placed ${replayStats.finesse.perfectpieces} pieces perfectly`}
+
+-# [${escapeUnderscores(replay.users[0].username).toUpperCase()}](https://ch.tetr.io/u/${replay.users[0].username}) ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}`),
+                    new EmbedBuilder().setColor('#80ffc4').setDescription(`### __[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id}) -> Performance__
+${perfStatBlock}
+-# [${escapeUnderscores(replay.users[0].username).toUpperCase()}](https://ch.tetr.io/u/${replay.users[0].username}) ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}`),
+                ]
+                
+                //initial row of buttons
+                row = new ActionRowBuilder().addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('replaypage_0')
+                        .setLabel('Overview')
+                        .setStyle(ButtonStyle.Primary)
+                        .setDisabled(true), //disable the first button initially
+                    new ButtonBuilder()
+                        .setCustomId('replaypage_1')
+                        .setLabel('Full')
+                        .setStyle(ButtonStyle.Primary),
+                    new ButtonBuilder()
+                        .setCustomId('replaypage_2')
+                        .setLabel('Performance')
+                        .setStyle(ButtonStyle.Primary)
+                );                
             } else {
                 return interaction.editReply({content: 'This type of replay file has not been accounted for yet, please contact the developers if you believe this is a mistake.'})
             }
