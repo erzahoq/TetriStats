@@ -52,6 +52,7 @@ module.exports = {
             let gamemode = "Unknown";
             if (replay.gamemode === 'zenith') gamemode = "Quick Play";
             if (replay.gamemode === 'zenithex') gamemode = "Quick Play EX";
+            if (replay.gamemode === '40l') gamemode = "40 Lines";
 
             // choose emoji for quickplay vs quickplay expert (zenithex)
             let quickplayEmoji = 'quickplay';
@@ -339,6 +340,121 @@ ${perfStatBlock}
                         .setLabel('Performance')
                         .setStyle(ButtonStyle.Primary)
                 );
+            } else if (replay.gamemode === '40l') {
+                console.log(replay.replay.results.stats);
+
+                // silly performance stuff idk
+                const time = replayStats.finaltime;
+                const pps = replayData.results.aggregatestats.pps;
+                const kpp = replayStats.inputs / replayStats.piecesplaced;
+                const kps = replayStats.inputs / (time / 1000);
+
+                // the function will just skip the "compared to [rank]" line.
+                const effectiveRank = null; // or whatever idk
+
+                let timeString = "";
+                let ppsString = "";
+                let kppString = "";
+                let kpsString = "";
+                let finesseString = "";
+
+                timeString = await buildReplayStatComparisonString(
+                    'sprint/time',              // same db key as in /performance
+                    'Time',
+                    time,
+                    effectiveRank,             // player baseline rank
+                    { lowerIsBetter: true, isTime: true }            // extras
+                );
+
+                ppsString = await buildReplayStatComparisonString(
+                    'sprint/pps',              // same db key as in /performance
+                    'Pieces Per Second',       
+                    pps,                      
+                    effectiveRank,             // player baseline rank
+                    { decimals: 3 }            // extras
+                );
+
+                kppString = await buildReplayStatComparisonString(
+                    'sprint/kpp',              // same db key as in /performance
+                    'Keys Per Piece',
+                    kpp,
+                    effectiveRank,             // player baseline rank
+                    { decimals: 3 }            // extras
+                );
+
+                kpsString = await buildReplayStatComparisonString(
+                    'sprint/kps',              // same db key as in /performance
+                    'Keys Per Second',
+                    kps,
+                    effectiveRank,             // player baseline rank
+                    { decimals: 3 }            // extras
+                );
+
+                finesseString = await buildReplayStatComparisonString(
+                    'sprint/finesse',              // same db key as in /performance
+                    'Finesse',
+                    finesse,
+                    effectiveRank,             // player baseline rank
+                    { decimals: 4, isPercentage: true }            // extras
+                );
+
+                // build performance block without empty lines
+                const perfStatBlock = [timeString, ppsString, kppString, kpsString, finesseString]
+                    .filter(s => typeof s === 'string' ? s.trim().length > 0 : Boolean(s))
+                    .join('\n');
+
+                //full page
+                const zenithStats = replayStats.zenith;
+                const garbageStats = replayStats.garbage;
+                const handling = replayData.options.handling;
+
+                let inputCounts = {};
+                for (const h of ["hardDrop", "softDrop", "hold", "moveLeft", "moveRight", "rotateCW", "rotateCCW", "rotate180"]) inputCounts[h] = 0;
+                for (const frameEvent of replayData.events) {
+                    if (frameEvent.type === 'keydown') {
+                        inputCounts[frameEvent.data.key]++;
+                    }
+                }
+                console.log(inputCounts)
+
+                pages = [
+                    new EmbedBuilder().setColor('#80ff80')
+                .setDescription(`### __[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id}) -> Overview__
+- **Finished in ${time} ms**
+  - ${pps.toFixed(2)} PPS
+  - ${kpp.toFixed(2)} Keys Per Piece
+  - ${kps.toFixed(2)} Keys Per Second
+  - ${((finesse)*100).toFixed(2)}% Finesse | ${replayStats.finesse.faults} Faults
+
+-# [${escapeUnderscores(replay.users[0].username).toUpperCase()}](https://ch.tetr.io/u/${replay.users[0].username}) ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}
+`),
+
+                    new EmbedBuilder().setColor('#ffb980').setDescription(`### __[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id}) -> Full__
+- **Placed ${replayStats.piecesplaced} pieces**
+
+-# [${escapeUnderscores(replay.users[0].username).toUpperCase()}](https://ch.tetr.io/u/${replay.users[0].username}) ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}`),
+                    new EmbedBuilder().setColor('#80ffc4').setDescription(`### __[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id}) -> Performance__
+${perfStatBlock}
+-# [${escapeUnderscores(replay.users[0].username).toUpperCase()}](https://ch.tetr.io/u/${replay.users[0].username}) ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}`),
+                ]
+                
+                //initial row of buttons
+                row = new ActionRowBuilder().addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('replaypage_0')
+                        .setLabel('Overview')
+                        .setStyle(ButtonStyle.Primary)
+                        .setDisabled(true), //disable the first button initially
+                    new ButtonBuilder()
+                        .setCustomId('replaypage_1')
+                        .setLabel('Full')
+                        .setStyle(ButtonStyle.Primary),
+                    new ButtonBuilder()
+                        .setCustomId('replaypage_2')
+                        .setLabel('Performance')
+                        .setStyle(ButtonStyle.Primary)
+                );
+
             } else {
                 return interaction.editReply({content: 'This type of replay file has not been accounted for yet, please contact the developers if you believe this is a mistake.'})
             }
