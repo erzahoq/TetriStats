@@ -297,7 +297,7 @@ ${modString}
 - **Cleared ${stats.lines} lines**
   - ${stats.clears.singles} singles (${stats.clears.tspinsingles ?? 0} spins) 
   - ${stats.clears.doubles} doubles (${stats.clears.tspindoubles ?? 0} spins) 
-  - ${stats.clears.triples} triples (${stats.clears.tspintriples ?? 0} spins), 
+  - ${stats.clears.triples} triples (${stats.clears.tspintriples ?? 0} spins)
   - ${stats.clears.quads} quads
 - **Sent ${formatNumber(garbageStats.sent)} garbage lines**
   - Recieved ${formatNumber(garbageStats.received)}
@@ -438,7 +438,7 @@ ${perfStatBlock}
 - **Cleared ${replayStats.lines} lines**
   - ${replayStats.clears.singles} singles (${replayStats.clears.tspinsingles ?? 0} spins) 
   - ${replayStats.clears.doubles} doubles (${replayStats.clears.tspindoubles ?? 0} spins) 
-  - ${replayStats.clears.triples} triples (${replayStats.clears.tspintriples ?? 0} spins), 
+  - ${replayStats.clears.triples} triples (${replayStats.clears.tspintriples ?? 0} spins)
   - ${replayStats.clears.quads} quads${finesse === -1 ? '' : `
 - **Had ${(finesse * 100).toFixed(2)}% finesse**
   - Reached a ${replayStats.finesse.combo} chain
@@ -552,7 +552,7 @@ ${perfStatBlock}
 - **Cleared ${replayStats.lines} lines**
   - ${replayStats.clears.singles} singles (${replayStats.clears.tspinsingles ?? 0} spins) 
   - ${replayStats.clears.doubles} doubles (${replayStats.clears.tspindoubles ?? 0} spins) 
-  - ${replayStats.clears.triples} triples (${replayStats.clears.tspintriples ?? 0} spins), 
+  - ${replayStats.clears.triples} triples (${replayStats.clears.tspintriples ?? 0} spins)
   - ${replayStats.clears.quads} quads${finesse === -1 ? '' : `
 - **Had ${(finesse * 100).toFixed(2)}% finesse**
   - Reached a ${replayStats.finesse.combo} chain

@@ -48,8 +48,9 @@ module.exports = {
             "solo": "Solo",
             "zenith": "Quick Play",
             "legacy": "Legacy",
+            "event": "Event"
         }
-        let categories = ["general", "league", "solo", "zenith", "legacy"];
+        let categories = ["general", "league", "solo", "zenith", "legacy", "event"];
         let achList = {};
         let achDisplays = {};
         let pages = {};
@@ -59,7 +60,8 @@ module.exports = {
             "league": "#c51111",
             "solo": "#ff7024",
             "zenith": "#ffc800",
-            "legacy": "#d384f5"
+            "legacy": "#ac64ca",
+            "event": "#f892a3"
         };
 
         //magic voodoo sorting raah
@@ -175,6 +177,7 @@ function formatAchievementListText(achlist) {
     // for every achievement...
     achlist.forEach(ach => {
         var achText = ""
+
         achCount++;
         //format thing because api silly
         let displayVal = formatNumber(Math.round(ach.v));
@@ -221,6 +224,11 @@ function formatAchievementListText(achlist) {
         if (ach.x.ally) {
             let allyUsername = ach.x.ally.username;
             achText += ` (With [${escapeUnderscores(allyUsername).toUpperCase()}](https://ch.tetr.io/u/${allyUsername}))`;
+        }
+
+        if (ach.event) {
+            let eventName = ach.event;
+            achText += ` (${eventName})`
         }
 
         // in case it's undefined, define as ""

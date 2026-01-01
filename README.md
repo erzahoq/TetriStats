@@ -47,7 +47,6 @@ Use the `/performance` command and get rated on each gamemode, and where to impr
 - Compare two users with `/compare`
 - View general server stats with `/server-stats`
 - View recent world records with `/news-top`
-...
 
 ## Installation & Usage
 
