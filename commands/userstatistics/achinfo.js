@@ -89,6 +89,7 @@ module.exports = {
                 })
                 pages[cat] = ind;
             } else {
+                if (cat === "event") return; // no text or button if no event achievements
                 achDisplays[`${cat}0`] = `${getEmoji("ach_none")} No ${cat} achievements unlocked yet... :(`
             }
         })
