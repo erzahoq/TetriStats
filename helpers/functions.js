@@ -3,6 +3,8 @@
 
 const { getEmoji } = require('./emojis');
 
+const { createCanvas, loadImage } = require("canvas");
+
 function formatNumber(num) {
     const numStr = num.toString();
     return numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
@@ -69,7 +71,7 @@ function getEmojiOfRank(rank) {
 
 function reformatTimestamp(isoString) {
     if (!isoString) {
-        return "Before account creation was tracked"
+        return "before account creation was tracked"
     }
 
     // Create a Date object from the ISO string
@@ -81,6 +83,7 @@ function reformatTimestamp(isoString) {
 
 // a magic formula stolen from somewhere online
 function calculateLevel(xp) {
+    if (xp === -1) return 0;
     return ((xp / 500) ** 0.6) + (xp / (5000 + ((Math.max(0, xp - (4 * 10 ** 6))) / 5000))) + 1
 }
 
@@ -196,6 +199,139 @@ function getModCombos(mods) {
     return { emojis: emojis, mods: mods};
 }
 
+
+// ====== HELPERS FOR LEVEL DISPLAY =========
+function drawPolygon(ctx, cx, cy, radius, sides, rotation = 0) {
+    ctx.beginPath();
+    for (let i = 0; i < sides; i++) {
+        const angle = (Math.PI * 2 * i) / sides + rotation;
+        const x = cx + radius * Math.cos(angle);
+        const y = cy + radius * Math.sin(angle);
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fill();
+}
+
+function drawRightShape(ctx, shape, x, y, size) {
+    ctx.save();
+    ctx.translate(x, y);
+
+    switch (shape) {
+        case "line":
+        ctx.fillRect(-size / 2, -10, 3, size * 2);
+        break;
+
+        case "triangle":
+        drawPolygon(ctx, 0, 0, size / 2, 3, -Math.PI / 2);
+        break;
+
+        case "diamond":
+        drawPolygon(ctx, 0, 0, size / 2, 4, Math.PI / 4);
+        break;
+
+        case "pentagon":
+        drawPolygon(ctx, 0, 0, size / 2, 5, -Math.PI / 2);
+        break;
+
+        case "hexagon":
+        drawPolygon(ctx, 0, 0, size / 2, 6);
+        break;
+    }
+
+    ctx.restore();
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+  ctx.fill();
+}
+
+
+
+async function createLevelImage(xp) {
+    const RAINBOW = [
+        "#bdbdbd",
+        "#f74d4d", // red
+        "#f88f48", // orange
+        "#ebd93f", // yellow
+        "#a8ef43", // green
+        "#5cf47f", // light green
+        "#5af7e6", // cyan
+        "#4793f6", // blue
+        "#a574ff", // indigo
+        "#f04df2"  // violet
+    ];
+
+    const SHAPES = ["line", "triangle", "diamond", "pentagon", "hexagon"];
+
+    function getRightColor(level) {
+        // changes every 10 levels
+        if (level > 4999) return "#f9de43";
+        return RAINBOW[Math.floor(level / 10) % RAINBOW.length];
+    }
+
+    function getTagColor(level) {
+        // changes every 500 levels
+        if (level > 4999) return "#f9de43";
+        return RAINBOW[Math.floor(level / 500) % RAINBOW.length];
+    }
+
+    function getShape(level) {
+        // changes every 100 levels
+        return SHAPES[Math.floor(level / 100) % SHAPES.length];
+    }
+
+    let level = Math.floor(calculateLevel(xp));
+    let colourLevel = level;
+
+    const width = 70;
+    const height = 23;
+
+    const canvas = createCanvas(width, height);
+    const ctx = canvas.getContext("2d");
+
+    ctx.clearRect(0, 0, width, height);
+
+    // ---- computed visuals ----
+    if (level === 0) colourLevel = 1;
+    const tagColor = getTagColor(colourLevel);
+    const rightColor = getRightColor(colourLevel);
+    const shape = getShape(colourLevel);
+
+    // ---- left tag ----
+    ctx.fillStyle = tagColor;
+    roundRect(ctx, 0, 0, 48, height, 6);
+
+    // ---- level text ----
+    ctx.fillStyle = "#fff";
+
+    if (499 < level < 1000 || 3499 < level < 4999) {
+        ctx.fillStyle = "#000"
+    }
+
+    ctx.font = "bold 13px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(level.toString(), 24, height / 2);
+
+    // ---- right shape ----
+    ctx.fillStyle = rightColor;
+    drawRightShape(ctx, shape, 58, height / 2, 12);
+
+    return canvas.toBuffer("image/png");
+}
+
 module.exports = {
     formatNumber,
     escapeUnderscores,
@@ -209,5 +345,6 @@ module.exports = {
     capitalizeFirstLetter,
     getModEmoji,
     getLeagueRankColour,
-    getModCombos
+    getModCombos,
+    createLevelImage
 }

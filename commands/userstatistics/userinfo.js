@@ -1,8 +1,13 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, AttachmentBuilder, ButtonBuilder, ButtonStyle, MessageFlags, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
 import('node-fetch'); // Ensure 'node-fetch' is imported properly
 
 // Import helper functions for formatting and data processing
-const { formatNumber, escapeUnderscores, countryCodeToEmoji, convertToTimeFormat, playtimeConvert, getEmojiOfAch, getEmojiOfRank, reformatTimestamp, calculateLevel } = require('../../helpers/functions');
+const {
+      formatNumber, escapeUnderscores, countryCodeToEmoji,
+      convertToTimeFormat, playtimeConvert, getEmojiOfAch,
+      getEmojiOfRank, reformatTimestamp, calculateLevel,
+      createLevelImage
+    } = require('../../helpers/functions');
 const { getUser } = require('../../helpers/getuser');
 const { getEmoji } = require('../../helpers/emojis');
 
@@ -145,8 +150,11 @@ ${formatLeaguePreview(summaryData, country)} ${formatZenith(summaryData, country
       )
     );
 
+    const pngBuffer = await createLevelImage(statData.xp);
+    const levelFile = new AttachmentBuilder(pngBuffer, { name: "level.png" });
+
     // Send the first page as a reply, with navigation buttons
-    await interaction.reply({ embeds: [pages[0]], components: [row] });
+    await interaction.reply({ embeds: [pages[0]], components: [row], files: [levelFile] });
 
     // Store page data for this interaction (for navigation handling elsewhere)
     interaction.client.pageData = {
