@@ -245,11 +245,24 @@ client.once(Events.ClientReady, async readyClient => {
     console.log(`Ready! Logged in as ${readyClient.user.tag}`);
     await initEmojis(readyClient); // Initialize emojis
     status();
-    checkRdAlerts(); 
+    checkRdAlerts().catch(err => {
+        console.error('[RD] checkRdAlerts crashed:', err);
+    });
 });
 
 // Log in to Discord with your client's token
 client.login(token);
+
+
+//Error handling
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled rejection:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err);
+});
+
 
 async function checkRdAlerts() {
     console.log('Checking RD alerts...');
