@@ -8,7 +8,7 @@ let sessionId;
 const USER_DATA_REQUEST_COOLDOWN = 1.05;
 const LEAGUE_USERS_REQUEST_COOLDOWN = 1.35;
 
-const USERS_PER_RANK = 600;
+const USERS_PER_RANK = 700;
 const MAX_ERRORS = 5;
 const BAR_SIZE = 35;
 const RANKS = ['d', 'd+', 'c-', 'c', 'c+', 'b-', 'b', 'b+', 'a-', 'a', 'a+', 's-', 's', 's+', 'ss', 'u', 'x', 'x+'];
@@ -446,7 +446,7 @@ async function fetchWithCooldown(url, cooldown) {
 
     lastRequestTime = Date.now();
     try {
-        const response = await fetch(url, { headers: { 'X-Session-ID': sessionId } });
+        const response = await fetch(url, { headers: { 'X-Session-ID': sessionId, 'User-Agent': "TetriStats-Discord-Bot/0.1 by @erzahoq" } });
         return response;
     }
     catch (error) {
