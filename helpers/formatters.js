@@ -3,9 +3,16 @@
 
 const { getEmoji } = require('./emojis');
 
-function formatNumber(num) {
-    const numStr = num.toString();
-    return numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+function formatNumber(num, decimalPlaces = 0) {
+    let numStr = Math.floor(num).toString();
+    numStr = numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+    if (decimalPlaces > 0) {
+        const decimal = num - Math.floor(num);
+        const decimalStr = decimal.toFixed(decimalPlaces).substring(2);
+        numStr += '.' + decimalStr;
+    }
+    return numStr;
 }
 
 function escapeUnderscores(input) {
@@ -30,8 +37,7 @@ function countryCodeToEmoji(countryCode) {
     return String.fromCodePoint(...codePoints);
 }
 
-// functions.js
-function convertToTimeFormat(inputMs) {
+function formatTime(inputMs) {
     const ms = Math.abs(inputMs);           // normalize to positive
     const totalSeconds = ms / 1000;
     const minutes = Math.floor(totalSeconds / 60);
@@ -43,39 +49,35 @@ function convertToTimeFormat(inputMs) {
     return `${minutes}:${formattedSeconds}`; // e.g., 0:40.597
 }
 
-
-function playtimeConvert(playtime) {
+function formatPlaytime(playtime) {
     if (playtime === 'Hidden') {
         return playtime;
     } 
-    return `${Math.round((playtime/3600) * 10) / 10} Hours`
-}
 
-function getEmojiOfAch(name) { // kinda dumb but whatever, ill fix it later
-    return getEmoji(`ach_${name}`)
-}
+    const hours = playtime % 24;
+    const days = Math.floor(hours / 24);
 
-function getModEmoji(emoji) {
-    return getEmoji(`mod_${emoji}`)
+    let result = '';
+    if (days > 0) {
+        result += `${formatNumber(days)} Days and `;
+    }
+    result += `${formatNumber(hours, 2)} Hours`;
+    return result;
 }
 
 function getEmojiOfRank(rank) {
-    if (!rank) {
-        return;
-    }
     let formattedRank = 'rank_' + rank.toLowerCase().replace("+", "plus").replace("-", "minus");
     return getEmoji(formattedRank)
 }
 
-function reformatTimestamp(isoString) {
-    if (!isoString) {
-        return "Before account creation was tracked"
+function formatISOString(isoString, accountCreation = false) {
+    if (!isoString && accountCreation) {
+        return "before account creation was tracked"
+    } else if (!isoString) {
+        return "who knows when"
     }
 
-    // Create a Date object from the ISO string
     const date = new Date(isoString);
-
-    // Return the Unix timestamp by dividing the milliseconds by 1000
     return `<t:${Math.floor(date.getTime() / 1000)}:R>`;
 }
 
@@ -119,7 +121,6 @@ function getModCombos(mods) {
         return [];
     }
 
-    let combo = "";
     let foundEntry = null;
 
     // define combos
@@ -168,14 +169,12 @@ function getModCombos(mods) {
         if (entry.mods) {
             const reqSet = new Set(entry.mods);
             if (modsSet.size === reqSet.size && entry.mods.every(m => modsSet.has(m))) {
-                combo = entry.name;
                 foundEntry = entry;
                 break;
             }
         } else if (entry.allowedMods && Number.isInteger(entry.count)) {
             // match when mods contains exactly `count` items in allowedMods
             if (modsSet.size === entry.count && [...modsSet].every(m => entry.allowedMods.includes(m))) {
-                combo = entry.name;
                 foundEntry = entry;
                 break;
             }
@@ -193,21 +192,29 @@ function getModCombos(mods) {
     }
 
     // no combo matched
-    return { emojis: emojis, mods: mods};
+    return { emojis: emojis, mods: mods };
+}
+
+function formatUsername(name, asLink = false) {
+    const formatted = escapeUnderscores(name.toUpperCase());
+
+    if (asLink) {
+        return `[${formatted}](https://ch.tetr.io/u/${formatted})`;
+    }
+    return formatted;
 }
 
 module.exports = {
     formatNumber,
     escapeUnderscores,
     countryCodeToEmoji,
-    convertToTimeFormat,
-    playtimeConvert,
-    getEmojiOfAch,
+    formatTime,
+    formatPlaytime,
     getEmojiOfRank,
-    reformatTimestamp,
+    formatISOString,
     calculateLevel,
     capitalizeFirstLetter,
-    getModEmoji,
     getLeagueRankColour,
-    getModCombos
+    getModCombos,
+    formatUsername
 }

@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
-const { formatNumber, escapeUnderscores, getEmojiOfRank, getLeagueRankColour } = require('../../helpers/functions');
+const { formatNumber, escapeUnderscores, getEmojiOfRank, getLeagueRankColour } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
 const { database } = require('../../database');
 

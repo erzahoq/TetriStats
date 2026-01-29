@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, InteractionContextType, MessageFlags } = require('discord.js');
 import("node-fetch");
 
-const { formatNumber } = require('../../helpers/functions');
+const { formatNumber } = require('../../helpers/formatters');
 
 
 module.exports = {

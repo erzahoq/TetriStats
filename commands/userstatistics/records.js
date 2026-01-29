@@ -1,7 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, InteractionContextType, MessageFlags, ApplicationIntegrationType } = require('discord.js');
-import("node-fetch");
 
-const { formatNumber, escapeUnderscores, convertToTimeFormat, reformatTimestamp, getModEmoji } = require('../../helpers/functions');
+const { formatNumber, escapeUnderscores, convertToTimeFormat, reformatTimestamp, getModEmoji } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
 const { getEmoji } = require('../../helpers/emojis');
 
@@ -159,7 +158,7 @@ function formatRecord(record) {
         if (record.extras.zenith.mods) {
             formatted += ' ';
             record.extras.zenith.mods.forEach(mod => {
-                formatted += getModEmoji(mod);
+                formatted += getEmoji("mod_" + mod);
             });
         }
     } 

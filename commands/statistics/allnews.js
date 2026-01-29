@@ -1,7 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, InteractionContextType, MessageFlags } = require('discord.js');
-import("node-fetch");
-
-const { convertToTimeFormat, getEmojiOfRank, reformatTimestamp, capitalizeFirstLetter } = require('../../helpers/functions');
+const { formatTime, getEmojiOfRank, formatISOString, capitalizeFirstLetter } = require('../../helpers/formatters');
 const { getEmoji } = require('../../helpers/emojis');
 
 
@@ -56,22 +54,21 @@ module.exports = {
                 if (userData.gametype === 'zenith' || userData.gametype === 'zenithex') {
                     message += ` (${Math.round(userData.result * 10) / 10}m)`
                 } else {
-                    message += ` (${convertToTimeFormat(userData.result)})`
+                    message += ` (${formatTime(userData.result)})`
                 }
             } else if (user.type === 'supporter') {
-                message += `- ${getEmoji(supporter_star)} [${(userData.username).toUpperCase()}](https://ch.tetr.io/u/${userData.username}) has become a Supporter!`
+                message += `- ${getEmoji('supporter_star')} [${(userData.username).toUpperCase()}](https://ch.tetr.io/u/${userData.username}) has become a Supporter!`
             } else if (user.type === 'rankup') {
                 message += `- ${getEmojiOfRank(userData.rank)} [${(userData.username).toUpperCase()}](https://ch.tetr.io/u/${userData.username}) achieved ${capitalizeFirstLetter(userData.rank) /*me when i reuse code :3*/} rank!`
             } else {
                 message += user.type;
             }
-            message += ` (${reformatTimestamp(user.ts)})`;
+            message += ` (${formatISOString(user.ts)})`;
 
             // Put the message in the page
             pageData[Math.floor(i / itemsPerPage)].push(message);
         }
 
-        // hardcoded pages
         const pages = [
             new EmbedBuilder()
                 .setColor("#f58484")
@@ -87,13 +84,12 @@ module.exports = {
                 .setDescription("### __Recent news (global)__\n" + pageData[3].join('\n')),
         ];
 
-        // Initial row of buttons
         const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder()
                 .setCustomId('allnewspage_0')
                 .setLabel('Page 1')
                 .setStyle(ButtonStyle.Primary)
-                .setDisabled(true), // Disable the first button initially
+                .setDisabled(true),
             new ButtonBuilder()
                 .setCustomId('allnewspage_1')
                 .setLabel('Page 2')
@@ -108,7 +104,6 @@ module.exports = {
                 .setStyle(ButtonStyle.Primary),
         );
 
-        // Send the initial message with the first page and buttons
         await interaction.reply({
             embeds: [pages[0]],
             components: [row]

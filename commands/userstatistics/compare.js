@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, InteractionContextType, ApplicationIntegrationType, MessageFlags } = require('discord.js');
 
-const { formatNumber, escapeUnderscores, countryCodeToEmoji, playtimeConvert, getEmojiOfRank, calculateLevel } = require('../../helpers/functions');
+const { formatNumber, escapeUnderscores, countryCodeToEmoji, formatPlaytime, getEmojiOfRank, calculateLevel } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser')
 
 module.exports = {
@@ -86,7 +86,7 @@ module.exports = {
                 ${countryCodeToEmoji(userStats1.country) || '🌐'}
                 ${userStats1.gamesplayed===-1?"N/A":formatNumber(userStats1.gamesplayed)}
                 ${userStats1.gameswon===-1?"N/A":`${formatNumber(userStats1.gameswon)} (${(userStats1.gameswon / userStats1.gamesplayed * 100).toFixed(2)/*this is extremely scuffed but i dont care */}%)`}
-                ${playtimeConvert(userStats1.gametime)}
+                ${formatPlaytime(userStats1.gametime)}
                 ${formatNumber(Math.floor(calculateLevel(userStats1.xp)))}
                 ${formatNumber(userStats1.ar)} AR
                 ${getEmojiOfRank(userSummary1.league.rank)}
@@ -98,7 +98,7 @@ module.exports = {
                 ${countryCodeToEmoji(userStats2.country) || '🌐'}
                 ${userStats2.gamesplayed===-1?"N/A":formatNumber(userStats2.gamesplayed)}
                 ${userStats2.gameswon===-1?"N/A":formatNumber(userStats2.gameswon)} (${(userStats2.gameswon / userStats2.gamesplayed * 100).toFixed(2)}%)
-                ${playtimeConvert(userStats2.gametime)}
+                ${formatPlaytime(userStats2.gametime)}
                 ${formatNumber(Math.floor(calculateLevel(userStats2.xp)))}
                 ${formatNumber(userStats2.ar)} AR
                 ${getEmojiOfRank(userSummary2.league.rank)}

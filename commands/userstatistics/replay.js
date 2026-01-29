@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, InteractionContextType, ApplicationIntegrationType, MessageFlags } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
 
-const { formatNumber, escapeUnderscores, countryCodeToEmoji, convertToTimeFormat, playtimeConvert, getEmojiOfAch, getEmojiOfRank, reformatTimestamp, getModCombos, addRankComparisonField, buildModeHeaderEmbed } = require('../../helpers/functions');
+const { formatNumber, escapeUnderscores, countryCodeToEmoji, formatTime, getEmojiOfRank, getModCombos } = require('../../helpers/formatters');
 const { getEmoji } = require('../../helpers/emojis');
 const { database } = require('../../database'); 
 
@@ -418,7 +418,7 @@ ${perfStatBlock}
                 pages = [
                     new EmbedBuilder().setColor('#80ff80')
                 .setDescription(`### __[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id}) -> Overview__
-- **Finished in ${convertToTimeFormat(time)}**
+- **Finished in ${formatTime(time)}**
   - ${pps.toFixed(2)} PPS
   - ${kpp.toFixed(2)} Keys Per Piece
   - ${kps.toFixed(2)} Keys Per Second

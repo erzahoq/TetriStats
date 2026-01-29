@@ -1,7 +1,6 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, ComponentType, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
-import('node-fetch'); // Ensure 'node-fetch' is imported properly
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
 
-const { formatNumber, escapeUnderscores, getEmojiOfAch, reformatTimestamp, convertToTimeFormat } = require('../../helpers/functions');
+const { formatNumber, escapeUnderscores, formatISOString, formatTime } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
 const { getEmoji } = require('../../helpers/emojis');
 
@@ -182,14 +181,14 @@ function formatAchievementListText(achlist) {
         achCount++;
         //format thing because api silly
         let displayVal = formatNumber(Math.round(ach.v));
-        if (ach.vt === 2) displayVal = `${convertToTimeFormat(ach.v)}`
-        else if (ach.vt === 3) displayVal = `${convertToTimeFormat(-ach.v)}`
+        if (ach.vt === 2) displayVal = `${formatTime(ach.v)}`
+        else if (ach.vt === 3) displayVal = `${formatTime(-ach.v)}`
         else if (ach.vt === 4) displayVal = `${formatNumber(Math.round((ach.v) * 100) / 100)}m (Floor ${Math.floor(ach.a)})`
         else if (ach.name === "Guardian Angel") displayVal = `${formatNumber(Math.round((ach.v) * 100) / 100)}m` //fuck you OSK you bitch (jk we love you)
-        else if (ach.vt === 5) displayVal = `Obtained ${reformatTimestamp(-ach.v)}`
+        else if (ach.vt === 5) displayVal = `Obtained ${formatISOString(-ach.v)}`
         else if (ach.vt === 6) displayVal = formatNumber(-Math.round(ach.v))
 
-        achText += `\n- ` + getEmojiOfAch(achievementMapping[ach['rank']])
+        achText += `\n- ` + getEmoji('ach_' + achievementMapping[ach['rank']])
 
         //check for attributes and format
         if (ach.art === 0) {
