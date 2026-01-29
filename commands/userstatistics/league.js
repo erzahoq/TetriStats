@@ -1,9 +1,13 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { EmbedBuilder, InteractionContextType, ApplicationIntegrationType, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
-const { formatNumber, getLeagueRankColour, getEmojiOfRank, escapeUnderscores } = require('../../helpers/formatters');
+const { formatNumber, getLeagueRankColour, getEmojiOfRank, escapeUnderscores, formatUsername } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
 const { getEmoji } = require('../../helpers/emojis');
+
+
+// TODO!!!!!!!!!!!!!!!! merge previous seasons code bc it's like basically the same anyway
+// (and also finish refractoring to use formatNumber everywhere instead of toFixed sometimes)
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -53,7 +57,7 @@ module.exports = {
             let { apm, pps, vs, tr, glicko, rd, prev_rank, next_rank, rank, standing, standing_local, decaying, bestrank, percentile, gxe, past } = leagueData;
             const gamesPlayed = leagueData.gamesplayed || 0;
             const gamesWon = leagueData.gameswon || 0;
-            const winRate = gamesPlayed > 0 ? ((gamesWon / gamesPlayed) * 100).toFixed(2) : 'N/A';
+            const winRate = gamesPlayed > 0 ? formatNumber((gamesWon / gamesPlayed) * 100, 2) : 'N/A';
         
             // Calculate extra stats
 
@@ -79,7 +83,7 @@ module.exports = {
             }
 
             // For current data
-            let description = `### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${user.username}/) -> Tetra League__\n`;
+            let description = `### __${formatUsername(user.username)} -> Tetra League__\n`;
             description += `## ${tr < 0 ? `Currently unranked ${getEmojiOfRank('z')}` : `Currently ranked ${getEmojiOfRank(rank)}`}\n`;
 
             if (tr < 0) {
@@ -94,7 +98,7 @@ module.exports = {
             } else {
                 description += `- **Has ${formatNumber(tr.toFixed(1))} TR**\n`;
                 if (rd > 100) {
-                    description += `  - Probably around ${getEmojiOfRank(leagueData.percentile_rank)} (Top ${(percentile*100).toFixed(1)}%)\n`;
+                    description += `  - Probably around ${getEmojiOfRank(leagueData.percentile_rank)} (Top ${formatNumber(percentile * 100, 1)}%)\n`;
                     rankBar = false;
                     if (bestrank && bestrank !== leagueData.percentile_rank) {
                         description += `  - Has reached ${getEmojiOfRank(bestrank)}\n`;
@@ -106,23 +110,23 @@ module.exports = {
                             description += `  - Ranked #${standing_local} locally\n`;
                         }
                     } else {
-                        description += `  - Ranked #${standing} worldwide (Top ${(percentile*100).toFixed(1)}%)\n  - Ranked #${standing_local} locally\n`;
+                        description += `  - Ranked #${standing} worldwide (Top ${formatNumber(percentile * 100, 1)}%)\n  - Ranked #${standing_local} locally\n`;
                     }
                     rankBar = `${getEmojiOfRank(prev_rank)} ${generateProgressBar("Ranked", (leagueData.prev_at - standing) / (leagueData.prev_at - leagueData.next_at), 15)} ${getEmojiOfRank(next_rank)}`;
                     if (bestrank && bestrank !== rank) {
                         description += `  - Has reached ${getEmojiOfRank(bestrank)}\n`;
                     }
                 }
-                description += `  - Has ${glicko.toFixed(2)} ± ${rd.toFixed(1)} Glicko\n`;
+                description += `  - Has ${formatNumber(glicko, 2)} ± ${formatNumber(rd, 1)} Glicko\n`;
                 if (gxe) {
-                    description += `  - ${gxe.toFixed(1)}% chance to win against random player\n`;
+                    description += `  - ${formatNumber(gxe, 1)}% chance to win against random player\n`;
                 }
                 if (decaying) {
                     description += `  - Hasn't played in a week; __rating deviation is increasing__\n`;
                 }
-                description += `- **Has played ${gamesPlayed} game${gamesPlayed === 1 ? '' : 's'}**\n`;
+                description += `- **Has played ${formatNumber(gamesPlayed)} game${gamesPlayed === 1 ? '' : 's'}**\n`;
                 if (gamesPlayed > 0) {
-                    description += `  - Won ${gamesWon} of them (${winRate}%)\n  - ${apm.toFixed(2)} APM | ${pps.toFixed(2)} PPS | ${vs.toFixed(2)} VS score\n`;
+                    description += `  - Won ${formatNumber(gamesWon)} of them (${winRate}%)\n  - ${formatNumber(apm, 2)} APM | ${formatNumber(pps, 2)} PPS | ${formatNumber(vs, 2)} VS score\n`;
                 }
             }
 
@@ -161,7 +165,7 @@ module.exports = {
                     if (seasonData.tr < 0) {
                         pastDescription += `- Has played ${seasonData.gamesPlayed}/10 rating games\n`;
                         if (seasonData.gamesplayed > 0) {
-                            pastDescription += `  - Won ${seasonData.gameswon} of them (${(100*(seasonData.gameswon/seasonData.gamesplayed)).toFixed(2)}%)\n  - ${seasonData.apm.toFixed(2)} APM | ${seasonData.pps.toFixed(2)} PPS | ${seasonData.vs.toFixed(2)} VS score\n`;
+                            pastDescription += `  - Won ${seasonData.gameswon} of them (${formatNumber(100*(seasonData.gameswon/seasonData.gamesplayed), 2)}%)\n  - ${formatNumber(seasonData.apm, 2)} APM | ${formatNumber(seasonData.pps, 2)} PPS | ${formatNumber(seasonData.vs, 2)} VS score\n`;
                         }
                         if (seasonData.bestrank) {
                             pastDescription += `  - Has reached ${getEmojiOfRank(seasonData.bestrank)}\n`;
@@ -180,13 +184,13 @@ module.exports = {
                                 pastDescription += `  - Has reached ${getEmojiOfRank(seasonData.bestrank)}\n`;
                             }
                         }
-                        pastDescription += `  - Had ${seasonData.glicko.toFixed(2)} ± ${seasonData.rd.toFixed(1)} Glicko\n`;
+                        pastDescription += `  - Had ${formatNumber(seasonData.glicko, 2)} ± ${formatNumber(seasonData.rd, 1)} Glicko\n`;
                         if (seasonData.gxe) {
-                            pastDescription += `  - ${seasonData.gxe.toFixed(1)}% chance to win against random player\n`;
+                            pastDescription += `  - ${formatNumber(seasonData.gxe, 2)}% chance to win against random player\n`;
                         }
-                        pastDescription += `- **Played ${seasonData.gamesplayed} game${seasonData.gamesplayed === 1 ? '' : 's'}**\n`;
+                        pastDescription += `- **Played ${formatNumber(seasonData.gamesplayed)} game${seasonData.gamesplayed === 1 ? '' : 's'}**\n`;
                         if (seasonData.gamesplayed > 0) {
-                            pastDescription += `  - Won ${seasonData.gameswon} of them (${(100*(seasonData.gameswon/seasonData.gamesplayed)).toFixed(2)}%)\n  - ${seasonData.apm.toFixed(2)} APM | ${seasonData.pps.toFixed(2)} PPS | ${seasonData.vs.toFixed(2)} VS score\n`;
+                            pastDescription += `  - Won ${formatNumber(seasonData.gameswon)} of them (${formatNumber(100*(seasonData.gameswon/seasonData.gamesplayed), 2)}%)\n  - ${formatNumber(seasonData.apm, 2)} APM | ${formatNumber(seasonData.pps, 2)} PPS | ${formatNumber(seasonData.vs, 2)} VS score\n`;
                         }
                     }
 

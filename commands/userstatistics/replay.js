@@ -1,11 +1,15 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
 
-const { formatNumber, escapeUnderscores, countryCodeToEmoji, formatTime, getEmojiOfRank, getModCombos } = require('../../helpers/formatters');
+const { formatNumber, escapeUnderscores, countryCodeToEmoji, formatTime, getEmojiOfRank, getModCombos, formatISOString } = require('../../helpers/formatters');
 const { getEmoji } = require('../../helpers/emojis');
 const { database } = require('../../database'); 
 
 let replayStatRankData = {};
+
+
+// TODO: reformat this hell
+
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -62,8 +66,7 @@ module.exports = {
             let row; //for buttons
 
             //general stats
-            const date = new Date(replay.ts);
-            const formattedDate = `<t:${Math.floor(date.getTime() / 1000)}:F>`;
+            const formattedDate = formatISOString(replay.ts);
 
 
             const finesse = (replayStats.finesse.perfectpieces / replayStats.piecesplaced) ?? -1;
@@ -272,9 +275,9 @@ module.exports = {
                     .setDescription(`### __[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id}) -> Overview__
 ${modString}
 - **Finished in ${framesToTime(replayData.frames)}**
-  - ${replayData.results.aggregatestats.pps.toFixed(2)} PPS
-  - ${replayData.results.aggregatestats.apm.toFixed(2)} APM
-  - ${replayData.results.aggregatestats.vsscore.toFixed(2)} VS Score
+  - ${formatNumber(replayData.results.aggregatestats.pps,2)} PPS
+  - ${formatNumber(replayData.results.aggregatestats.apm,2)} APM
+  - ${formatNumber(replayData.results.aggregatestats.vsscore,2)} VS Score
   - ${((replayStats.finesse.perfectpieces/replayStats.piecesplaced)*100).toFixed(2)}% Finesse | ${replayStats.finesse.faults} Faults
 - **Climbed ${zenithStats.altitude.toFixed(1)}m (Floor ${zenithStats.floor})**
   - Reached ${zenithStats.peakrank.toFixed(2)} climb speed, averaged ${zenithStats.rank.toFixed(2)}

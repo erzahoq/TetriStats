@@ -85,7 +85,7 @@ module.exports = {
                 { name: `${escapeUnderscores(userStats1.username.toUpperCase())}`, value: `
                 ${countryCodeToEmoji(userStats1.country) || '🌐'}
                 ${userStats1.gamesplayed===-1?"N/A":formatNumber(userStats1.gamesplayed)}
-                ${userStats1.gameswon===-1?"N/A":`${formatNumber(userStats1.gameswon)} (${(userStats1.gameswon / userStats1.gamesplayed * 100).toFixed(2)/*this is extremely scuffed but i dont care */}%)`}
+                ${userStats1.gameswon===-1?"N/A":`${formatNumber(userStats1.gameswon)} (${formatNumber(userStats1.gameswon / userStats1.gamesplayed * 100, 2)}%)`}
                 ${formatPlaytime(userStats1.gametime)}
                 ${formatNumber(Math.floor(calculateLevel(userStats1.xp)))}
                 ${formatNumber(userStats1.ar)} AR
@@ -97,7 +97,7 @@ module.exports = {
                 { name: `${escapeUnderscores(userStats2.username.toUpperCase())}`, value: `
                 ${countryCodeToEmoji(userStats2.country) || '🌐'}
                 ${userStats2.gamesplayed===-1?"N/A":formatNumber(userStats2.gamesplayed)}
-                ${userStats2.gameswon===-1?"N/A":formatNumber(userStats2.gameswon)} (${(userStats2.gameswon / userStats2.gamesplayed * 100).toFixed(2)}%)
+                ${userStats2.gameswon===-1?"N/A":formatNumber(userStats2.gameswon)} (${formatNumber(userStats2.gameswon / userStats2.gamesplayed * 100, 2)}%)
                 ${formatPlaytime(userStats2.gametime)}
                 ${formatNumber(Math.floor(calculateLevel(userStats2.xp)))}
                 ${formatNumber(userStats2.ar)} AR

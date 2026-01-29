@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, InteractionContextType, MessageFlags, ApplicationIntegrationType } = require('discord.js');
 
-const { formatNumber, escapeUnderscores, convertToTimeFormat, reformatTimestamp, getModEmoji } = require('../../helpers/formatters');
+const { formatNumber, escapeUnderscores, convertToTimeFormat, reformatTimestamp, getModEmoji, formatUsername } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
 const { getEmoji } = require('../../helpers/emojis');
 
@@ -74,7 +74,7 @@ module.exports = {
                 .setStyle(ButtonStyle.Primary)
 
             // do the description
-            let desc = `### __[${escapeUnderscores(user.username.toUpperCase())}](https://ch.tetr.io/u/${user.username}) -> Records -> ${gametypeMapping[category]}__\n`;
+            let desc = `### __${formatUsername(user.username)} -> Records -> ${gametypeMapping[category]}__\n`;
             if (fetched['top']) {
                 desc += `- ${getEmoji('news_lblocal')} Personal best
   ${formatRecord(fetched['top'])}\n\n`
@@ -151,7 +151,7 @@ function formatRecord(record) {
         formatted += `**${formatNumber(stats.score)}**`;
     } 
     else if (record.gamemode === 'zenithex' || record.gamemode === 'zenith') {
-        formatted += `**${formatNumber(Math.round(stats.zenith.altitude * 10) / 10)}m**`;
+        formatted += `**${formatNumber(stats.zenith.altitude, 1)}m**`;
         stats = record.results.aggregatestats; // PPS and VS Score are in aggregate
 
         // Add any active mod emojis
@@ -182,7 +182,7 @@ function formatRecord(record) {
                 formatted += `**❌ DEFEAT** (by Disqualification)`;
                 stats = players[1].stats;
         }
-        formatted += ` vs **${escapeUnderscores(record.otherusers[0].username)}**`;
+        formatted += ` vs **${formatUsername(record.otherusers[0].username, false)}**`;
     } 
     else {
         formatted += `[Invalid gamemode.]`; // Should never happen
@@ -191,14 +191,14 @@ function formatRecord(record) {
     // Add general performance stats (APM, PPS, VS Score)
     if (['zenith', 'zenithex', 'league'].includes(record.gamemode)) {
         formatted += `
-  - **APM:** ${formatNumber(Math.round(stats.apm * 100) / 100)}
-  - **PPS:** ${formatNumber(Math.round(stats.pps * 100) / 100)}
-  - **VS Score:** ${formatNumber(Math.round(stats.vsscore * 100) / 100)}`;
+  - **APM:** ${formatNumber(stats.apm, 2)}
+  - **PPS:** ${formatNumber(stats.pps, 2)}
+  - **VS Score:** ${formatNumber(stats.vsscore, 2)}`;
     } 
     else {
         formatted += `
-  - **PPS:** ${formatNumber(Math.round(record.results.aggregatestats.pps * 100) / 100)}
-  - **Finesse:** ${Math.round(stats.finesse.perfectpieces / stats.piecesplaced * 10000) / 100}% (${stats.finesse.faults} faults)`;
+  - **PPS:** ${formatNumber(record.results.aggregatestats.pps, 2)}
+  - **Finesse:** ${formatNumber(stats.finesse.perfectpieces / stats.piecesplaced * 100, 2)}% (${formatNumber(stats.finesse.faults)} faults)`;
     }
 
     // Add timestamp and replay link

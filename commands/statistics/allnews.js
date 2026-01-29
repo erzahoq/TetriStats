@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, InteractionContextType, MessageFlags } = require('discord.js');
-const { formatTime, getEmojiOfRank, formatISOString, capitalizeFirstLetter } = require('../../helpers/formatters');
+const { formatTime, getEmojiOfRank, formatISOString, capitalizeFirstLetter, formatNumber, formatUsername } = require('../../helpers/formatters');
 const { getEmoji } = require('../../helpers/emojis');
 
 
@@ -49,17 +49,17 @@ module.exports = {
 
             // Handle different types of stuff :3
             if (user.type === 'personalbest') {
-                message += `- ${getEmoji("news_lblocal")} [${(userData.username).toUpperCase()}](https://ch.tetr.io/u/${userData.username}) got a new PB in ${gametypeMapping[userData.gametype]}!`
+                message += `- ${getEmoji("news_lblocal")} ${formatUsername(userData.username)} got a new PB in ${gametypeMapping[userData.gametype]}!`
 
                 if (userData.gametype === 'zenith' || userData.gametype === 'zenithex') {
-                    message += ` (${Math.round(userData.result * 10) / 10}m)`
+                    message += ` (${formatNumber(userData.result, 1)}m)`
                 } else {
                     message += ` (${formatTime(userData.result)})`
                 }
             } else if (user.type === 'supporter') {
-                message += `- ${getEmoji('supporter_star')} [${(userData.username).toUpperCase()}](https://ch.tetr.io/u/${userData.username}) has become a Supporter!`
+                message += `- ${getEmoji('supporter_star')} ${formatUsername(userData.username)} has become a Supporter!`
             } else if (user.type === 'rankup') {
-                message += `- ${getEmojiOfRank(userData.rank)} [${(userData.username).toUpperCase()}](https://ch.tetr.io/u/${userData.username}) achieved ${capitalizeFirstLetter(userData.rank) /*me when i reuse code :3*/} rank!`
+                message += `- ${getEmojiOfRank(userData.rank)} ${formatUsername(userData.username)} achieved ${capitalizeFirstLetter(userData.rank)} rank!`
             } else {
                 message += user.type;
             }

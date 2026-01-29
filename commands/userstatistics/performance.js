@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
-const { formatNumber, escapeUnderscores, getEmojiOfRank, getLeagueRankColour } = require('../../helpers/formatters');
+const { formatNumber, escapeUnderscores, getEmojiOfRank, getLeagueRankColour, formatUsername } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
 const { database } = require('../../database');
 
@@ -155,7 +155,7 @@ module.exports = {
     if (availableModes.length === 0) {
       const newUserEmbed = new EmbedBuilder()
         .setDescription(
-          `### __[${escapeUnderscores(user.username).toUpperCase()}](https://tetr.io/u/${user.username}) -> Performance__\n` +
+          `### __${formatUsername(user.username)} -> Performance__\n` +
           `No recorded games yet.`
         )
         .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.png`)
@@ -212,7 +212,7 @@ function getEmbed(username, mode, userId, recordNotExists, userRank, userPercent
         : getLeagueRankColour(userRank)
     )
     .setDescription(
-      `### __[${escapeUnderscores(username).toUpperCase()}](https://tetr.io/u/${username}) -> Performance -> ${mode}__\n${statusLine}`
+      `### __${formatUsername(username)} -> Performance -> ${mode}__\n${statusLine}`
     )
     .setThumbnail(`https://tetr.io/user-content/avatars/${userId}.png`)
     .setURL(`https://tetr.io/u/${username}`);
@@ -267,24 +267,20 @@ async function addEmbedField(
     if (extras.isTime) {
       const seconds = value / 1000;
       if (value >= 60000) return `${Math.floor(seconds / 60)}:${(seconds % 60).toFixed(2).padStart(5, '0')}`;
-      return seconds.toFixed(2) + 's';
+      return formatNumber(seconds, 2) + 's';
     }
 
-    if (extras.isPercentage) return (value * 100).toFixed(2) + '%';
-    if (decimals === 0) return formatNumber(Math.round(value));
-    
-    const decimalShift = 10 ** decimals;
-    return formatNumber(Math.floor(value)) + '.' + (Math.floor(value * decimalShift) % decimalShift).toString().padStart(decimals, '0');
+    if (extras.isPercentage) return formatNumber(value * 100, 2) + '%';
+    return formatNumber(value, decimals);
   };
 
   const fmtDelta = (deltaValue) => {
     const sign = deltaValue > 0 ? '+' : deltaValue === 0 ? '±' : '';
 
-    if (extras.isTime) return `${sign}${(deltaValue / 1000).toFixed(2)}s`;
-    if (extras.isPercentage) return `${sign}${(deltaValue * 100).toFixed(2)}%`;
-    if (decimals === 0) return `${sign}${formatNumber(Math.round(deltaValue))}`;
+    if (extras.isTime) return `${sign}${formatNumber(deltaValue / 1000, 2)}s`;
+    if (extras.isPercentage) return `${sign}${formatNumber(deltaValue * 100, 2)}%`;
 
-    return `${sign}${Number(deltaValue).toFixed(decimals)}`;
+    return `${sign}${formatNumber(deltaValue, decimals)}`;
   };
 
   // 1. determine the "average rank" for this stat value

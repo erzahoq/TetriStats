@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, InteractionContextType, MessageFlags } = require('discord.js');
 
-const { formatISOString } = require('../../helpers/formatters');
+const { formatISOString, formatUsername } = require('../../helpers/formatters');
 const { getEmoji } = require('../../helpers/emojis');
 
 
@@ -48,9 +48,9 @@ module.exports = {
             if (user.type === 'leaderboard') {
                 let rank = userData.rank;
                 if (rank > 4) rank = 4;
-                message += `- ${getEmoji(`news_lb${rank}`)} [${(userData.username).toUpperCase()}](https://ch.tetr.io/u/${userData.username}) reached #${userData.rank} in ${gametypeMapping[userData.gametype]}!`;
+                message += `- ${getEmoji(`news_lb${rank}`)} ${formatUsername(userData.username)} reached #${userData.rank} in ${gametypeMapping[userData.gametype]}!`;
             } else if (user.type === 'badge') {
-                message += `- ${getEmoji("news_badge")} [${(userData.username).toUpperCase()}](https://ch.tetr.io/u/${userData.username}) received the "${userData.label}" badge!`;
+                message += `- ${getEmoji("news_badge")} ${formatUsername(userData.username)} received the "${userData.label}" badge!`;
             }
             message += ` (${formatISOString(user.ts)})`;
 
