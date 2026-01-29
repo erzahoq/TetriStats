@@ -1,8 +1,28 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
+const {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  MessageFlags,
+  InteractionContextType,
+  ApplicationIntegrationType,
+} = require('discord.js');
+
 import('node-fetch'); // Ensure 'node-fetch' is imported properly
 
-// Import helper functions for formatting and data processing
-const { formatNumber, escapeUnderscores, countryCodeToEmoji, convertToTimeFormat, playtimeConvert, getEmojiOfAch, getEmojiOfRank, reformatTimestamp, calculateLevel } = require('../../helpers/functions');
+const {
+  formatNumber,
+  escapeUnderscores,
+  countryCodeToEmoji,
+  convertToTimeFormat,
+  playtimeConvert,
+  getEmojiOfAch,
+  getEmojiOfRank,
+  reformatTimestamp,
+  calculateLevel,
+} = require('../../helpers/functions');
+
 const { getUser } = require('../../helpers/getuser');
 const { getEmoji } = require('../../helpers/emojis');
 
@@ -20,13 +40,12 @@ module.exports = {
     ),
 
   async execute(interaction) {
-    // Fetch user data from TETR.IO API using provided username/ID
     const user = await getUser(interaction.options.getString('user').toLowerCase()); // calls API only once
 
-    // Handle user not found or server error cases
     if (user === 'no such user') {
       return await interaction.reply({
-        content: 'No such user found on TETR.IO! Either the account no longer exists, or this person has not linked their Discord with TETR.IO.',
+        content:
+          'No such user found on TETR.IO! Either the account no longer exists, or this person has not linked their Discord with TETR.IO.',
         flags: MessageFlags.Ephemeral,
       });
     } else if (user === 'server error') {
@@ -36,7 +55,7 @@ module.exports = {
       });
     }
 
-    // Fetch detailed user statistics and summary from TETR.IO API
+    // fetch from API using the ID
     const response = await fetch(`https://ch.tetr.io/api/users/${user._id}`);
     const summaryRaw = await fetch(`https://ch.tetr.io/api/users/${user._id}/summaries`);
 
@@ -46,7 +65,6 @@ module.exports = {
     const statData = stats.data;
     const summaryData = summary.data;
 
-    // Normalize arrays to avoid repeated Array.isArray checks
     const ach = Array.isArray(summaryData.achievements) ? summaryData.achievements : [];
     const badges = Array.isArray(statData.badges) ? statData.badges : [];
 
@@ -74,22 +92,46 @@ module.exports = {
       return parts.length ? '\n  - ' + parts.join(', ') : '';
     })();
 
-    // Get country flag emoji
-    const country = countryCodeToEmoji(statData.country);
-
-    // Helper to format games played/won/playtime for both general and bot pages
-    function getGamesSummary(stats) {
-      if (stats.gamesplayed >= 0) {
-        return `- Played ${stats.gamesplayed} games` +
-          (stats.gameswon >= 0 ? `\n  - Won ${gamesWonConvert(stats.gameswon, stats.gamesplayed)}` : '') +
-          (stats.gametime >= 0 ? `\n  - Has ${Math.round((stats.gametime / 3600) * 10) / 10} hours of playtime` : '');
-      }
-      return '- Has hidden games played';
+    // ========= anon/bot detection =========
+    // these accounts are kinda weird, anon has basically nothing, bot hides records but has some basic info
+    if (statData.role === 'anon') {
+      const embed = new EmbedBuilder()
+        .setColor('#80bdff')
+        .setThumbnail('https://tetr.io/res/avatar.png')
+        .setDescription(`
+# ANONYMOUS
+${escapeUnderscores(user.username).toUpperCase()} is **anonymous**, which means they have no statistics, and cannot save replays. There's nothing that can be shown.
+`);
+      return await interaction.reply({ embeds: [embed] });
     }
 
-    // Build the three main embed pages: Profile, General, Gameplay
+    if (statData.role === 'bot') {
+      const embed = new EmbedBuilder()
+        .setColor('#80bdff')
+        .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
+        .setFooter({ text: `User ID: ${statData._id}` })
+        .setDescription(`
+# BOT
+This user is a **BOT**, owned by ${String(statData.botmaster || 'unknown').toLowerCase()}. Their records are not available, but some general information can be shown.
+
+### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${user.username}) -> Quick Look__
+
+- About:
+  - Account created ${reformatTimestamp(statData.ts)}
+  - Level ${formatNumber(Math.floor(calculateLevel(statData.xp)))} (${formatNumber(Math.floor(statData.xp))} XP)
+  - Has ${statData.friend_count} friends
+
+${formatGamesPlayed(statData.gamesplayed, statData.gameswon, statData.gametime) || ''}
+`);
+      return await interaction.reply({ embeds: [embed] });
+    }
+    // ========= end anon/bot detection =========
+
+    const country = countryCodeToEmoji(statData.country);
+
+    // big wall embeds, functions are split up inside them though so click those
+    // i love function spam
     const pages = [
-      // Profile page
       new EmbedBuilder()
         .setColor('#80bdff')
         .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
@@ -107,7 +149,6 @@ ${formatOldUsernames(statData.oldusernames)}
   `)
         .setTimestamp(),
 
-      // General stats page
       new EmbedBuilder()
         .setColor('#ff9d7d')
         .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
@@ -117,11 +158,14 @@ ${formatOldUsernames(statData.oldusernames)}
 
 - Has ${unlockedCount} achievements${medalLine}${statData.ar > 0 ? `\n  - Totalling ${statData.ar} Achievement Rating` : ''}${formatBadges(badges)} ${formatDisplayedAchs(statData.achievements, ach)}
 
-${getGamesSummary(statData)}
+${statData.gamesplayed >= 0
+  ? `- Played ${statData.gamesplayed} games${statData.gameswon >= 0
+      ? `\n  - Won ${statData.gameswon} of them (${isNaN(Math.round(10000 * (statData.gameswon / statData.gamesplayed)) / 100) ? 0 : Math.round(10000 * (statData.gameswon / statData.gamesplayed)) / 100}%)`
+      : ''}${statData.gametime >= 0 ? `\n  - Has ${Math.round((statData.gametime / 3600) * 10) / 10} hours of playtime` : ''}`
+  : '- Has hidden games played'}
   `)
         .setTimestamp(),
 
-      // Gameplay stats page
       new EmbedBuilder()
         .setColor('#ff7dc0')
         .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
@@ -133,22 +177,20 @@ ${formatLeaguePreview(summaryData, country)} ${formatZenith(summaryData, country
         .setTimestamp(),
     ];
 
-    // Create navigation buttons for the embed pages using a map for scalability
-    const buttonLabels = ['Profile', 'General', 'Gameplay'];
+    //initial row of buttons
     const row = new ActionRowBuilder().addComponents(
-      ...buttonLabels.map((label, idx) =>
-        new ButtonBuilder()
-          .setCustomId(`profilepage_${idx}`)
-          .setLabel(label)
-          .setStyle(ButtonStyle.Primary)
-          .setDisabled(idx === 0)
-      )
+      new ButtonBuilder().setCustomId('profilepage_0').setLabel('Profile').setStyle(ButtonStyle.Primary).setDisabled(true), //disable the first button initially
+      new ButtonBuilder().setCustomId('profilepage_1').setLabel('General').setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId('profilepage_2').setLabel('Gameplay').setStyle(ButtonStyle.Primary),
     );
 
-    // Send the first page as a reply, with navigation buttons
-    await interaction.reply({ embeds: [pages[0]], components: [row] });
+    //send the initial message with the first page and buttons
+    await interaction.reply({
+      embeds: [pages[0]],
+      components: [row],
+    });
 
-    // Store page data for this interaction (for navigation handling elsewhere)
+    //attach pages to the interaction for future reference
     interaction.client.pageData = {
       [interaction.id]: {
         pages,
@@ -158,211 +200,334 @@ ${formatLeaguePreview(summaryData, country)} ${formatZenith(summaryData, country
   },
 };
 
-// =====================
-// Helper Functions Below
-// =====================
+// most of these functions are self-explanatory
+// good typo :aysm:
 
-// Converts games won to a string with win percentage
 function gamesWonConvert(gamesWon, gamesPlayed) {
-  if (gamesWon === 'Hidden' || gamesPlayed === 'Hidden' || gamesPlayed === 0) return gamesWon;
+  if (gamesWon === 'Hidden' || gamesPlayed === 'Hidden' || gamesPlayed === 0) {
+    return gamesWon;
+  }
+
   return `${gamesWon} (${Math.round(10000 * (gamesWon / gamesPlayed)) / 100}%)`;
 }
 
-// Formats badge count for display
 function formatBadges(badgelist) {
-  const count = Array.isArray(badgelist) ? badgelist.length : 0;
-  return count > 0 ? `\n  - As well as ${count} badges` : '';
+  if (badgelist.length > 0) {
+    return `\n  - As well as ${badgelist.length} badges`;
+  } else {
+    return ``;
+  }
 }
 
-// Formats games played, won, and playtime
 function formatGamesPlayed(gamesplayed, gameswon, gamestime) {
   if (gamesplayed > -1) {
-    return `\n### Games Played: ${gamesplayed}\n- Games Won: ${gamesWonConvert(gameswon, gamesplayed)}\n- Playtime: ${playtimeConvert(gamestime)}`;
+    return `\n### Games Played: ${gamesplayed}
+- Games Won: ${gamesWonConvert(gameswon, gamesplayed)}
+- Playtime: ${playtimeConvert(gamestime)}`;
+  } else {
+    return '';
   }
-  return '';
 }
 
-// Returns supporter stars based on tier
 function starConvert(supporterTier) {
-  let s = '';
-  for (let i = 1; i < supporterTier; i++) s = s.concat(` ${getEmoji('supporter_star')}`);
-  return s;
+  let supporterString = '';
+
+  for (let i = 1; i < supporterTier; i++) {
+    supporterString = supporterString.concat(` ${getEmoji('supporter_star')}`);
+  }
+  return supporterString;
 }
 
-// Formats achievement counts for legacy AR breakdown
 function formatAchievementCounts(ar_counts) {
   const formattedList = [];
-  const map = { 1: 'bronze', 2: 'silver', 3: 'gold', 4: 'platinum', 5: 'diamond', t100: 't100', t50: 't50', t25: 't25', t10: 't10', t5: 't5', t3: 't3' };
-  if (ar_counts[100]) formattedList.push(`${getEmojiOfAch('issued')} ${ar_counts[100]}`);
-  for (const [key, name] of Object.entries(map)) if (ar_counts[key]) formattedList.push(`${getEmojiOfAch(name)} ${ar_counts[key]}`);
-  return formattedList.length ? '\n  - ' + formattedList.join(', ') : '';
+
+  const achievementMapping = {
+    1: 'bronze',
+    2: 'silver',
+    3: 'gold',
+    4: 'platinum',
+    5: 'diamond',
+    t100: 't100',
+    t50: 't50',
+    t25: 't25',
+    t10: 't10',
+    t5: 't5',
+    t3: 't3',
+  };
+
+  if (ar_counts[100]) {
+    formattedList.push(`${getEmojiOfAch('issued')} ${ar_counts[100]}`);
+  }
+
+  for (const [key, name] of Object.entries(achievementMapping)) {
+    if (ar_counts[key]) {
+      formattedList.push(`${getEmojiOfAch(name)} ${ar_counts[key]}`);
+    }
+  }
+
+  if (formattedList.length === 0) {
+    return '';
+  }
+
+  return '\n  - ' + formattedList.join(', ');
 }
 
-// Formats user connections (Discord, Twitch, etc.)
 function formatConnections(connections) {
-  const types = ['Discord', 'Twitch', 'Twitter', 'Reddit', 'Youtube', 'Steam'];
-  const list = [];
-  types.forEach((c) => {
-    if (connections[c.toLowerCase()]) {
-      const u = connections[c.toLowerCase()].display_username || connections[c.toLowerCase()].username;
-      list.push(`  - ${c}: ${u}`);
+  const connectionTypes = ['Discord', 'Twitch', 'Twitter', 'Reddit', 'Youtube', 'Steam'];
+  const formattedList = [];
+
+  connectionTypes.forEach((connection) => {
+    if (connections[connection.toLowerCase()]) {
+      const username = connections[connection.toLowerCase()].display_username || connections[connection.toLowerCase()].username;
+      formattedList.push(`  - ${connection}: ${username}`);
     }
   });
-  if (!list.length) return '';
-  return `\n\n- ${list.length} connections\n` + list.join('\n');
+
+  if (formattedList.length === 0) {
+    return '';
+  }
+
+  return `\n\n- ${formattedList.length} connections\n` + formattedList.join('\n');
 }
 
-// Formats league preview stats for gameplay page
+//small and cute league function (will purr at you if it gets the chance)
 function formatLeaguePreview(statistics, country) {
   const leagueStats = statistics['league'];
-  let { gamesplayed: gp, gameswon: gw, glicko, rd, tr, gxe, rank, percentile_rank: estRank } = leagueStats;
+
+  let gamesPlayed = leagueStats.gamesplayed;
+  let gamesWon = leagueStats.gameswon;
+  let ratingDeviation = leagueStats.rd;
+  let rating = leagueStats.tr;
+  let rank = leagueStats.rank;
+  let estRank = leagueStats.percentile_rank;
 
   let progressToNextRank = (leagueStats.prev_at - leagueStats.standing) / (leagueStats.prev_at - leagueStats.next_at);
+
   let prevRank = leagueStats.prev_rank;
   let nextRank = leagueStats.next_rank;
 
-  if (!nextRank && prevRank === 'x') { prevRank = 'x+'; nextRank = 'top'; }
-  if (!prevRank && nextRank === 'd+') prevRank = 'd';
+  if (!nextRank && prevRank === 'x') {
+    prevRank = 'x+';
+    nextRank = 'top';
+  }
+
+  if (!prevRank && nextRank === 'd+') {
+    prevRank = 'd';
+  }
 
   prevRank = getEmojiOfRank(prevRank);
   nextRank = getEmojiOfRank(nextRank);
 
-  let recordDisplay = Math.round(10000 * (gw / gp)) / 100;
+  let recordDisplay = Math.round(10000 * (gamesWon / gamesPlayed)) / 100;
 
-  if (tr < 0) {
-    if (leagueStats.gamesplayed === 0) recordDisplay = 0;
-    tr = `${leagueStats.gamesplayed}/10 rating games`;
+  if (rating < 0) {
+    if (leagueStats.gamesplayed === 0) {
+      recordDisplay = 0;
+    }
+    rating = `${leagueStats.gamesplayed}/10 rating games`;
     progressToNextRank = leagueStats.gamesplayed / 10;
     prevRank = '';
     nextRank = getEmoji('rank_z');
   } else {
-    tr = `${formatNumber(Math.round(tr * 100) / 100)} TR`;
+    rating = `${formatNumber(Math.round(rating * 100) / 100)} TR`;
   }
 
   let standing = '';
-  if (rank != leagueStats.bestrank && gp !== 0 && leagueStats.bestRank) standing += `\n  - Has reached ${getEmojiOfRank(leagueStats.bestrank)}`;
-  if (rd > 100) standing += `\n  - Probably around ${getEmojiOfRank(estRank)}`;
-  if (leagueStats.standing > 0) standing += `\n  - Ranked #${leagueStats.standing} ${formatCountry(leagueStats.standing_local, country)}`;
-  if (gp !== 0) standing += `\n    - Won ${gw}/${gp} games (${((gw / gp) * 100).toFixed(2)}%)\n    - ${leagueStats.vs || 'N/A'} VS score`;
 
-  return `\n- ${getEmoji('league')} **${tr}**, ${getEmojiOfRank(rank)} ${standing}`;
+  if (rank != leagueStats.bestrank && gamesPlayed !== 0 && leagueStats.bestRank) {
+    standing += `\n  - Has reached ${getEmojiOfRank(leagueStats.bestrank)}`;
+  }
+
+  if (ratingDeviation > 100) {
+    standing += `\n  - Probably around ${getEmojiOfRank(estRank)}`;
+  }
+  if (leagueStats.standing > 0) {
+    standing += `\n  - Ranked #${leagueStats.standing} ${formatCountry(leagueStats.standing_local, country)}`;
+  }
+
+  if (gamesPlayed !== 0) {
+    standing += `\n    - Won ${gamesWon}/${gamesPlayed} games (${((gamesWon / gamesPlayed) * 100).toFixed(2)}%)\n    - ${
+      leagueStats.vs || 'N/A'
+    } VS score`;
+  }
+
+  return `\n- ${getEmoji('league')} **${rating}**, ${getEmojiOfRank(rank)} ${standing}`;
 }
 
-// Formats 40 Lines mode stats
 function format40Lines(statistics, country) {
   if (statistics['40l'].record) {
-    const flStatistics = statistics['40l'];
-    const results = flStatistics.record.results;
-    return `\n- ${getEmoji('40lines')} **40 Lines in ${convertToTimeFormat(results.stats.finaltime)}**\n  - Ranked #${formatNumber(flStatistics.rank)} ${formatCountry(flStatistics.rank_local, country)}\n  - [Submitted ${reformatTimestamp(flStatistics.record.ts)}](https://tetr.io/#R:${flStatistics.record.replayid})\n  - ${Math.round(results.aggregatestats.pps * 100) / 100} PPS | ${formatNumber(results.stats.finesse.faults)} finesse faults`;
+    let flStatistics = statistics['40l'];
+    let results = flStatistics.record.results;
+    return `\n- ${getEmoji('40lines')} **40 Lines in ${convertToTimeFormat(results.stats.finaltime)}**
+  - Ranked #${formatNumber(flStatistics.rank)} ${formatCountry(flStatistics.rank_local, country)}
+  - [Submitted ${reformatTimestamp(flStatistics.record.ts)}](https://tetr.io/#R:${flStatistics.record.replayid})
+  - ${Math.round(results.aggregatestats.pps * 100) / 100} PPS | ${formatNumber(results.stats.finesse.faults)} finesse faults`;
+  } else {
+    return '';
   }
-  return '';
 }
 
-// Formats Blitz mode stats
 function formatBlitz(statistics, country) {
   if (statistics['blitz'].record) {
-    const blStatistics = statistics['blitz'];
-    return `\n- ${getEmoji('blitz')} **${formatNumber(blStatistics.record.results.stats.score)} points in Blitz**\n  - Ranked #${formatNumber(blStatistics.rank)} ${formatCountry(blStatistics.rank_local, country)}\n  - [Submitted ${reformatTimestamp(blStatistics.record.ts)}](https://tetr.io/#R:${blStatistics.record.replayid})\n  - ${Math.round(blStatistics.record.results.aggregatestats.pps * 100) / 100} PPS | ${formatNumber(Math.round((blStatistics.record.results.stats.score / blStatistics.record.results.stats.piecesplaced) * 100) / 100)} Points/Piece`;
+    let blStatistics = statistics['blitz'];
+    return `\n- ${getEmoji('blitz')} **${formatNumber(blStatistics.record.results.stats.score)} points in Blitz**
+  - Ranked #${formatNumber(blStatistics.rank)} ${formatCountry(blStatistics.rank_local, country)}
+  - [Submitted ${reformatTimestamp(blStatistics.record.ts)}](https://tetr.io/#R:${blStatistics.record.replayid})
+  - ${Math.round(blStatistics.record.results.aggregatestats.pps * 100) / 100} PPS | ${formatNumber(
+    Math.round((blStatistics.record.results.stats.score / blStatistics.record.results.stats.piecesplaced) * 100) / 100,
+  )} Points/Piece`;
+  } else {
+    return '';
   }
-  return '';
 }
 
-// Formats Zenith (Quick Play) stats
 function formatZenith(statistics, country) {
-  let text = '';
-  const z = statistics['zenith'];
-  if (z.record) {
-    text = `\n- ${getEmoji('quickplay')} **${formatNumber(Math.round(z.record.results.stats.zenith.altitude * 100) / 100)}m in Quick Play**\n  - Ranked #${formatNumber(z.rank)} ${formatCountry(z.rank_local, country)}\n  - [Submitted ${reformatTimestamp(z.record.ts)}](https://tetr.io/#R:${z.record.replayid})\n  - ${Math.round(z.record.results.aggregatestats.pps * 100) / 100} PPS | ${Math.round(z.record.results.aggregatestats.apm * 100) / 100} APM\n  - Floor ${z.record.results.stats.zenith.floor} | ${z.record.results.stats.kills} KOs | Reached ${z.record.results.stats.topbtb} B2B`;
+  let zenithText = '';
+  let zStatistics = statistics['zenith'];
+
+  if (statistics['zenith'].record) {
+    zenithText = `\n- ${getEmoji('quickplay')} **${formatNumber(Math.round(zStatistics.record.results.stats.zenith.altitude * 100) / 100)}m in Quick Play**
+  - Ranked #${formatNumber(zStatistics.rank)} ${formatCountry(zStatistics.rank_local, country)}
+  - [Submitted ${reformatTimestamp(zStatistics.record.ts)}](https://tetr.io/#R:${zStatistics.record.replayid})
+  - ${Math.round(zStatistics.record.results.aggregatestats.pps * 100) / 100} PPS | ${Math.round(
+      zStatistics.record.results.aggregatestats.apm * 100,
+    ) / 100} APM
+  - Floor ${zStatistics.record.results.stats.zenith.floor} | ${zStatistics.record.results.stats.kills} KOs | Reached ${
+      zStatistics.record.results.stats.topbtb
+    } B2B`;
     if (statistics['zenith'].best.record) {
-      text += `\n  - All-time best is ${formatNumber(Math.round(z.best.record.results.stats.zenith.altitude * 100) / 100)}m (#${formatNumber(z.best.rank)})`;
+      zenithText += `\n  - All-time best is ${formatNumber(
+        Math.round(zStatistics.best.record.results.stats.zenith.altitude * 100) / 100,
+      )}m (#${formatNumber(zStatistics.best.rank)})`;
     }
-  } else if (z.best.record) {
-    text = `\n- ${getEmoji('quickplay')} Hasn't played Quick Play this week\n  - All-time best is ${formatNumber(Math.round(z.best.record.results.stats.zenith.altitude * 100) / 100)}m\n  - Ranked #${formatNumber(z.best.rank)}\n  - [Submitted ${reformatTimestamp(z.best.record.ts)}](https://tetr.io/#R:${z.best.record.replayid})`;
+  } else if (statistics['zenith'].best.record) {
+    zenithText = `\n- ${getEmoji('quickplay')} Hasn't played Quick Play this week
+  - All-time best is ${formatNumber(Math.round(zStatistics.best.record.results.stats.zenith.altitude * 100) / 100)}m
+  - Ranked #${formatNumber(zStatistics.best.rank)}
+  - [Submitted ${reformatTimestamp(zStatistics.best.record.ts)}](https://tetr.io/#R:${zStatistics.best.record.replayid})`;
   }
-  return text;
+
+  return zenithText;
 }
 
-// Formats Zenith Expert stats
 function formatZenithExpert(statistics, country) {
-  let text = '';
-  const z = statistics['zenithex'];
-  if (z.record) {
-    text = `\n- ${getEmoji('quickplayexpert')} **${formatNumber(Math.round(z.record.results.stats.zenith.altitude * 100) / 100)}m in Quick Play EXPERT**\n  - Ranked #${formatNumber(z.rank)} ${formatCountry(z.rank_local, country)}\n  - [Submitted ${reformatTimestamp(z.record.ts)}](https://tetr.io/#R:${z.record.replayid})\n  - ${Math.round(z.record.results.aggregatestats.pps * 100) / 100} PPS | ${Math.round(z.record.results.aggregatestats.apm * 100) / 100} APM\n  - Floor ${z.record.results.stats.zenith.floor} | ${z.record.results.stats.kills} KOs | Reached ${z.record.results.stats.topbtb} B2B`;
+  let zenithText = '';
+  let zStatistics = statistics['zenithex'];
+
+  if (statistics['zenithex'].record) {
+    zenithText = `\n- ${getEmoji('quickplayexpert')} **${formatNumber(
+      Math.round(zStatistics.record.results.stats.zenith.altitude * 100) / 100,
+    )}m in Quick Play EXPERT**
+  - Ranked #${formatNumber(zStatistics.rank)} ${formatCountry(zStatistics.rank_local, country)}
+  - [Submitted ${reformatTimestamp(zStatistics.record.ts)}](https://tetr.io/#R:${zStatistics.record.replayid})
+  - ${Math.round(zStatistics.record.results.aggregatestats.pps * 100) / 100} PPS | ${Math.round(
+      zStatistics.record.results.aggregatestats.apm * 100,
+    ) / 100} APM
+  - Floor ${zStatistics.record.results.stats.zenith.floor} | ${zStatistics.record.results.stats.kills} KOs | Reached ${
+      zStatistics.record.results.stats.topbtb
+    } B2B`;
     if (statistics['zenith'].best.record) {
-      text += `\n  - All-time best is ${formatNumber(Math.round(z.best.record.results.stats.zenith.altitude * 100) / 100)}m (#${formatNumber(z.best.rank)})`;
+      zenithText += `\n  - All-time best is ${formatNumber(
+        Math.round(zStatistics.best.record.results.stats.zenith.altitude * 100) / 100,
+      )}m (#${formatNumber(zStatistics.best.rank)})`;
     }
-  } else if (z.best.record) {
-    text = `\n- ${getEmoji('quickplayexpert')} Hasn't played Quick Play EXPERT this week\n  - All-time best is ${formatNumber(Math.round(z.best.record.results.stats.zenith.altitude * 100) / 100)}m\n  - Ranked #${formatNumber(z.best.rank)}\n  - [Submitted ${reformatTimestamp(z.best.record.ts)}](https://tetr.io/#R:${z.best.record.replayid})`;
+  } else if (statistics['zenithex'].best.record) {
+    zenithText = `\n- ${getEmoji('quickplayexpert')} Hasn't played Quick Play EXPERT this week
+  - All-time best is ${formatNumber(Math.round(zStatistics.best.record.results.stats.zenith.altitude * 100) / 100)}m
+  - Ranked #${formatNumber(zStatistics.best.rank)}
+  - [Submitted ${reformatTimestamp(zStatistics.best.record.ts)}](https://tetr.io/#R:${zStatistics.best.record.replayid})`;
   }
-  return text;
+
+  return zenithText;
 }
 
-// Formats Zen mode stats
 function formatZen(statistics) {
   if (statistics['zen']) {
-    const z = statistics['zen'];
-    return `\n- ${getEmoji('zen')} **Level ${z.level} in Zen**\n  - ${formatNumber(Math.round(z.score))} points`;
+    let zenStatistics = statistics['zen'];
+    return `\n- ${getEmoji('zen')} **Level ${zenStatistics.level} in Zen**
+  - ${formatNumber(Math.round(zenStatistics.score))} points`;
+  } else {
+    return '';
   }
-  return '';
 }
 
-// Formats displayed achievements for the user
 function formatDisplayedAchs(displayed = [], all = []) {
-  const map = { 100: 'issued', 1: 'bronze', 2: 'silver', 3: 'gold', 4: 'platinum', 5: 'diamond' };
-  if (!Array.isArray(all) || !Array.isArray(displayed) || all.length === 0) return '';
+  const achievementMapping = {
+    100: 'issued',
+    1: 'bronze',
+    2: 'silver',
+    3: 'gold',
+    4: 'platinum',
+    5: 'diamond',
+  };
 
-  let out = '\n  - Displayed achievements:';
+  let displayCase = '\n  - Displayed achievements:';
 
-  all.forEach((a) => {
-    const featured = displayed.includes(a.k);
-    const unlocked = !a.stub && (a.rank === 100 || (typeof a.rank === 'number' && a.rank >= 1));
-    if (!featured || !unlocked) return;
+  all.forEach((achievement) => {
+    if (displayed.includes(achievement['k'])) {
+      displayCase += `\n    - ` + getEmojiOfAch(achievementMapping[achievement['rank']]);
 
-    const rankName = map[a.rank];
-    if (!rankName) return;
+      // the formatting here is certainly
+      if (achievement.vt === 4) {
+        displayCase += ` **${achievement['name']}** - **Floor ${Math.floor(achievement.a)}** (${formatNumber(
+          Math.round(achievement.v * 100) / 100,
+        )}m) ${achievement.object || ''}`;
+      } else {
+        if (achievement['rank'] !== 100) {
+          const prettyValue =
+            achievement.v < 0 ? convertToTimeFormat(Math.abs(achievement.v)) : formatNumber(Math.round(achievement.v));
 
-    out += `\n    - ${getEmojiOfAch(rankName)}`;
+          displayCase += ` **${achievement['name']}** - **${prettyValue}** ${achievement.object || ''}`;
+        } else if (achievement.vt === 5) {
+          displayCase += ` **${achievement['name']}** - Obtained ${reformatTimestamp(-achievement.v)} ${
+            achievement.object || ''
+          }`;
+        } else if (achievement.vt === 6) {
+          displayCase += ` **${achievement['name']}** - ${formatNumber(-Math.round(achievement.v))} ${
+            achievement.object || ''
+          }`;
+        }
+      }
 
-    if (a.vt === 4) {
-      out += ` **${a.name}** - **Floor ${Math.floor(a.a)}** (${formatNumber(Math.round(a.v * 100) / 100)}m) ${a.object || ''}`;
-    } else if (a.rank !== 100) {
-      // If value is negative, it's probably a time in ms (e.g., Sprint 40L)
-      const prettyValue = a.v < 0
-        ? convertToTimeFormat(Math.abs(a.v))     // -40597 -> "0:40.597"
-        : formatNumber(Math.round(a.v));         // normal numbers stay formatted
+      if (achievement['rank'] === 100) {
+        displayCase += ` (Issue ${achievement['pos']}/${achievement['total']})`;
+      } else {
+        if (achievement['pos'] < 100) {
+          displayCase += ` (**#${achievement['pos'] + 1}**)`;
+        } else if (achievement['pos'] / achievement['total'] < 0.01) {
+          displayCase += ` (Top ${Math.round((achievement['pos'] / achievement['total']) * 100000) / 1000}%)`;
+        } else {
+          displayCase += ` (Top ${Math.round((achievement['pos'] / achievement['total']) * 10000) / 100}%)`;
+        }
+      }
 
-      out += ` **${a.name}** - **${prettyValue}** ${a.object || ''}`;
-    } else if (a.vt === 5) {
-      out += ` **${a.name}** - Obtained ${reformatTimestamp(-a.v)} ${a.object || ''}`;
-    } else if (a.vt === 6) {
-      out += ` **${a.name}** - ${formatNumber(-Math.round(a.v))} ${a.object || ''}`;
+      if (achievement['x'] && achievement['x'].ally !== undefined) {
+        displayCase += ` (With [${achievement['x'].ally.username.toUpperCase()}](https://ch.tetr.io/u/${
+          achievement['x'].ally.username
+        }))`;
+      }
     }
-
-    if (a.rank === 100) {
-      out += ` (Issue ${a.pos}/${a.total})`;
-    } else if (a.total > 0) {
-      if (a.pos < 100) out += ` (**#${a.pos + 1}**)`;
-      else if (a.pos / a.total < 0.01) out += ` (Top ${Math.round((a.pos / a.total) * 100000) / 1000}%)`;
-      else out += ` (Top ${Math.round((a.pos / a.total) * 10000) / 100}%)`;
-    }
-
-    const ally = a.x && a.x.ally;
-    if (ally && ally.username) out += ` (With [${ally.username.toUpperCase()}](https://ch.tetr.io/u/${ally.username}))`;
   });
 
-  return out !== '\n  - Displayed achievements:' ? out : '';
-}
-
-// Formats country and local rank for display
-function formatCountry(localRank, country) {
-  if (localRank > 0) return `(#${formatNumber(localRank)} ${country})`;
+  if (displayCase != '\n  - Displayed achievements:') return displayCase;
   return '';
 }
 
-// Formats previous usernames for display
+function formatCountry(localRank, country) {
+  if (localRank > 0) return `(#${formatNumber(localRank)} ${country})`;
+  else return '';
+}
+
+// i nuked a massive comment here and it was probably deserved
+
 function formatOldUsernames(usernameArray) {
-  if (!Array.isArray(usernameArray) || usernameArray.length === 0) return '';
-  let s = `- Previous usernames:`;
-  usernameArray.forEach((n) => (s += `\n  - ${n.username}`));
-  return s;
+  if (usernameArray.length === 0) return '';
+
+  let usernames = `- Previous usernames:`;
+
+  usernameArray.forEach((name) => {
+    usernames = usernames + `\n  - ${name.username}`;
+  });
+
+  return usernames;
 }
