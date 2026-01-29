@@ -99,8 +99,12 @@ module.exports = {
         .setColor('#80bdff')
         .setThumbnail('https://tetr.io/res/avatar.png')
         .setDescription(`
-# ANONYMOUS
-${escapeUnderscores(user.username).toUpperCase()} is **anonymous**, which means they have no statistics, and cannot save replays. There's nothing that can be shown.
+### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${user.username})__
+## ANONYMOUS
+${escapeUnderscores(user.username).toUpperCase()} is anonymous, which means they have no statistics, and cannot save replays. Only first seen date is known.
+
+- About:
+  - First seen ${reformatTimestamp(statData.ts)}
 `);
       return await interaction.reply({ embeds: [embed] });
     }
@@ -111,16 +115,14 @@ ${escapeUnderscores(user.username).toUpperCase()} is **anonymous**, which means 
         .setThumbnail(`https://tetr.io/user-content/avatars/${statData._id}.jpg`)
         .setFooter({ text: `User ID: ${statData._id}` })
         .setDescription(`
-# BOT
-This user is a **BOT**, owned by ${String(statData.botmaster || 'unknown').toLowerCase()}. Their records are not available, but some general information can be shown.
-
 ### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${user.username}) -> Quick Look__
+## BOT
+${escapeUnderscores(user.username).toUpperCase()} is a known bot, owned by ${String(statData.botmaster || 'unknown').toLowerCase()}. Their records are not available, but some general information can be shown.
 
 - About:
   - Account created ${reformatTimestamp(statData.ts)}
   - Level ${formatNumber(Math.floor(calculateLevel(statData.xp)))} (${formatNumber(Math.floor(statData.xp))} XP)
   - Has ${statData.friend_count} friends
-
 ${formatGamesPlayed(statData.gamesplayed, statData.gameswon, statData.gametime) || ''}
 `);
       return await interaction.reply({ embeds: [embed] });
@@ -144,7 +146,7 @@ ${formatGamesPlayed(statData.gamesplayed, statData.gameswon, statData.gametime) 
   - Level ${formatNumber(Math.floor(calculateLevel(statData.xp)))} (${formatNumber(Math.floor(statData.xp))} XP)
   - ${country}
   - Has ${statData.friend_count} friends
-${statData.supporter ? ` - Has supporter${starConvert(statData.supporter_tier)}${statData.bio ? `\n> -  ${statData.bio}` : ''}` : ''}${formatConnections(statData.connections)}
+${statData.supporter ? `  - Has supporter${starConvert(statData.supporter_tier)}${statData.bio ? `\n> -  ${statData.bio}` : ''}` : ''}${formatConnections(statData.connections)}
 ${formatOldUsernames(statData.oldusernames)}
   `)
         .setTimestamp(),
@@ -157,12 +159,7 @@ ${formatOldUsernames(statData.oldusernames)}
 ### __[${escapeUnderscores(user.username).toUpperCase()}](https://ch.tetr.io/u/${user.username}) -> Quick Look -> General__
 
 - Has ${unlockedCount} achievements${medalLine}${statData.ar > 0 ? `\n  - Totalling ${statData.ar} Achievement Rating` : ''}${formatBadges(badges)} ${formatDisplayedAchs(statData.achievements, ach)}
-
-${statData.gamesplayed >= 0
-  ? `- Played ${statData.gamesplayed} games${statData.gameswon >= 0
-      ? `\n  - Won ${statData.gameswon} of them (${isNaN(Math.round(10000 * (statData.gameswon / statData.gamesplayed)) / 100) ? 0 : Math.round(10000 * (statData.gameswon / statData.gamesplayed)) / 100}%)`
-      : ''}${statData.gametime >= 0 ? `\n  - Has ${Math.round((statData.gametime / 3600) * 10) / 10} hours of playtime` : ''}`
-  : '- Has hidden games played'}
+${formatGamesPlayed(statData.gamesplayed, statData.gameswon, statData.gametime) || ''}
   `)
         .setTimestamp(),
 
@@ -221,11 +218,11 @@ function formatBadges(badgelist) {
 
 function formatGamesPlayed(gamesplayed, gameswon, gamestime) {
   if (gamesplayed > -1) {
-    return `\n### Games Played: ${gamesplayed}
-- Games Won: ${gamesWonConvert(gameswon, gamesplayed)}
-- Playtime: ${playtimeConvert(gamestime)}`;
+    return `\n- Played ${gamesplayed} games
+  - Won ${gamesWonConvert(gameswon, gamesplayed)} of them (${isNaN(gameswon / gamesplayed) ? 0 : (gameswon / gamesplayed).toFixed(2)}%)
+  - Has ${playtimeConvert(gamestime)} of playtime`;
   } else {
-    return '';
+    return '\n- Has hidden games played';
   }
 }
 
@@ -236,40 +233,6 @@ function starConvert(supporterTier) {
     supporterString = supporterString.concat(` ${getEmoji('supporter_star')}`);
   }
   return supporterString;
-}
-
-function formatAchievementCounts(ar_counts) {
-  const formattedList = [];
-
-  const achievementMapping = {
-    1: 'bronze',
-    2: 'silver',
-    3: 'gold',
-    4: 'platinum',
-    5: 'diamond',
-    t100: 't100',
-    t50: 't50',
-    t25: 't25',
-    t10: 't10',
-    t5: 't5',
-    t3: 't3',
-  };
-
-  if (ar_counts[100]) {
-    formattedList.push(`${getEmojiOfAch('issued')} ${ar_counts[100]}`);
-  }
-
-  for (const [key, name] of Object.entries(achievementMapping)) {
-    if (ar_counts[key]) {
-      formattedList.push(`${getEmojiOfAch(name)} ${ar_counts[key]}`);
-    }
-  }
-
-  if (formattedList.length === 0) {
-    return '';
-  }
-
-  return '\n  - ' + formattedList.join(', ');
 }
 
 function formatConnections(connections) {
