@@ -219,7 +219,7 @@ function formatBadges(badgelist) {
 function formatGamesPlayed(gamesplayed, gameswon, gamestime) {
   if (gamesplayed > -1) {
     return `\n- Played ${gamesplayed} games
-  - Won ${gamesWonConvert(gameswon, gamesplayed)} of them (${isNaN(gameswon / gamesplayed) ? 0 : (gameswon / gamesplayed).toFixed(2)}%)
+  - Won ${gamesWonConvert(gameswon, gamesplayed)} of them
   - Has ${playtimeConvert(gamestime)} of playtime`;
   } else {
     return '\n- Has hidden games played';
