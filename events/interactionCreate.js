@@ -1,0 +1,166 @@
+const {
+    AutocompleteInteraction,
+    DiscordAPIError,
+    Events,
+    EmbedBuilder,
+    MessageFlags,
+    StringSelectMenuComponent,
+} = require("discord.js");
+
+module.exports = {
+    name: Events.InteractionCreate,
+    async execute(interaction) {
+        try {
+            if (
+                interaction.isChatInputCommand() ||
+                interaction.isMessageContextMenuCommand()
+            ) {
+                const command = interaction.client.commands[interaction.commandName];
+
+                if (!command) {
+                    console.log(
+                        `[ERROR] No command matching ${interaction.commandName} was found.`
+                    );
+                    return;
+                }
+
+                await command.execute(interaction);
+            } else if (interaction.isButton()) {
+                if (
+                    interaction.message.interaction &&
+                    interaction.user.id !=
+                    interaction.message.interaction.user.id
+                ) {
+                    return await interaction.reply({
+                        content: "You cannot interact with this!",
+                        flags: MessageFlags.Ephemeral,
+                    });
+                }
+
+                const buttonId = interaction.customId;
+                const split = buttonId.split(":");
+                const buttonCommand = interaction.client.commands[split[0]];
+
+                if (split[1]) {
+                    if (!buttonCommand || !buttonCommand.buttons) {
+                        console.error(
+                            `No command for button ${buttonId} (command ${buttonCommand}) was found.`,
+                            interaction.client
+                        );
+                        return;
+                    } else {
+                        await buttonCommand.buttons[split[1].split("-")[0]](
+                            interaction,
+                            split[1].split("-")[1]
+                        );
+                    }
+                }
+            } else if (interaction.isStringSelectMenu()) {
+                if (
+                    interaction.message.interaction &&
+                    interaction.user.id !=
+                    interaction.message.interaction.user.id
+                ) {
+                    return await interaction.reply({
+                        content: "You cannot interact with this!",
+                        flags: MessageFlags.Ephemeral,
+                    });
+                }
+                if (!(interaction.component instanceof StringSelectMenuComponent))
+                    return;
+
+                const dropdownId = interaction.component.customId;
+                const split = dropdownId.split(":");
+                const buttonCommand = interaction.client.commands[split[0]];
+
+                if (split[1]) {
+                    if (!buttonCommand || !buttonCommand.dropdowns) {
+                        console.error(
+                            `No command for dropdown ${dropdownId} (command ${buttonCommand}) was found.`,
+                            interaction.client
+                        );
+                        return;
+                    } else {
+                        await buttonCommand.dropdowns[split[1].split("-")[0]](
+                            interaction,
+                            split[1].split("-")[1]
+                        );
+                    }
+                }
+            } else if (interaction.isAutocomplete()) {
+                const command = interaction.client.commands[interaction.commandName];
+
+                if (!command || !command.autocomplete) {
+                    console.error(
+                        `No autocomplete handler for command ${interaction.commandName} was found.`,
+                        interaction.client
+                    );
+                    return await interaction.respond([]);
+                }
+
+                await command.autocomplete(interaction);
+            } else if (interaction.isModalSubmit()) {
+                const modalId = interaction.customId;
+                const split = modalId.split(":");
+                const modalCommand = interaction.client.commands[split[0]];
+
+                if (
+                    !modalCommand ||
+                    !modalCommand.modals ||
+                    !modalCommand.modals[split[1]]
+                ) {
+                    console.error(
+                        `No modal handler for modal ${modalId} was found.`,
+                        interaction.client
+                    );
+                    return;
+                }
+
+                await modalCommand.modals[split[1]](interaction);
+            }
+        } catch (error) {
+            if (error instanceof DiscordAPIError && error.code == 10062) {
+                return console.log(
+                    `[INFO] unknown interaction error; thanks, discord`
+                );
+            }
+            if (error instanceof DiscordAPIError && error.code == 10008) {
+                return console.log(
+                    `[INFO] unknown message error; thanks, discord`
+                );
+            }
+
+            console.error(
+                error +
+                `\nextra info:
+    caused by ${interaction.user.username} (${interaction.user.id}) in ${interaction.guild?.name} (${interaction.guild?.id})
+    ${error.requestBody && error.requestBody.json && error.requestBody.json.data ? JSON.stringify(error.requestBody.json.data) : "no request body available"}`,
+                interaction.client,
+                error
+            );
+
+            const reply = {
+                embeds: [
+                    new EmbedBuilder()
+                        .setTitle("An error occurred!")
+                        .setDescription(
+                            `wuh oh, something broke\ndon't worry! the developer has been informed of this failure and will fix this bug ASAP.\n\n${error}`
+                        )
+                        .setColor("#ff0000"),
+                ],
+                flags: MessageFlags.Ephemeral,
+            };
+            try {
+                if (!(interaction instanceof AutocompleteInteraction)) {
+                    if (interaction.replied || interaction.deferred) {
+                        await interaction.followUp(reply);
+                    } else {
+                        await interaction.reply(reply);
+                    }
+                }
+            } catch {
+                console.error("[ERROR] error message sending failed? guh");
+            }
+        }
+    },
+};
