@@ -1,13 +1,9 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder, InteractionContextType, ApplicationIntegrationType, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { EmbedBuilder, InteractionContextType, ApplicationIntegrationType, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle, embedLength } = require('discord.js');
 
 const { formatNumber, getLeagueRankColour, getEmojiOfRank, escapeUnderscores, formatUsername } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
 const { getEmoji } = require('../../helpers/emojis');
-
-
-// TODO!!!!!!!!!!!!!!!! merge previous seasons code bc it's like basically the same anyway
-// (and also finish refractoring to use formatNumber everywhere instead of toFixed sometimes)
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -39,211 +35,171 @@ module.exports = {
 
         const apiURL = `https://ch.tetr.io/api/users/${user._id}/summaries/league`;
 
-        try {
-            // Fetch user league data
-            const response = await fetch(apiURL);
-            const data = await response.json();
+        // Fetch user league data
+        const response = await fetch(apiURL);
+        const data = await response.json();
 
-            if (!data.success || !data.data) {
-                return interaction.reply({ content: `Could not find league data for user **${user.username}**.`, flags: MessageFlags.Ephemeral }); // this should like never happen because we checked for it earlier but like just in case
-            }
-
-            const leagueData = data.data;
-
-            // Extract basic stats from current league data
-            //
-            //
-            //
-            let { apm, pps, vs, tr, glicko, rd, prev_rank, next_rank, rank, standing, standing_local, decaying, bestrank, percentile, gxe, past } = leagueData;
-            const gamesPlayed = leagueData.gamesplayed || 0;
-            const gamesWon = leagueData.gameswon || 0;
-            const winRate = gamesPlayed > 0 ? formatNumber((gamesWon / gamesPlayed) * 100, 2) : 'N/A';
-        
-            // Calculate extra stats
-
-            // assuming that VS = ((LinesSent + GarbageCleared) / Pieces) * PPS * 100
-            // which also simplifies to VS =  (LinesSent + GarbageCleared) * 100 / Sec
-            const attackPerPiece = apm / (60 * pps); // formula simplifies to `Attack / PiecesDropped`
-            // const vsPieceEfficiency = (vs / pps); // formula simplifies to `(LinesSent + GarbageCleared) * 100 / PiecesDropped`
-            const garbageAcceptanceRatio = ((vs / 100) - (apm / 60)) / pps; // formula simplifies to `(GarbageCleared - LinesCancelled) / PiecesDropped`
-            const efficiencySpeedRelianceRatio = (3 * attackPerPiece) / (pps) // this one doesn't simplify into something understandable, but it makes sense
-            // const generalPieceEfficiency = vs / (100 * apm) // formula simplifies to `60(LinesSent + GarbageCleared) / Attack`
-
-            // const agpp = (apm / pps) * (vs / 100); //agression per piece
-            // const dsr = ((vs / 100) - (apm / 60)) / pps;
-            // const cpr = (vs / pps) * 10;
-
-            let rankBar;
-
-            if (!next_rank && prev_rank === 'x') {
-                next_rank = 'top'
-            }
-            if (!prev_rank && next_rank === 'd+') {
-                prev_rank = "d"
-            }
-
-            // For current data
-            let description = `### __${formatUsername(user.username)} -> Tetra League__\n`;
-            description += `## ${tr < 0 ? `Currently unranked ${getEmojiOfRank('z')}` : `Currently ranked ${getEmojiOfRank(rank)}`}\n`;
-
-            if (tr < 0) {
-                description += `- **Has played ${gamesPlayed}/10 rating games**\n`;
-                if (gamesPlayed > 0) {
-                    description += `  - Won ${gamesWon} of them (${winRate}%)\n  - ${apm.toFixed(2)} APM | ${pps.toFixed(2)} PPS | ${vs.toFixed(2)} VS score\n`;
-                }
-                rankBar = `${generateProgressBar("Unranked", gamesPlayed / 10, 10)} ${getEmojiOfRank('z')}`;
-                if (bestrank && bestrank !== leagueData.percentile_rank) {
-                    description += `  - Has reached ${getEmojiOfRank(bestrank)}\n`;
-                }
-            } else {
-                description += `- **Has ${formatNumber(tr.toFixed(1))} TR**\n`;
-                if (rd > 100) {
-                    description += `  - Probably around ${getEmojiOfRank(leagueData.percentile_rank)} (Top ${formatNumber(percentile * 100, 1)}%)\n`;
-                    rankBar = false;
-                    if (bestrank && bestrank !== leagueData.percentile_rank) {
-                        description += `  - Has reached ${getEmojiOfRank(bestrank)}\n`;
-                    }
-                } else {
-                    if (percentile < 0.005) {
-                        description += `  - Ranked #${standing} worldwide\n`;
-                        if (standing !== 1) {
-                            description += `  - Ranked #${standing_local} locally\n`;
-                        }
-                    } else {
-                        description += `  - Ranked #${standing} worldwide (Top ${formatNumber(percentile * 100, 1)}%)\n  - Ranked #${standing_local} locally\n`;
-                    }
-                    rankBar = `${getEmojiOfRank(prev_rank)} ${generateProgressBar("Ranked", (leagueData.prev_at - standing) / (leagueData.prev_at - leagueData.next_at), 15)} ${getEmojiOfRank(next_rank)}`;
-                    if (bestrank && bestrank !== rank) {
-                        description += `  - Has reached ${getEmojiOfRank(bestrank)}\n`;
-                    }
-                }
-                description += `  - Has ${formatNumber(glicko, 2)} ± ${formatNumber(rd, 1)} Glicko\n`;
-                if (gxe) {
-                    description += `  - ${formatNumber(gxe, 1)}% chance to win against random player\n`;
-                }
-                if (decaying) {
-                    description += `  - Hasn't played in a week; __rating deviation is increasing__\n`;
-                }
-                description += `- **Has played ${formatNumber(gamesPlayed)} game${gamesPlayed === 1 ? '' : 's'}**\n`;
-                if (gamesPlayed > 0) {
-                    description += `  - Won ${formatNumber(gamesWon)} of them (${winRate}%)\n  - ${formatNumber(apm, 2)} APM | ${formatNumber(pps, 2)} PPS | ${formatNumber(vs, 2)} VS score\n`;
-                }
-            }
-
-            if (rankBar) {
-                description += `\n${rankBar}`;
-            }
-
-
-            //past data
-
-            // Check if past is empty
-            if (!past || Object.keys(past).length === 0) {
-                // Only send current league data, no buttons
-                const embed = new EmbedBuilder()
-                    .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
-                    .setDescription(description)
-                    .setColor(getLeagueRankColour(rank) || '#ff8c57');
-                await interaction.reply({
-                    embeds: [embed]
-                });
-            } else {
-                // Build pages: first is current, then each season
-                const pages = [
-                    new EmbedBuilder()
-                        .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
-                        .setDescription(description)
-                        .setColor(getLeagueRankColour(rank) || '#ff8c57')
-                ];
-
-                // Add a page for each season in order
-                const seasonNumbers = Object.keys(past).map(Number).sort((a, b) => a - b);
-                for (const season of seasonNumbers) {
-                    const seasonData = past[season];
-                    let pastDescription = `### __[${escapeUnderscores(seasonData.username).toUpperCase()}](https://ch.tetr.io/u/${seasonData.username}/) -> Tetra League -> Season ${season}__\n`;
-                    pastDescription += `## ${seasonData.tr < 0 ? `Unranked ${getEmojiOfRank('z')}` : `Ranked ${getEmojiOfRank(seasonData.rank)}`}\n`;
-                    if (seasonData.tr < 0) {
-                        pastDescription += `- Has played ${seasonData.gamesPlayed}/10 rating games\n`;
-                        if (seasonData.gamesplayed > 0) {
-                            pastDescription += `  - Won ${seasonData.gameswon} of them (${formatNumber(100*(seasonData.gameswon/seasonData.gamesplayed), 2)}%)\n  - ${formatNumber(seasonData.apm, 2)} APM | ${formatNumber(seasonData.pps, 2)} PPS | ${formatNumber(seasonData.vs, 2)} VS score\n`;
-                        }
-                        if (seasonData.bestrank) {
-                            pastDescription += `  - Has reached ${getEmojiOfRank(seasonData.bestrank)}\n`;
-                        }
-                    } 
-                    else {
-                        pastDescription += `- **Had ${formatNumber(seasonData.tr.toFixed(1))} TR**\n`;
-                        if (rd > 100) {
-                            pastDescription += `  - Unranked\n`;
-                            if (seasonData.bestrank) {
-                                pastDescription += `  - Has reached ${getEmojiOfRank(seasonData.bestrank)}\n`;
-                            }
-                        } else {
-                            pastDescription += `  - Rank #${seasonData.placement ? seasonData.placement : '?'} worldwide\n`;
-                            if (seasonData.bestrank && seasonData.bestrank !== seasonData.rank) {
-                                pastDescription += `  - Has reached ${getEmojiOfRank(seasonData.bestrank)}\n`;
-                            }
-                        }
-                        pastDescription += `  - Had ${formatNumber(seasonData.glicko, 2)} ± ${formatNumber(seasonData.rd, 1)} Glicko\n`;
-                        if (seasonData.gxe) {
-                            pastDescription += `  - ${formatNumber(seasonData.gxe, 2)}% chance to win against random player\n`;
-                        }
-                        pastDescription += `- **Played ${formatNumber(seasonData.gamesplayed)} game${seasonData.gamesplayed === 1 ? '' : 's'}**\n`;
-                        if (seasonData.gamesplayed > 0) {
-                            pastDescription += `  - Won ${formatNumber(seasonData.gameswon)} of them (${formatNumber(100*(seasonData.gameswon/seasonData.gamesplayed), 2)}%)\n  - ${formatNumber(seasonData.apm, 2)} APM | ${formatNumber(seasonData.pps, 2)} PPS | ${formatNumber(seasonData.vs, 2)} VS score\n`;
-                        }
-                    }
-
-
-                    pages.push(
-                        new EmbedBuilder()
-                            .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
-                            .setColor(getLeagueRankColour(seasonData.rank) || '#ff8c57')
-                            .setDescription(pastDescription)
-                    );
-                }
-
-                // Create dynamic buttons: "Current", then "Season X" for each season
-                const buttons = [
-                    new ButtonBuilder()
-                        .setCustomId('leaguepage_0')
-                        .setLabel('Current')
-                        .setStyle(ButtonStyle.Primary)
-                        .setDisabled(true) // Default page
-                ];
-                for (let i = 0; i < seasonNumbers.length; i++) {
-                    buttons.push(
-                        new ButtonBuilder()
-                            .setCustomId(`leaguepage_${i + 1}`) // +1 because 0 is "Current"
-                            .setLabel(`Season ${seasonNumbers[i]}`)
-                            .setStyle(ButtonStyle.Primary)
-                    );
-                }
-
-                const row = new ActionRowBuilder().addComponents(buttons);
-
-                await interaction.reply({
-                    embeds: [pages[0]],
-                    components: [row]
-                });
-
-                // Store pages and button count for later use
-                interaction.client.pageData = {
-                    ...interaction.client.pageData,
-                    [interaction.id]: {
-                        pages,
-                        currentPage: 0,
-                        seasonNumbers // Save for reference if needed
-                    }
-                };
-            }
-
-        } catch (error) {
-            console.error(error);
-            interaction.reply({ content: 'An error occurred while fetching data. Please try again later.', flags: MessageFlags.Ephemeral });
+        if (!data.success || !data.data) {
+            return interaction.reply({ content: `Could not find league data for user **${user.username}**.`, flags: MessageFlags.Ephemeral }); // this should like never happen because we checked for it earlier but like just in case
         }
+
+        const leagueData = data.data;
+        const past = leagueData.past;
+
+        const currentEmbed = createLeagueEmbed(leagueData, user);
+
+        if (!past || Object.keys(past).length === 0) {
+            await interaction.reply({
+                embeds: [currentEmbed]
+            });
+            return;
+        } 
+        // past data exists, time to format
+        
+        // Build pages: first is current, then each season
+        const pages = [
+            currentEmbed
+        ];
+
+        // Add a page for each season in order
+        const seasonNumbers = Object.keys(past).map(Number).sort((a, b) => a - b);
+        for (const season of seasonNumbers) {
+            const seasonData = past[season];
+            const thisSeasonEmbed = createLeagueEmbed(seasonData, user, season);
+
+            pages.push(thisSeasonEmbed);
+        }
+
+        // Create dynamic buttons: "Current", then "Season X" for each season
+        const buttons = [
+            new ButtonBuilder()
+                .setCustomId('leaguepage_0')
+                .setLabel('Current')
+                .setStyle(ButtonStyle.Primary)
+                .setDisabled(true) // Default page
+        ];
+        for (let i = 0; i < seasonNumbers.length; i++) {
+            buttons.push(
+                new ButtonBuilder()
+                    .setCustomId(`leaguepage_${i + 1}`) // +1 because 0 is "Current"
+                    .setLabel(`Season ${seasonNumbers[i]}`)
+                    .setStyle(ButtonStyle.Primary)
+            );
+        }
+
+        const row = new ActionRowBuilder().addComponents(buttons);
+
+        await interaction.reply({
+            embeds: [pages[0]],
+            components: [row]
+        });
+
+        // Store pages and button count for later use
+        interaction.client.pageData = {
+            ...interaction.client.pageData,
+            [interaction.id]: {
+                pages,
+                currentPage: 0,
+                seasonNumbers // Save for reference if needed
+            }
+        };
     }
 };
+
+function createLeagueEmbed(leagueData, user, past = 0) {
+    const { apm, pps, vs, tr, glicko, rd, prev_rank, next_rank, rank, standing, standing_local, decaying, bestrank, percentile, gxe } = leagueData;
+    const gamesPlayed = leagueData.gamesplayed || 0;
+    const gamesWon = leagueData.gameswon || 0;
+    const winRate = gamesPlayed > 0 ? formatNumber((gamesWon / gamesPlayed) * 100, 2) : 'N/A';
+
+    /* EXTRA STATS AREA
+    currently unused but could be added later if we wanted extra details or whatever
+
+    // assuming that VS = ((LinesSent + GarbageCleared) / Pieces) * PPS * 100
+    // which also simplifies to VS =  (LinesSent + GarbageCleared) * 100 / Sec
+
+    const attackPerPiece = apm / (60 * pps); // formula simplifies to `Attack / PiecesDropped`
+    const vsPieceEfficiency = (vs / pps); // formula simplifies to `(LinesSent + GarbageCleared) * 100 / PiecesDropped`
+    const garbageAcceptanceRatio = ((vs / 100) - (apm / 60)) / pps; // formula simplifies to `(GarbageCleared - LinesCancelled) / PiecesDropped`
+    const efficiencySpeedRelianceRatio = (3 * attackPerPiece) / (pps) // this one doesn't simplify into something understandable, but it makes sense
+    const generalPieceEfficiency = vs / (100 * apm) // formula simplifies to `60(LinesSent + GarbageCleared) / Attack`
+
+    const agpp = (apm / pps) * (vs / 100); //agression per piece
+    const dsr = ((vs / 100) - (apm / 60)) / pps;
+    const cpr = (vs / pps) * 10;
+
+    */
+
+    let rankBar;
+
+    if (!next_rank && prev_rank === 'x') {
+        next_rank = 'top'
+    }
+    if (!prev_rank && next_rank === 'd+') {
+        prev_rank = "d"
+    }
+
+    const Currently = past ? `Was` : `Currently`;
+    const Has = past ? `Had` : `Has`;
+
+    let description = `### __${formatUsername(user.username)} -> Tetra League${past ? ` -> Season ${past}` : ""}__\n`;
+    description += `## ${tr < 0 || rank == "z" ? `${Currently} unranked ${getEmojiOfRank('z')}` : `${Currently} ranked ${getEmojiOfRank(rank)}`}\n`;
+
+    if (tr < 0) {
+        description += `- **${Has} played ${gamesPlayed}/10 rating games**\n`;
+        if (gamesPlayed > 0) {
+            description += `  - Won ${gamesWon} of them (${winRate}%)\n  - ${formatNumber(apm, 2)} APM | ${formatNumber(pps, 2)} PPS | ${formatNumber(vs, 2)} VS score\n`;
+        }
+        rankBar = `${generateProgressBar("Unranked", gamesPlayed / 10, 10)} ${getEmojiOfRank('z')}`;
+        if (bestrank && bestrank !== leagueData.percentile_rank) {
+            description += `  - ${Has} reached ${getEmojiOfRank(bestrank)}\n`;
+        }
+    } else {
+        description += `- **${Has} ${formatNumber(tr, 1)} TR**\n`;
+        if (rd > 100) {
+            if (!past) {            
+                description += `  - Around ${getEmojiOfRank(leagueData.percentile_rank)} (Top ${formatNumber(percentile * 100, 1)}%)\n`;
+            }
+            rankBar = false;
+            if (bestrank && bestrank !== leagueData.percentile_rank) {
+                description += `  - ${Has} reached ${getEmojiOfRank(bestrank)}\n`;
+            }
+        } else {
+            if (percentile < 0.005) {
+                description += `  - Ranked #${standing} worldwide\n`;
+                if (standing !== 1) {
+                    description += `  - Ranked #${standing_local} locally\n`;
+                }
+            } else {
+                description += `  - Ranked #${standing} worldwide (Top ${formatNumber(percentile * 100, 1)}%)\n  - Ranked #${standing_local} locally\n`;
+            }
+            rankBar = `${getEmojiOfRank(prev_rank)} ${generateProgressBar("Ranked", (leagueData.prev_at - standing) / (leagueData.prev_at - leagueData.next_at), 15)} ${getEmojiOfRank(next_rank)}`;
+            if (bestrank && bestrank !== rank) {
+                description += `  - ${Has} reached ${getEmojiOfRank(bestrank)}\n`;
+            }
+        }
+        description += `  - ${Has} ${formatNumber(glicko, 2)} ± ${formatNumber(rd, 1)} Glicko\n`;
+        if (gxe) {
+            description += `  - ${formatNumber(gxe, 1)}% chance to win against random player\n`;
+        }
+        if (decaying) {
+            description += `  - ${Has}n't played in a week; __rating deviation is increasing__\n`;
+        }
+        description += `- **${Has} played ${formatNumber(gamesPlayed)} game${gamesPlayed === 1 ? '' : 's'}**\n`;
+        if (gamesPlayed > 0) {
+            description += `  - Won ${formatNumber(gamesWon)} of them (${winRate}%)\n  - ${formatNumber(apm, 2)} APM | ${formatNumber(pps, 2)} PPS | ${formatNumber(vs, 2)} VS score\n`;
+        }
+    }
+
+    if (rankBar && !past) description += `\n${rankBar}`;
+
+    const embed = new EmbedBuilder()
+        .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
+        .setDescription(description)
+        .setColor(getLeagueRankColour(rank) || '#ff8c57');
+    
+    return embed;
+}
 
 function generateProgressBar(barType, progress, length = 14) {
     let startSymbol = getEmoji("bar_start");
