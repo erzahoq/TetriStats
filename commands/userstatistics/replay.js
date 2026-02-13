@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
 
-const { formatNumber, escapeUnderscores, countryCodeToEmoji, formatTime, getEmojiOfRank, getModCombos, formatISOString } = require('../../helpers/formatters');
+const { formatNumber, escapeUnderscores, countryCodeToEmoji, formatTime, getEmojiOfRank, getModCombos, formatISOString, formatUsername } = require('../../helpers/formatters');
 const { getEmoji } = require('../../helpers/emojis');
 const { database } = require('../../database'); 
 
@@ -28,584 +28,429 @@ module.exports = {
 
         const replayAttachment = interaction.options.getAttachment('replay');
 
-        if (!replayAttachment.name.endsWith('.ttr')) {
+        if (!replayAttachment.name.endsWith('.ttr') && !replayAttachment.name.endsWith('.json')) {
             return interaction.editReply({ content: 'Please upload a valid .ttr replay file.' });
         }
         
-        try {
-            // Fetch the replay file
-            const response = await fetch(replayAttachment.url);
-            if (!response.ok) {
-                throw new Error(`Failed to fetch replay file: ${response.statusText}`);
+        // Fetch the replay file
+        const response = await fetch(replayAttachment.url);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch replay file: ${response.statusText}`);
+        }
+
+        const arrayBuffer = await response.arrayBuffer();
+        const replayDataBuffer = Buffer.from(arrayBuffer);
+
+        // Parse the file as JSON
+        const replay = JSON.parse(replayDataBuffer.toString());
+        if (!replay || !replay.id || !replay.users) { // some easy checks to see if common replay file structure is there
+            return interaction.editReply({ content: 'The uploaded file does not appear to be a valid TETR.IO replay.' });
+            // note this doesn't technically prevent uploading malformed files
+            // with the right structure but it's a start and should catch most user errors
+        }
+
+        let replayData = replay.replay;
+        let replayStats = replayData.results.stats;
+
+        //initially define list of pages 
+        let pages = [];
+
+        //check the gamemode
+        let gamemode = "Unknown";
+        if (replay.gamemode === 'zenith') gamemode = "Quick Play";
+        if (replay.gamemode === 'zenithex') gamemode = "Quick Play EX";
+        if (replay.gamemode === '40l') gamemode = "40 Lines";
+        if (replay.gamemode === 'blitz') gamemode = "Blitz";
+
+        // choose emoji for quickplay vs quickplay expert (zenithex)
+        let quickplayEmoji = 'quickplay';
+        if (replay.gamemode === 'zenithex') quickplayEmoji = 'quickplayexpert';
+        
+        let row; //for buttons
+
+        // common stats
+        const replayLinkFormat = `[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id})`;
+        const formattedDate = formatISOString(replay.ts);
+        const finesse = (replayStats.finesse.perfectpieces / replayStats.piecesplaced) ?? -1;
+
+        let inputCounts = {};
+        for (const h of ["hardDrop", "softDrop", "hold", "moveLeft", "moveRight", "rotateCW", "rotateCCW", "rotate180"]) inputCounts[h] = 0;
+        for (const frameEvent of replayData.events) {
+            if (frameEvent.type === 'keydown') {
+                inputCounts[frameEvent.data.key]++;
+            }
+        }
+        const handling = replayData.options.handling;
+        const inputCountString = 
+`- **Placed ${formatNumber(replayStats.piecesplaced)} pieces**
+  - Held ${formatNumber(replayStats.holds)} pieces
+  - Pressed ${formatNumber(replayStats.inputs)} inputs
+  - ⇊ ${formatNumber(inputCounts.hardDrop)} | ⇃ ${formatNumber(inputCounts.softDrop)} | ⇄ ${formatNumber(inputCounts.hold)}
+  - ← ${formatNumber(inputCounts.moveLeft)} | → ${formatNumber(inputCounts.moveRight)}
+  - ↶ ${formatNumber(inputCounts.rotateCCW)} | ↷ ${formatNumber(inputCounts.rotateCW)} | ⟳ ${formatNumber(inputCounts.rotate180)}
+  - ${handling.arr}F ARR | ${handling.das}F DAS | ${handling.sdf === 41 ? "∞" : handling.sdf}x SDF
+- **Cleared ${formatNumber(replayStats.lines)} lines**
+  - ${replayStats.clears.singles} singles (${replayStats.clears.tspinsingles ?? 0} spins) 
+  - ${replayStats.clears.doubles} doubles (${replayStats.clears.tspindoubles ?? 0} spins) 
+  - ${replayStats.clears.triples} triples (${replayStats.clears.tspintriples ?? 0} spins)
+  - ${replayStats.clears.quads} quads${finesse === -1 ? '' : `
+- **Had ${formatNumber(finesse * 100, 2)}% finesse**
+  - Reached a ${replayStats.finesse.combo} chain
+  - Made ${replayStats.finesse.faults} faults
+  - Placed ${replayStats.finesse.perfectpieces} pieces perfectly`}`;
+
+        let performanceStrings = [];
+        let performanceDisclaimer = "";
+        // skips the "compared to rank" line for performance tab
+        // TODO maybe add an API call here to get an actual rank
+        const effectiveRank = null;
+
+        const userSuffix = `
+-# ${formatUsername(replay.users[0].username)} ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}`;
+
+
+        //=== For each gamemode, create a list of pages ===
+        // Zenith gamemode :3
+        // expert and normal are together because their stats are extremely similar
+        if (replay.gamemode === "zenith" || replay.gamemode === "zenithex") {     
+            let combos = getModCombos(replayData.options.zenith_mods)
+
+            let emojis = combos.emojis || "";
+            let flavour = combos.flavour || "";
+            let foundEntry = combos.name || "";
+            let mods = combos.mods || [];
+
+            let modString = `${emojis} **${foundEntry}**\n-# *${flavour}*`
+
+            if (mods.length === 0) {
+                modString = ``
             }
 
-            const arrayBuffer = await response.arrayBuffer();
-            const replayDataBuffer = Buffer.from(arrayBuffer);
-
-            // Parse the file as JSON
-            const replay = JSON.parse(replayDataBuffer.toString());
-
-            let replayData = replay.replay;
-
-            let replayStats = replayData.results.stats;
-
-            //initially define list of pages 
-            let pages = [];
-
-            //check the gamemode
-            let gamemode = "Unknown";
-            if (replay.gamemode === 'zenith') gamemode = "Quick Play";
-            if (replay.gamemode === 'zenithex') gamemode = "Quick Play EX";
-            if (replay.gamemode === '40l') gamemode = "40 Lines";
-            if (replay.gamemode === 'blitz') gamemode = "Blitz";
-
-            // choose emoji for quickplay vs quickplay expert (zenithex)
-            let quickplayEmoji = 'quickplay';
-            if (replay.gamemode === 'zenithex') quickplayEmoji = 'quickplayexpert';
-            
-            let row; //for buttons
-
-            //general stats
-            const formattedDate = formatISOString(replay.ts);
-
-
-            const finesse = (replayStats.finesse.perfectpieces / replayStats.piecesplaced) ?? -1;
-
-
-            //=== For each gamemode, create a list of pages ===
-            // Zenith gamemode :3
-            // expert and normal are together because their stats are extremely similar
-            if (replay.gamemode === "zenith" || replay.gamemode === "zenithex") {     
-                let combos = getModCombos(replayData.options.zenith_mods)
-
-                let emojis = combos.emojis || "";
-                let flavour = combos.flavour || "";
-                let foundEntry = combos.name || "";
-                let mods = combos.mods || [];
-
-                let modString = `${emojis} **${foundEntry}**\n-# *${flavour}*`
-
-                if (mods.length === 0) {
-                    modString = ``
-                }
-
-                 // human-friendly mod names
-                const modNames = {
-                    nohold: 'No Hold',
-                    doublehole: 'Double Hole',
-                    messy: 'Messy',
-                    allspin: 'All-Spin',
-                    gravity: 'Gravity',
-                    invisible: 'Invisible',
-                    expert: 'Expert',
-                    volatile: 'Volatile'
-                }
-
-                const modNamesList = mods.slice().reverse().map(m => modNames[m] || m).join(', ');
-
-
-                if (mods.length > 0 && !foundEntry) {
-                    modString = `${emojis}\n-# ${modNamesList}`
-                }
-
-                const zenithStats = replayStats.zenith;
-
-
-                // silly performance stuff idk
-                const height = zenithStats.altitude;
-                const pps = replayData.results.aggregatestats.pps;
-                const apm = replayData.results.aggregatestats.apm;
-                const climbSpeed = zenithStats.rank;
-                const btb = replayStats.topbtb;
-
-
-                // the function will just skip the "compared to [rank]" line.
-                const effectiveRank = null; // or whatever idk
-
-                let heightString = "";
-                let ppsString = "";
-                let apmString = "";
-                let climbSpeedString = "";
-                let btbString = "";
-                let finesseString = "";
-
-                //check if zenith expert
-                const zenithMods = Array.isArray(replayData.options?.zenith_mods) ? replayData.options.zenith_mods : [];
-
-                //big ass if statement
-                if (replay.gamemode === "zenith") {
-                    heightString = await buildReplayStatComparisonString(
-                        'zenith/height',              // same db key as in /performance
-                        'Meters',       
-                        height,                      
-                        effectiveRank,             // player baseline rank
-                        { decimals: 1 }            // extras
-                    );
-
-                    ppsString = await buildReplayStatComparisonString(
-                        'zenith/pps',              // same db key as in /performance
-                        'Pieces Per Second',       
-                        pps,                      
-                        effectiveRank,             // player baseline rank
-                        { decimals: 3 }            // extras
-                    );
-
-                    apmString = await buildReplayStatComparisonString(
-                        'zenith/apm',              // same db key as in /performance
-                        'Attack Per Minute',
-                        apm,
-                        effectiveRank,             // player baseline rank
-                        { decimals: 2 }            // extras
-                    );
-
-                    climbSpeedString = await buildReplayStatComparisonString(
-                        'zenith/climbSpeed',              // same db key as in /performance
-                        'Average Climb Speed',
-                        climbSpeed,
-                        effectiveRank,             // player baseline rank
-                        { decimals: 3 }            // extras
-                    );
-
-                    btbString = await buildReplayStatComparisonString(
-                        'zenith/btb',              // same db key as in /performance
-                        'Highest Back-to-Back',
-                        btb,
-                        effectiveRank,             // player baseline rank
-                        { decimals: 0 }            // extras
-                    );
-
-                    finesseString = await buildReplayStatComparisonString(
-                        'zenith/finesse',              // same db key as in /performance
-                        'Finesse',
-                        finesse,
-                        effectiveRank,             // player baseline rank
-                        { decimals: 4, isPercentage: true }            // extras
-                    );
-                } else if (replay.gamemode === "zenithex") {
-                    //expert mode !! yay
-                    heightString = await buildReplayStatComparisonString(
-                        'zenithEx/height',              // same db key as in /performance
-                        'Meters',       
-                        height,                      
-                        effectiveRank,             // player baseline rank
-                        { decimals: 1 }            // extras
-                    );
-
-                    ppsString = await buildReplayStatComparisonString(
-                        'zenithEx/pps',              // same db key as in /performance
-                        'Pieces Per Second',       
-                        pps,                      
-                        effectiveRank,             // player baseline rank
-                        { decimals: 3 }            // extras
-                    );
-
-                    apmString = await buildReplayStatComparisonString(
-                        'zenithEx/apm',              // same db key as in /performance
-                        'Attack Per Minute',
-                        apm,
-                        effectiveRank,             // player baseline rank
-                        { decimals: 2 }            // extras
-                    );
-
-                    // only show/build climb speed if NOT reverse-expert
-                    if (!zenithMods.includes('expert_reversed')) {
-                        climbSpeedString = await buildReplayStatComparisonString(
-                            'zenithEx/climbSpeed',              // same db key as in /performance
-                            'Average Climb Speed',
-                            climbSpeed,
-                            effectiveRank,             // player baseline rank
-                            { decimals: 3 }            // extras
-                        );
-                    } else {
-                        // explicitly blank so the template doesn't print "null"
-                        climbSpeedString = '';
-                    }
-
-                    btbString = await buildReplayStatComparisonString(
-                        'zenithEx/btb',                        
-                        'Highest Back-to-Back',
-                        btb,
-                        effectiveRank,                        
-                        { decimals: 0 }                    
-                    );
-
-                    finesseString = await buildReplayStatComparisonString(
-                        'zenithEx/finesse',              // same db key as in /performance
-                        'Finesse',
-                        finesse,
-                        effectiveRank,             // player baseline rank
-                        { decimals: 4, isPercentage: true }            // extras
-                    );
+            // human-friendly mod names
+            const modNames = {
+                nohold: 'No Hold',
+                doublehole: 'Double Hole',
+                messy: 'Messy',
+                allspin: 'All-Spin',
+                gravity: 'Gravity',
+                invisible: 'Invisible',
+                expert: 'Expert',
+                volatile: 'Volatile'
             }
 
-            let disclamer = "";
+            const modNamesList = mods.slice().reverse().map(m => modNames[m] || m).join(', ');
 
-            // treat reverse-expert as expert for messaging
+
+            if (mods.length > 0 && !foundEntry) {
+                modString = `${emojis}\n-# ${modNamesList}`
+            }
+
+            const zenithStats = replayStats.zenith;
+
+            // silly performance stuff idk
+            const height = zenithStats.altitude;
+            const pps = replayData.results.aggregatestats.pps;
+            const apm = replayData.results.aggregatestats.apm;
+            const climbSpeed = zenithStats.rank;
+            const btb = replayStats.topbtb;
+
+            //check if zenith expert
+            const zenithMods = Array.isArray(replayData.options?.zenith_mods) ? replayData.options.zenith_mods : [];
             const isExpertMod = mods.includes('expert') || zenithMods.includes('expert_reversed');
+
+            // time for performance strings yay!
+            const zenithVer = isExpertMod ? 'zenithEx' : 'zenith';
+            performanceStrings.push(await buildReplayStatComparisonString(
+                `${zenithVer}/height`,
+                'Meters',       
+                height,                      
+                effectiveRank,
+                { decimals: 1 }
+            ));
+            performanceStrings.push(await buildReplayStatComparisonString(
+                `${zenithVer}/pps`,
+                'Pieces Per Second',       
+                pps,                      
+                effectiveRank,
+                { decimals: 3 }
+            ));
+            performanceStrings.push(await buildReplayStatComparisonString(
+                `${zenithVer}/apm`,
+                'Attack Per Minute',
+                apm,
+                effectiveRank,
+                { decimals: 2 }
+            ));
+            // only show/build climb speed if NOT reverse-expert
+            if (!zenithMods.includes('expert_reversed')) {
+                performanceStrings.push(await buildReplayStatComparisonString(
+                    `${zenithVer}/climbSpeed`,
+                    'Average Climb Speed',
+                    climbSpeed,
+                    effectiveRank,
+                    { decimals: 3 }
+                ));
+            }
+            performanceStrings.push(await buildReplayStatComparisonString(
+                `${zenithVer}/btb`,
+                'Highest Back-to-Back',
+                btb,
+                effectiveRank,
+                { decimals: 0 }
+            ));
+            performanceStrings.push(await buildReplayStatComparisonString(
+                `${zenithVer}/finesse`,
+                'Finesse',
+                finesse,
+                effectiveRank,
+                { decimals: 4, isPercentage: true }
+            ));
 
             // don't show a warning if the only mod is "expert" (including reversed)
             if (mods.length > 0 && !(mods.length === 1 && isExpertMod)) {
                 if (isExpertMod) {
-                    disclamer = `\n-# ${getEmoji("windup_4")} These stats are based off of Expert Quick Play runs without mods! Be wary when comparing.`;
+                    performanceDisclaimer = `\n-# ${getEmoji("windup_4")} These stats are based off of Expert Quick Play runs without mods! Be wary when comparing.`;
                 } else {
-                    disclamer = `\n-# ${getEmoji("windup_4")} These stats are based off of Quick Play runs without mods! Be wary when comparing.`;
+                    performanceDisclaimer = `\n-# ${getEmoji("windup_4")} These stats are based off of Quick Play runs without mods! Be wary when comparing.`;
                 }
             }
-
-            // build performance block without empty lines
-            const perfStatBlock = [heightString, ppsString, apmString, climbSpeedString, btbString, finesseString]
-                .filter(s => typeof s === 'string' ? s.trim().length > 0 : Boolean(s))
-                .join('\n');
 
             //full page
             const stats = replayStats;
             const garbageStats = replayStats.garbage;
-            const handling = replayData.options.handling;
 
-            let inputCounts = {};
-            for (const h of ["hardDrop", "softDrop", "hold", "moveLeft", "moveRight", "rotateCW", "rotateCCW", "rotate180"]) inputCounts[h] = 0;
-            for (const frameEvent of replayData.events) {
-                if (frameEvent.type === 'keydown') {
-                    inputCounts[frameEvent.data.key]++;
-                }
-            }
 
-                pages = [
-                    new EmbedBuilder().setColor('#80ff80')
-                    .setDescription(`### __[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id}) -> Overview__
+            pages = [
+                new EmbedBuilder().setColor('#80ff80')
+                .setDescription(`### __${replayLinkFormat} -> Overview__
 ${modString}
 - **Finished in ${framesToTime(replayData.frames)}**
-  - ${formatNumber(replayData.results.aggregatestats.pps,2)} PPS
-  - ${formatNumber(replayData.results.aggregatestats.apm,2)} APM
+  - ${formatNumber(pps,2)} PPS
+  - ${formatNumber(apm,2)} APM
   - ${formatNumber(replayData.results.aggregatestats.vsscore,2)} VS Score
-  - ${((replayStats.finesse.perfectpieces/replayStats.piecesplaced)*100).toFixed(2)}% Finesse | ${replayStats.finesse.faults} Faults
-- **Climbed ${zenithStats.altitude.toFixed(1)}m (Floor ${zenithStats.floor})**
+  - ${formatNumber(finesse * 100, 2)}% Finesse | ${replayStats.finesse.faults} Faults
+- **Climbed ${formatNumber(height, 1)}m (Floor ${zenithStats.floor})**
   - Reached ${zenithStats.peakrank.toFixed(2)} climb speed, averaged ${zenithStats.rank.toFixed(2)}
   - Reached ${replayStats.topbtb} B2B
 - **KO'd ${replayStats.kills} players**
-  - Sent ${formatNumber(replayStats.garbage.sent)} lines 
-  - Received ${formatNumber(replayStats.garbage.received)} lines
+  - Sent ${formatNumber(garbageStats.sent)} lines 
+  - Received ${formatNumber(garbageStats.received)} lines
+${userSuffix}`),
 
--# [${escapeUnderscores(replay.users[0].username).toUpperCase()}](https://ch.tetr.io/u/${replay.users[0].username}) ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}
-`),
-
-                    new EmbedBuilder().setColor('#ffb980').setDescription(`### __[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id}) -> Full__
-- **Placed ${stats.piecesplaced} pieces**
-  - Held ${stats.holds} pieces
-  - Pressed ${stats.inputs} inputs
-    - ⇊ ${inputCounts.hardDrop} | ⇃ ${inputCounts.softDrop} | ⇄ ${inputCounts.hold}
-    - ← ${inputCounts.moveLeft} | → ${inputCounts.moveRight}
-    - ↶ ${inputCounts.rotateCCW} | ↷ ${inputCounts.rotateCW} | ⟳ ${inputCounts.rotate180}
-  - ${handling.arr}F ARR | ${handling.das}F DAS | ${handling.sdf === 41 ? "∞" : handling.sdf}x SDF
-- **Cleared ${stats.lines} lines**
-  - ${stats.clears.singles} singles (${stats.clears.tspinsingles ?? 0} spins) 
-  - ${stats.clears.doubles} doubles (${stats.clears.tspindoubles ?? 0} spins) 
-  - ${stats.clears.triples} triples (${stats.clears.tspintriples ?? 0} spins)
-  - ${stats.clears.quads} quads
+                new EmbedBuilder().setColor('#ffb980').setDescription(`### __${replayLinkFormat} -> Full__
+${inputCountString}
 - **Sent ${formatNumber(garbageStats.sent)} garbage lines**
   - Recieved ${formatNumber(garbageStats.received)}
   - Cleared ${formatNumber(garbageStats.cleared)}
   - Generated ${formatNumber(garbageStats.attack)} total attack
-  - Sent a ${formatNumber(garbageStats.maxspike)} spike${finesse === -1 ? '' : `
-- **Had ${(finesse * 100).toFixed(2)}% finesse**
-  - Reached a ${stats.finesse.combo} chain
-  - Made ${stats.finesse.faults} faults
-  - Placed ${stats.finesse.perfectpieces} pieces perfectly`}
+  - Sent a ${formatNumber(garbageStats.maxspike)} spike
 - **Scored ${formatNumber(stats.score)} points**
   - Reached a ${stats.topcombo} combo
   - Reached a ${stats.topbtb} Back-to-Back chain
-
--# [${escapeUnderscores(replay.users[0].username).toUpperCase()}](https://ch.tetr.io/u/${replay.users[0].username}) ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}`),
-                    new EmbedBuilder().setColor('#ff80d9')
-                    .setDescription(`### __[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id}) -> Splits__
+${userSuffix}`),
+                new EmbedBuilder().setColor('#ff80d9')
+                .setDescription(`### __${replayLinkFormat} -> Splits__
 ${splitFormat(zenithStats.splits)}
--# [${escapeUnderscores(replay.users[0].username).toUpperCase()}](https://ch.tetr.io/u/${replay.users[0].username}) ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}                        `),
-                    new EmbedBuilder().setColor('#80ffc4').setDescription(`### __[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id}) -> Performance__${disclamer}
-${perfStatBlock}
--# [${escapeUnderscores(replay.users[0].username).toUpperCase()}](https://ch.tetr.io/u/${replay.users[0].username}) ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}`),
-                ]
-                
-                //initial row of buttons
-                row = new ActionRowBuilder().addComponents(
-                    new ButtonBuilder()
-                        .setCustomId('replaypage_0')
-                        .setLabel('Overview')
-                        .setStyle(ButtonStyle.Primary)
-                        .setDisabled(true), //disable the first button initially
-                    new ButtonBuilder()
-                        .setCustomId('replaypage_1')
-                        .setLabel('Full')
-                        .setStyle(ButtonStyle.Primary),
-                    new ButtonBuilder()
-                        .setCustomId('replaypage_2')
-                        .setLabel('Splits')
-                        .setStyle(ButtonStyle.Primary),
-                    new ButtonBuilder()
-                        .setCustomId('replaypage_3')
-                        .setLabel('Performance')
-                        .setStyle(ButtonStyle.Primary)
-                );
-            } else if (replay.gamemode === '40l') {
+${userSuffix}`),
+            ]
+            
+            //initial row of buttons
+            row = new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                    .setCustomId('replaypage_0')
+                    .setLabel('Overview')
+                    .setStyle(ButtonStyle.Primary)
+                    .setDisabled(true), //disable the first button initially
+                new ButtonBuilder()
+                    .setCustomId('replaypage_1')
+                    .setLabel('Full')
+                    .setStyle(ButtonStyle.Primary),
+                new ButtonBuilder()
+                    .setCustomId('replaypage_2')
+                    .setLabel('Splits')
+                    .setStyle(ButtonStyle.Primary),
+                new ButtonBuilder()
+                    .setCustomId('replaypage_3')
+                    .setLabel('Performance')
+                    .setStyle(ButtonStyle.Primary)
+            );
+        } else if (replay.gamemode === '40l') {
 
-                // silly performance stuff idk
-                const time = replayStats.finaltime;
-                const pps = replayData.results.aggregatestats.pps;
-                const kpp = replayStats.inputs / replayStats.piecesplaced;
-                const kps = replayStats.inputs / (time / 1000);
+            // silly performance stuff idk
+            const time = replayStats.finaltime;
+            const pps = replayData.results.aggregatestats.pps;
+            const kpp = replayStats.inputs / replayStats.piecesplaced;
+            const kps = replayStats.inputs / (time / 1000);
 
-                // the function will just skip the "compared to [rank]" line.
-                const effectiveRank = null; // or whatever idk
+            performanceStrings.push(await buildReplayStatComparisonString(
+                'sprint/time',
+                'Time',
+                time,
+                effectiveRank,
+                { lowerIsBetter: true, isTime: true }
+            ));
 
-                let timeString = "";
-                let ppsString = "";
-                let kppString = "";
-                let kpsString = "";
-                let finesseString = "";
+            performanceStrings.push(await buildReplayStatComparisonString(
+                'sprint/pps',
+                'Pieces Per Second',       
+                pps,                      
+                effectiveRank,
+                { decimals: 3 }
+            ));
 
-                timeString = await buildReplayStatComparisonString(
-                    'sprint/time',              // same db key as in /performance
-                    'Time',
-                    time,
-                    effectiveRank,             // player baseline rank
-                    { lowerIsBetter: true, isTime: true }            // extras
-                );
+            performanceStrings.push(await buildReplayStatComparisonString(
+                'sprint/kpp',
+                'Keys Per Piece',
+                kpp,
+                effectiveRank,
+                { decimals: 3 }
+            ));
 
-                ppsString = await buildReplayStatComparisonString(
-                    'sprint/pps',              // same db key as in /performance
-                    'Pieces Per Second',       
-                    pps,                      
-                    effectiveRank,             // player baseline rank
-                    { decimals: 3 }            // extras
-                );
+            performanceStrings.push(await buildReplayStatComparisonString(
+                'sprint/kps',
+                'Keys Per Second',
+                kps,
+                effectiveRank,
+                { decimals: 3 }
+            ));
 
-                kppString = await buildReplayStatComparisonString(
-                    'sprint/kpp',              // same db key as in /performance
-                    'Keys Per Piece',
-                    kpp,
-                    effectiveRank,             // player baseline rank
-                    { decimals: 3 }            // extras
-                );
+            performanceStrings.push(await buildReplayStatComparisonString(
+                'sprint/finesse',
+                'Finesse',
+                finesse,
+                effectiveRank,
+                { decimals: 4, isPercentage: true }
+            ));
 
-                kpsString = await buildReplayStatComparisonString(
-                    'sprint/kps',              // same db key as in /performance
-                    'Keys Per Second',
-                    kps,
-                    effectiveRank,             // player baseline rank
-                    { decimals: 3 }            // extras
-                );
-
-                finesseString = await buildReplayStatComparisonString(
-                    'sprint/finesse',              // same db key as in /performance
-                    'Finesse',
-                    finesse,
-                    effectiveRank,             // player baseline rank
-                    { decimals: 4, isPercentage: true }            // extras
-                );
-
-                // build performance block without empty lines
-                const perfStatBlock = [timeString, ppsString, kppString, kpsString, finesseString]
-                    .filter(s => typeof s === 'string' ? s.trim().length > 0 : Boolean(s))
-                    .join('\n');
-
-                //full page
-                const handling = replayData.options.handling;
-
-                let inputCounts = {};
-                for (const h of ["hardDrop", "softDrop", "hold", "moveLeft", "moveRight", "rotateCW", "rotateCCW", "rotate180"]) inputCounts[h] = 0;
-                for (const frameEvent of replayData.events) {
-                    if (frameEvent.type === 'keydown') {
-                        inputCounts[frameEvent.data.key]++;
-                    }
-                }
-
-                pages = [
-                    new EmbedBuilder().setColor('#80ff80')
-                .setDescription(`### __[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id}) -> Overview__
+            pages = [
+                new EmbedBuilder().setColor('#80ff80')
+            .setDescription(`### __${replayLinkFormat} -> Overview__
 - **Finished in ${formatTime(time)}**
   - ${pps.toFixed(2)} PPS
   - ${kpp.toFixed(2)} Keys Per Piece
   - ${kps.toFixed(2)} Keys Per Second
-  - ${((finesse)*100).toFixed(2)}% Finesse | ${replayStats.finesse.faults} Faults
-
--# [${escapeUnderscores(replay.users[0].username).toUpperCase()}](https://ch.tetr.io/u/${replay.users[0].username}) ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}
+  - ${formatNumber(finesse * 100, 2)}% Finesse | ${replayStats.finesse.faults} Faults
+${userSuffix}
 `),
+                new EmbedBuilder().setColor('#ffb980').setDescription(`### __${replayLinkFormat} -> Full__
+${inputCountString}
+${userSuffix}`),
+            ]
+            
+            //initial row of buttons
+            row = new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                    .setCustomId('replaypage_0')
+                    .setLabel('Overview')
+                    .setStyle(ButtonStyle.Primary)
+                    .setDisabled(true), //disable the first button initially
+                new ButtonBuilder()
+                    .setCustomId('replaypage_1')
+                    .setLabel('Full')
+                    .setStyle(ButtonStyle.Primary),
+                new ButtonBuilder()
+                    .setCustomId('replaypage_2')
+                    .setLabel('Performance')
+                    .setStyle(ButtonStyle.Primary)
+            );
 
-                    new EmbedBuilder().setColor('#ffb980').setDescription(`### __[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id}) -> Full__
-- **Placed ${replayStats.piecesplaced} pieces**
-  - Held ${replayStats.holds} pieces
-  - Pressed ${replayStats.inputs} inputs
-    - ⇊ ${inputCounts.hardDrop} | ⇃ ${inputCounts.softDrop} | ⇄ ${inputCounts.hold}
-    - ← ${inputCounts.moveLeft} | → ${inputCounts.moveRight}
-    - ↶ ${inputCounts.rotateCCW} | ↷ ${inputCounts.rotateCW} | ⟳ ${inputCounts.rotate180}
-  - ${handling.arr}F ARR | ${handling.das}F DAS | ${handling.sdf === 41 ? "∞" : handling.sdf}x SDF
-- **Cleared ${replayStats.lines} lines**
-  - ${replayStats.clears.singles} singles (${replayStats.clears.tspinsingles ?? 0} spins) 
-  - ${replayStats.clears.doubles} doubles (${replayStats.clears.tspindoubles ?? 0} spins) 
-  - ${replayStats.clears.triples} triples (${replayStats.clears.tspintriples ?? 0} spins)
-  - ${replayStats.clears.quads} quads${finesse === -1 ? '' : `
-- **Had ${(finesse * 100).toFixed(2)}% finesse**
-  - Reached a ${replayStats.finesse.combo} chain
-  - Made ${replayStats.finesse.faults} faults
-  - Placed ${replayStats.finesse.perfectpieces} pieces perfectly`}
+        } else if (replay.gamemode === 'blitz') {
+            const score = replayStats.score;
+            const pps = replayData.results.aggregatestats.pps;
+            const spp = score / replayStats.piecesplaced;
 
--# [${escapeUnderscores(replay.users[0].username).toUpperCase()}](https://ch.tetr.io/u/${replay.users[0].username}) ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}`),
-                    new EmbedBuilder().setColor('#80ffc4').setDescription(`### __[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id}) -> Performance__
-${perfStatBlock}
--# [${escapeUnderscores(replay.users[0].username).toUpperCase()}](https://ch.tetr.io/u/${replay.users[0].username}) ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}`),
-                ]
-                
-                //initial row of buttons
-                row = new ActionRowBuilder().addComponents(
-                    new ButtonBuilder()
-                        .setCustomId('replaypage_0')
-                        .setLabel('Overview')
-                        .setStyle(ButtonStyle.Primary)
-                        .setDisabled(true), //disable the first button initially
-                    new ButtonBuilder()
-                        .setCustomId('replaypage_1')
-                        .setLabel('Full')
-                        .setStyle(ButtonStyle.Primary),
-                    new ButtonBuilder()
-                        .setCustomId('replaypage_2')
-                        .setLabel('Performance')
-                        .setStyle(ButtonStyle.Primary)
-                );
+            performanceStrings.push(await buildReplayStatComparisonString(
+                'blitz/score',
+                'Score',
+                score,
+                effectiveRank,
+                { decimals: 0 }
+            ));
 
-            } else if (replay.gamemode === 'blitz') {
-                const score = replayStats.score;
-                const pps = replayData.results.aggregatestats.pps;
-                const spp = score / replayStats.piecesplaced;
+            performanceStrings.push(await buildReplayStatComparisonString(
+                'blitz/pps',
+                'Pieces Per Second',
+                pps,                      
+                effectiveRank,
+                { decimals: 3 }
+            ));
 
-                // the function will just skip the "compared to [rank]" line.
-                const effectiveRank = null; // or whatever idk
-
-                let scoreString = "";
-                let ppsString = "";
-                let sppString = "";
-                let finesseString = "";
-
-                scoreString = await buildReplayStatComparisonString(
-                    'blitz/score',              // same db key as in /performance
-                    'Score',
-                    score,
-                    effectiveRank,             // player baseline rank
-                    { decimals: 0 }            // extras
-                );
-
-                ppsString = await buildReplayStatComparisonString(
-                    'blitz/pps',              // same db key as in /performance
-                    'Pieces Per Second',
-                    pps,                      
-                    effectiveRank,             // player baseline rank
-                    { decimals: 3 }            // extras
-                );
-
-                sppString = await buildReplayStatComparisonString(
-                    'blitz/spp',              // same db key as in /performance
-                    'Score Per Piece',
-                    spp,
-                    effectiveRank,             // player baseline rank
-                    { decimals: 2 }            // extras
-                );
+            performanceStrings.push(await buildReplayStatComparisonString(
+                'blitz/spp',
+                'Score Per Piece',
+                spp,
+                effectiveRank,
+                { decimals: 2 }
+            ));
 
 
-                finesseString = await buildReplayStatComparisonString(
-                    'blitz/finesse',              // same db key as in /performance
-                    'Finesse',
-                    finesse,
-                    effectiveRank,             // player baseline rank
-                    { decimals: 4, isPercentage: true }            // extras
-                );
+            performanceStrings.push(await buildReplayStatComparisonString(
+                'blitz/finesse',
+                'Finesse',
+                finesse,
+                effectiveRank,
+                { decimals: 4, isPercentage: true }
+            ));
 
-                // build performance block without empty lines
-                const perfStatBlock = [scoreString, ppsString, sppString, finesseString]
-                    .filter(s => typeof s === 'string' ? s.trim().length > 0 : Boolean(s))
-                    .join('\n');
-
-                //full page
-                const handling = replayData.options.handling;
-
-                let inputCounts = {};
-                for (const h of ["hardDrop", "softDrop", "hold", "moveLeft", "moveRight", "rotateCW", "rotateCCW", "rotate180"]) inputCounts[h] = 0;
-                for (const frameEvent of replayData.events) {
-                    if (frameEvent.type === 'keydown') {
-                        inputCounts[frameEvent.data.key]++;
-                    }
-                }
-
-                pages = [
-                    new EmbedBuilder().setColor('#80ff80')
-                .setDescription(`### __[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id}) -> Overview__
+            pages = [
+                new EmbedBuilder().setColor('#80ff80')
+            .setDescription(`### __${replayLinkFormat} -> Overview__
 - **Scored ${formatNumber(score)} points**
   - ${pps.toFixed(2)} PPS
   - ${spp.toFixed(2)} Points Per Piece
-  - ${((finesse)*100).toFixed(2)}% Finesse | ${replayStats.finesse.faults} Faults
-
--# [${escapeUnderscores(replay.users[0].username).toUpperCase()}](https://ch.tetr.io/u/${replay.users[0].username}) ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}
+  - ${formatNumber(finesse * 100, 2)}% Finesse | ${replayStats.finesse.faults} Faults
+${userSuffix}
 `),
 
-                    new EmbedBuilder().setColor('#ffb980').setDescription(`### __[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id}) -> Full__
-- **Placed ${replayStats.piecesplaced} pieces**
-  - Held ${replayStats.holds} pieces
-  - Pressed ${replayStats.inputs} inputs
-    - ⇊ ${inputCounts.hardDrop} | ⇃ ${inputCounts.softDrop} | ⇄ ${inputCounts.hold}
-    - ← ${inputCounts.moveLeft} | → ${inputCounts.moveRight}
-    - ↶ ${inputCounts.rotateCCW} | ↷ ${inputCounts.rotateCW} | ⟳ ${inputCounts.rotate180}
-  - ${handling.arr}F ARR | ${handling.das}F DAS | ${handling.sdf === 41 ? "∞" : handling.sdf}x SDF
-- **Cleared ${replayStats.lines} lines**
-  - ${replayStats.clears.singles} singles (${replayStats.clears.tspinsingles ?? 0} spins) 
-  - ${replayStats.clears.doubles} doubles (${replayStats.clears.tspindoubles ?? 0} spins) 
-  - ${replayStats.clears.triples} triples (${replayStats.clears.tspintriples ?? 0} spins)
-  - ${replayStats.clears.quads} quads${finesse === -1 ? '' : `
-- **Had ${(finesse * 100).toFixed(2)}% finesse**
-  - Reached a ${replayStats.finesse.combo} chain
-  - Made ${replayStats.finesse.faults} faults
-  - Placed ${replayStats.finesse.perfectpieces} pieces perfectly`}
-
--# [${escapeUnderscores(replay.users[0].username).toUpperCase()}](https://ch.tetr.io/u/${replay.users[0].username}) ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}`),
-                    new EmbedBuilder().setColor('#80ffc4').setDescription(`### __[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id}) -> Performance__
-${perfStatBlock}
--# [${escapeUnderscores(replay.users[0].username).toUpperCase()}](https://ch.tetr.io/u/${replay.users[0].username}) ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}`),
-                ]
-                
-                //initial row of buttons
-                row = new ActionRowBuilder().addComponents(
-                    new ButtonBuilder()
-                        .setCustomId('replaypage_0')
-                        .setLabel('Overview')
-                        .setStyle(ButtonStyle.Primary)
-                        .setDisabled(true), //disable the first button initially
-                    new ButtonBuilder()
-                        .setCustomId('replaypage_1')
-                        .setLabel('Full')
-                        .setStyle(ButtonStyle.Primary),
-                    new ButtonBuilder()
-                        .setCustomId('replaypage_2')
-                        .setLabel('Performance')
-                        .setStyle(ButtonStyle.Primary)
-                );                
-            } else {
-                return interaction.editReply({content: 'This type of replay file has not been accounted for yet, please contact the developers if you believe this is a mistake.'})
-            }
-
-            //send the initial message with the first page and buttons
-            await interaction.editReply({
-                embeds: [pages[0]],
-                components: [row]
-            });
-
-            //attach pages to the interaction for future reference
-            interaction.client.pageData = {
-                [interaction.id]: {
-                    pages,
-                    currentPage: 0
-                }
-            };
+                new EmbedBuilder().setColor('#ffb980').setDescription(`### __${replayLinkFormat} -> Full__
+${inputCountString}
+${userSuffix}`),
+            ]
             
-        } catch (error) {
-            console.error('Error analyzing replay:', error);
-            return interaction.editReply({ content: 'An error occurred while analyzing the replay. Please ensure it is a valid .ttr file.' });
+            //initial row of buttons
+            row = new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                    .setCustomId('replaypage_0')
+                    .setLabel('Overview')
+                    .setStyle(ButtonStyle.Primary)
+                    .setDisabled(true), //disable the first button initially
+                new ButtonBuilder()
+                    .setCustomId('replaypage_1')
+                    .setLabel('Full')
+                    .setStyle(ButtonStyle.Primary),
+                new ButtonBuilder()
+                    .setCustomId('replaypage_2')
+                    .setLabel('Performance')
+                    .setStyle(ButtonStyle.Primary)
+            );                
+        } else {
+            return interaction.editReply({content: 'This type of replay file has not been accounted for yet, please contact the developers if you believe this is a mistake.'})
         }
+
+        const perfStatBlock = performanceStrings
+                .filter(s => typeof s === 'string' ? s.trim().length > 0 : Boolean(s))
+                .join('\n');
+        
+        pages.push(
+            new EmbedBuilder()
+            .setColor('#80ffc4')
+            .setDescription(`### __${replayLinkFormat} -> Performance__${performanceDisclaimer}
+${perfStatBlock}
+${userSuffix}`));
+
+        //send the initial message with the first page and buttons
+        await interaction.editReply({
+            embeds: [pages[0]],
+            components: [row]
+        });
+
+        //attach pages to the interaction for future reference
+        interaction.client.pageData = {
+            [interaction.id]: {
+                pages,
+                currentPage: 0
+            }
+        };
     }
 };
 
@@ -697,6 +542,7 @@ async function getClosestRankForReplay(userValue, statKey, lowerIsBetter = false
 
 //this is probably bigger than i should make functions but oh well
 //next time ill split it up better
+// TODO test this function to make sure it actually works w/ the database (since i don't have a copy)
 async function buildReplayStatComparisonString(
     dbStatKey,
     statName,
