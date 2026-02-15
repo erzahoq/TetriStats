@@ -7,7 +7,7 @@ const { getEmoji } = require('../../helpers/emojis');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('achievement-info')
+        .setName('userachievements')
         .setContexts(InteractionContextType.BotDM, InteractionContextType.Guild, InteractionContextType.PrivateChannel)
         .setIntegrationTypes(ApplicationIntegrationType.UserInstall)
         .setDescription('Get information about a specific user\'s achievements via their TETR.IO (or Discord) username/ID.')
