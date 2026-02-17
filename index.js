@@ -4,10 +4,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { token } = require('./config.json');
 const { database } = require('./database.js');
-const { Op } = require('sequelize');
-const { initEmojis } = require('./helpers/emojis');
-const { getEmojiOfAch, escapeUnderscores, convertToTimeFormat, reformatTimestamp } = require('./helpers/functions');
-const { getEmoji } = require('./helpers/emojis');
+const { initEmojis, getEmoji } = require('./helpers/emojis');
+const { getEmojiOfAch, escapeUnderscores, convertToTimeFormat, reformatTimestamp, formatUsername } = require('./helpers/formatters');
 
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
@@ -423,10 +421,10 @@ function buildAchievementDetailEmbed(ach, listEmbed, username) {
     const lines = [];
 
     if (ach.rank != null) {
-        emoji = getEmojiOfAch(achievementMapping[ach['rank']]);
+        emoji = getEmoji("ach_" + achievementMapping[ach['rank']]);
     }
 
-    if (ach.category) lines.push(`### __[${escapeUnderscores(username.toUpperCase())}](https://ch.tetr.io/u/${username}) -> Achievements -> ${ach.name}__`);
+    if (ach.category) lines.push(`### __${formatUsername(username)} -> Achievements -> ${ach.name}__`);
 
     let achText = ""
 
@@ -440,7 +438,7 @@ function buildAchievementDetailEmbed(ach, listEmbed, username) {
     else if (ach.vt === 5) displayVal = `Obtained ${reformatTimestamp(-ach.v)}`
     else if (ach.vt === 6) displayVal = formatNumber(-Math.round(ach.v))
 
-    achText += `\n` + getEmojiOfAch(achievementMapping[ach['rank']])
+    achText += `\n` + getEmoji("ach_" + achievementMapping[ach['rank']])
 
     achText += ` **${displayVal}** ${ach['object']} \n` // show the main info
 
