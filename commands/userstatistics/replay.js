@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
 
-const { formatNumber, escapeUnderscores, countryCodeToEmoji, formatTime, getEmojiOfRank, getModCombos, formatISOString, formatUsername } = require('../../helpers/formatters');
+const { formatNumber, countryCodeToEmoji, formatTime, getEmojiOfRank, getModCombos, formatISOString, formatUsername } = require('../../helpers/formatters');
 const { getEmoji } = require('../../helpers/emojis');
 const { database } = require('../../database'); 
 

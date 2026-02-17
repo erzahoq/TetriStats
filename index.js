@@ -1,11 +1,13 @@
 // Require the necessary discord.js classes
-const { Client, Collection, Events, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, ActivityType, EmbedBuilder } = require('discord.js');
+const { Client, Collection, Events, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, ActivityType, EmbedBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder  } = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');
 const { token } = require('./config.json');
 const { database } = require('./database.js');
 const { Op } = require('sequelize');
 const { initEmojis } = require('./helpers/emojis');
+const { getEmojiOfAch, escapeUnderscores, convertToTimeFormat, reformatTimestamp } = require('./helpers/functions');
+const { getEmoji } = require('./helpers/emojis');
 
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
@@ -99,21 +101,76 @@ client.on(Events.InteractionCreate, async interaction => {
 				await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
 			}
 		}
-	} else if (interaction.isButton()) {
+	} else if (interaction.isStringSelectMenu()) {
+        const menuId = interaction.customId;
+
+        // Achievements dropdown
+        if (menuId.startsWith("achselect_")) {
+            const interactionId = menuId.split("achselect_")[1];
+            const pageData = interaction.client.pageData?.[interactionId];
+            if (!pageData) return;
+
+            const chosen = interaction.values?.[0];
+            if (!chosen || chosen === "achd_none") return;
+
+
+            const [, pageStr, itemStr] = chosen.split("_");
+            const pageIndex = Number(pageStr);
+            const itemIndex = Number(itemStr);
+
+            const ach = pageData.pageAchsByPageIndex?.[pageIndex]?.[itemIndex];
+            if (!ach) return;
+
+            // make sure not to forgor
+            pageData.view = "detail";
+            pageData.lastListPage = pageData.currentPage ?? 0;
+            pageData.currentPage = pageIndex;
+
+            const detailEmbed = buildAchievementDetailEmbed(ach, pageData.textPages?.[pageIndex], pageData.username);
+
+            const deleteRow = buildDeleteRow(interactionId, pageData.ownerId);
+
+            await interaction.reply({
+                embeds: [detailEmbed],
+                components: [deleteRow],
+            });
+        }
+    } else if (interaction.isButton()) {
         const buttonId = interaction.customId;
-        const interactionId = interaction.message.interaction.id;
+        const interactionId = interaction.message.interaction?.id;
 
         // Regexes
+        //very practical
         let profilePageRegex = /^profilepage_[0-2]$/;
         let topNewsRegex = /^topnewspage_[0-3]$/;
         let allNewsRegex = /^allnewspage_[0-3]$/;
         let achPageRegex = /^achpage_[0-9]$/;
+        let achBackRegex = /^achback_.+$/;
         let recordsPageRegex = /^recordspage_.*$/;
         let replayPageRegex = /^replaypage_[0-9]$/;
         let leaguePageRegex = /^leaguepage_\d+$/;
 
+        // Achievements back
+        if (achBackRegex.test(buttonId)) {
+            const storedInteractionId = buttonId.split("achback_")[1];
+            const pageData = interaction.client.pageData?.[storedInteractionId];
+            if (!pageData) return;
+
+            pageData.view = "list";
+            const backTo = (pageData.lastListPage ?? pageData.currentPage ?? 0);
+            pageData.currentPage = backTo;
+
+            const buttonRows = buildAchButtonRows(pageData, backTo);
+            const selectRow = buildAchSelectRow(storedInteractionId, backTo, pageData.pageAchsByPageIndex?.[backTo]);
+
+            await interaction.update({
+                embeds: [pageData.textPages[backTo]],
+                components: [...buttonRows, selectRow]
+            });
+        }
+
         // Profile pages
-        if (profilePageRegex.test(buttonId)) {
+        else if (profilePageRegex.test(buttonId)) {
             await handlePageButtons({
                 interaction, buttonId, interactionId,
                 prefix: 'profilepage',
@@ -142,24 +199,36 @@ client.on(Events.InteractionCreate, async interaction => {
         }
 
         // Achievements pages
+        // Achievements delete
+        else if (buttonId.startsWith("achdelete")) {
+            const ownerId = buttonId.split("_")[2];
+            if (interaction.user.id !== ownerId) {
+                //return await interaction.reply({ content: 'You cannot interact with this!', ephemeral: true });
+                //aysm
+            }
+
+            await interaction.deferUpdate();
+            await interaction.message.delete().catch(() => {}); // in case message already deleted by user, don't care about error
+            return;
+        }
+
+
         else if (achPageRegex.test(buttonId)) {
             const pageData = interaction.client.pageData?.[interactionId];
             if (!pageData) return;
             const newPageIndex = parseInt(buttonId.split('_')[1]);
-            for (let i = 0; i < pageData.buttons.length; i++) {
-                pageData.buttons[i].setDisabled(newPageIndex === i);
-            }
-            const rows = [];
-            for (let i = 0; i < pageData.buttons.length; i++) {
-                const rowind = Math.floor(i / 5);
-                rows[rowind] = i % 5 === 0 ? new ActionRowBuilder() : rows[rowind];
-                rows[rowind].addComponents(pageData.buttons[i]);
-            }
+
+            pageData.view = "list";
+            pageData.lastListPage = newPageIndex;
+            pageData.currentPage = newPageIndex;
+
+            const buttonRows = buildAchButtonRows(pageData, newPageIndex);
+            const selectRow = buildAchSelectRow(interactionId, newPageIndex, pageData.pageAchsByPageIndex?.[newPageIndex]);
+
             await interaction.update({
                 embeds: [pageData.textPages[newPageIndex]],
-                components: rows
+                components: [...buttonRows, selectRow]
             });
-            pageData.currentPage = newPageIndex;
         }
 
         // Top news pages
@@ -238,6 +307,7 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 });
 
+
 // When the client is ready, run this code (only once).
 // The distinction between `client: Client<boolean>` and `readyClient: Client<true>` is important for TypeScript developers.
 // It makes some properties non-nullable.
@@ -315,3 +385,154 @@ async function status() {
 
 // Then set the interval to repeat every 5 minutes
 setInterval(status, 300000);
+
+
+//achievement info stupid stuff (im sorry morky)
+function buildAchButtonRows(pageData, activeIndex) {
+    for (let i = 0; i < pageData.buttons.length; i++) {
+        pageData.buttons[i].setDisabled(activeIndex === i);
+    }
+
+    const rows = [];
+    for (let i = 0; i < pageData.buttons.length; i++) {
+        const rowind = Math.floor(i / 5);
+        rows[rowind] = i % 5 === 0 ? new ActionRowBuilder() : rows[rowind];
+        rows[rowind].addComponents(pageData.buttons[i]);
+    }
+    return rows;
+}
+
+function buildAchievementDetailEmbed(ach, listEmbed, username) {
+    console.log(ach)
+
+    const achievementMapping = {
+        100: 'issued',
+        1: 'bronze',
+        2: 'silver',
+        3: 'gold',
+        4: 'platinum',
+        5: 'diamond'
+    };
+
+
+    const e = new EmbedBuilder().setColor(listEmbed.data.color || 'ffffff');
+    if (listEmbed?.data?.color) {
+        e.setColor(listEmbed.data.color);
+    }
+
+    const lines = [];
+
+    if (ach.rank != null) {
+        emoji = getEmojiOfAch(achievementMapping[ach['rank']]);
+    }
+
+    if (ach.category) lines.push(`### __[${escapeUnderscores(username.toUpperCase())}](https://ch.tetr.io/u/${username}) -> Achievements -> ${ach.name}__`);
+
+    let achText = ""
+
+    //ok this is the same achtext shit
+    //format thing because api silly
+    let displayVal = formatNumber(Math.round(ach.v));
+    if (ach.vt === 2) displayVal = `${convertToTimeFormat(ach.v)}`
+    else if (ach.vt === 3) displayVal = `${convertToTimeFormat(-ach.v)}`
+    else if (ach.vt === 4) displayVal = `${formatNumber(Math.round((ach.v) * 100) / 100)}m (Floor ${Math.floor(ach.a)})`
+    else if (ach.name === "Guardian Angel") displayVal = `${formatNumber(Math.round((ach.v) * 100) / 100)}m` //fuck you OSK you bitch (jk we love you)
+    else if (ach.vt === 5) displayVal = `Obtained ${reformatTimestamp(-ach.v)}`
+    else if (ach.vt === 6) displayVal = formatNumber(-Math.round(ach.v))
+
+    achText += `\n` + getEmojiOfAch(achievementMapping[ach['rank']])
+
+    achText += ` **${displayVal}** ${ach['object']} \n` // show the main info
+
+    if (ach.nolb) { // if it's issued
+        achText += `Issue ${ach['pos']}/${ach['total']}` 
+    } else {
+        if (ach['pos'] < 100) { // if you're in the top 100 players
+            achText += `**#${ach['pos'] + 1}** in the world`
+        }
+        else if (ach['pos'] / ach['total'] < 0.01) { // if you're in the top 1%
+            achText += `**#${ach['pos'] + 1}** in the world (Top ${Math.round(ach['pos'] / ach['total'] * 100000) / 1000}%)` // literally just one extra point of precision
+        } 
+        else { // everything else
+            achText += `**#${ach['pos'] + 1}** in the world (Top ${Math.round(ach['pos'] / ach['total'] * 10000) / 100}%)`
+        }
+    }
+
+    //duo achievement
+    if (ach.x?.ally) {
+        let allyUsername = ach.x.ally.username;
+        achText += `\n With [${escapeUnderscores(allyUsername).toUpperCase()}](https://ch.tetr.io/u/${allyUsername})`;
+    }
+
+    //check for attributes and format
+    if (ach.art > -1) achText += "\n" //sorry
+    if (ach.art === 0) {
+        achText += `\n${getEmoji('au')} **UNRANKED** / This achievement does not contribute to your Achievement Rating.`
+    } else if (ach.art === 2) {
+        achText += `\n${getEmoji('ac')} **COMPETITIVE** / This achievement grants extra Achievement Rating to those who place in its Top 100 leaderboard.`
+    }
+    if (ach.hidden) {
+        achText += `\n${getEmoji('ah')} **HIDDEN** / This achievement is only visible to the worthy.`
+    }
+    if (ach.event) {
+        let eventName = ach.event;
+        let extraText = '';
+        if (ach.category === 'legacy') extraText = " It is no longer available."
+        achText += `\n${getEmoji('ae')} **EVENT** / This achievement was part of the ${eventName} event.${extraText}`;
+    }
+    // i didn't like this formatting it was ugly imo
+
+    if (ach.desc) {
+        achText += `\n\n-# *${ach.desc}*`;
+    }
+
+    lines.push(achText);
+
+    e.setDescription(lines.join('\n') || 'No extra info available.');
+
+    return e;
+}
+
+//these should be in a helper file but im lazy so
+function buildAchSelectRow(messageKey, pageIndex, pageAchs) {
+    const list = pageAchs ?? [];
+
+    const menu = new StringSelectMenuBuilder()
+        .setCustomId(`achselect_${messageKey}`)
+        .setMinValues(1)
+        .setMaxValues(1);
+
+    if (list.length === 0) {
+        menu
+            .setPlaceholder("No achievements on this page")
+            .setDisabled(true)
+            .addOptions(
+                new StringSelectMenuOptionBuilder()
+                    .setLabel("No achievements available")
+                    .setValue("achd_none")
+            );
+    } else {
+        const opts = list.slice(0, 25).map((ach, i) =>
+            new StringSelectMenuOptionBuilder()
+                .setLabel(ach.name.length > 100 ? ach.name.slice(0, 97) + "..." : ach.name)
+                .setValue(`achd_${pageIndex}_${i}`)
+        );
+
+        menu
+            .setPlaceholder("View an achievement…")
+            .setDisabled(false)
+            .addOptions(opts);
+    }
+
+    return new ActionRowBuilder().addComponents(menu);
+}
+
+
+function buildDeleteRow(interactionId, ownerId) {
+    return new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId(`achdelete_${interactionId}_${ownerId}`)
+            .setLabel("Delete")
+            .setStyle(ButtonStyle.Secondary)
+    );
+}

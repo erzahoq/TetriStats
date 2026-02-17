@@ -267,8 +267,8 @@ async function calculateRankAverages() {
         }
     }
     for (const ach of allAches) {
-        dbObjects.achievements[ach.name] = await database.LeagueStat.create({
-            stat: `achievements/${ach.name}`,
+        dbObjects.achievements[ach.n] = await database.LeagueStat.create({
+            stat: `achievements/${ach.n}`,
             statGroup: "achievements",
         });
     }
@@ -361,25 +361,25 @@ async function calculateRankAverages() {
             rankTotals.league.apm += userData.league.apm;
             
             for (const achievement of userData.achievements || []) {
-                if (!rankTotals.achievements[achievement.name]) {
-                    rankTotals.achievements[achievement.name] = 0;
-                    dataSeenCount.achievements[achievement.name] = 0;
+                if (!rankTotals.achievements[achievement.n]) {
+                    rankTotals.achievements[achievement.n] = 0;
+                    dataSeenCount.achievements[achievement.n] = 0;
                 }
 
                 if (achievement.rank === 100) {
                     // issued achievement; calculate for percentage instead
                     if (achievement.pos) {
-                        rankTotals.achievements[achievement.name]++;
+                        rankTotals.achievements[achievement.n]++;
                     }
 
-                    dataSeenCount.achievements[achievement.name]++;
+                    dataSeenCount.achievements[achievement.n]++;
                     continue;
                 }
 
                 if (!achievement.v) achievement.v = 0;
 
-                rankTotals.achievements[achievement.name] += achievement.v;
-                dataSeenCount.achievements[achievement.name] += 1;
+                rankTotals.achievements[achievement.n] += achievement.v;
+                dataSeenCount.achievements[achievement.n] += 1;
             }
         }
         

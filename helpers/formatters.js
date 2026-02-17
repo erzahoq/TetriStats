@@ -192,81 +192,150 @@ function getModCombos(mods) {
     }
 
     // no combo matched
-    return { emojis: emojis, mods: mods };
+    return { emojis: emojis, mods: mods};
 }
 
-function formatUsername(name, asLink = true) {
-    const formatted = escapeUnderscores(name.toUpperCase());
 
-    if (asLink) {
-        return `[${formatted}](https://ch.tetr.io/u/${formatted})`;
-    }
-    return formatted;
-}
+//this is probably bigger than i should make functions but oh well
+//next time ill split it up better
+async function buildReplayStatComparisonString(
+    dbStatKey,
+    statName,
+    statValue,
+    effectiveRank,
+    extras = { lowerIsBetter: false, isTime: false, decimals: 2, isPercentage: false }
+) {
+    if (statValue == null || !isFinite(Number(statValue))) return null;
 
-function formatAchievement(ach) {
-    const achievementMapping = {
-        100: 'issued',
-        1: 'bronze',
-        2: 'silver',
-        3: 'gold',
-        4: 'platinum',
-        5: 'diamond'
+    const lowerIsBetter = !!extras.lowerIsBetter;
+    const decimals = Number.isInteger(extras.decimals) ? extras.decimals : 2;
+
+    const delta = (x, ref) => (lowerIsBetter ? (ref - x) : (x - ref));
+
+    const fmtValue = (value) => {
+        if (extras.isTime) {
+            const seconds = value / 1000;
+            if (value >= 60000)
+                return `${Math.floor(seconds / 60)}:${(seconds % 60).toFixed(2).padStart(5, '0')}`;
+            return seconds.toFixed(2) + 's';
+        }
+
+        if (extras.isPercentage) return (value * 100).toFixed(2) + '%';
+        if (decimals === 0) return formatNumber(Math.round(value));
+
+        const decimalShift = 10 ** decimals;
+        return (
+            formatNumber(Math.floor(value)) +
+            '.' +
+            (Math.floor(value * decimalShift) % decimalShift)
+                .toString()
+                .padStart(decimals, '0')
+        );
     };
 
-    //format thing because api silly
-    let displayVal = formatNumber(Math.round(ach.v));
-    if (ach.vt === 2) displayVal = `${formatTime(ach.v)}`
-    else if (ach.vt === 3) displayVal = `${formatTime(-ach.v)}`
-    else if (ach.vt === 4) displayVal = `${formatNumber(ach.v, 2)}m (Floor ${Math.floor(ach.a)})`
-    else if (ach.name === "Guardian Angel") displayVal = `${formatNumber(ach.v, 2)}m` //fuck you OSK you bitch (jk we love you)
-    else if (ach.vt === 5) displayVal = `Obtained ${formatISOString(-ach.v)}`
-    else if (ach.vt === 6) displayVal = formatNumber(-Math.round(ach.v))
+    const fmtDelta = (deltaValue) => {
+        const sign = deltaValue > 0 ? '+' : deltaValue === 0 ? '±' : '';
 
-    achText = getEmoji('ach_' + achievementMapping[ach['rank']])
+        if (extras.isTime) return `${sign}${(deltaValue / 1000).toFixed(2)}s`;
+        if (extras.isPercentage) return `${sign}${(deltaValue * 100).toFixed(2)}%`;
+        if (decimals === 0) return `${sign}${formatNumber(Math.round(deltaValue))}`;
 
-    //check for attributes and format
-    if (ach.art === 0) {
-        achText += getEmoji('au')
-    } else if (ach.art === 2) {
-        achText += getEmoji('ac')
-    }
-    if (ach.hidden) {
-        achText += getEmoji('ah')
-    }
-    if (ach.event) {
-        achText += getEmoji('ae')
-    }
-    // i didn't like this formatting it was ugly imo
+        return `${sign}${Number(deltaValue).toFixed(decimals)}`;
+    };
 
-    achText += ` **${ach.name}** - **${displayVal}** ${ach.object}` // show the main info
+    //“around” rank for this stat
+    const avgRank = await getClosestRankForReplay(statValue, dbStatKey, lowerIsBetter);
+    const avgRankValue = replayStatRankData[dbStatKey][avgRank];
+    const deltaToAvg =
+        avgRankValue != null && isFinite(Number(avgRankValue))
+            ? delta(statValue, Number(avgRankValue))
+            : null;
 
-    if (ach.nolb) { // if it's issued
-        achText += ` (Issue ${ach.pos}/${ach.total})` 
+    //user’s baseline rank
+    let userRankLabel = null;
+    let userRankValue = null;
+
+    if (effectiveRank && effectiveRank !== 'z') {
+        userRankLabel = getEmojiOfRank(effectiveRank);
+        userRankValue = replayStatRankData[dbStatKey][effectiveRank];
     } else {
-        if (ach.pos < 100) { // if you're in the top 100 players
-            achText += ` (**#${ach.pos + 1}**)`
+        userRankLabel = 'Unranked';
+    }
+
+    const deltaToUser =
+        userRankValue != null && isFinite(Number(userRankValue))
+            ? delta(statValue, Number(userRankValue))
+            : null;
+
+    const displayValue = fmtValue(statValue);
+    const lines = [`**${displayValue} ${statName}**`];
+
+    const userRankLetter = effectiveRank || null;
+
+    // “around …” line (only if different from the user’s rank)
+    if (avgRank && deltaToAvg !== null && avgRank !== userRankLetter) {
+        lines.push(`- around ${getEmojiOfRank(avgRank)} (${fmtDelta(deltaToAvg)})`);
+    }
+
+    //“compared to [current rank]” line
+    if (userRankLabel !== 'Unranked') {
+        if (deltaToUser !== null) {
+            lines.push(`- ${fmtDelta(deltaToUser)} compared to ${userRankLabel}`);
+        } else {
+            lines.push(`- compared to ${userRankLabel}`);
         }
-        else if (ach.pos / ach.total < 0.01) { // if you're in the top 1%
-            achText += ` (Top ${formatNumber(100 * ach.pos / ach.total, 3)}%, #${ach.pos})` // literally just one extra point of precision
-        } 
-        else { // everything else
-            achText += ` (Top ${formatNumber(100 * ach.pos / ach.total, 2)}%)`
+    }
+
+    //“compared to next rank …” line
+    if (avgRank && avgRank !== 'x+') {
+        const order = Object.keys(replayStatRankData[dbStatKey]);
+        const avgIdx = order.findIndex((rk) => rk === avgRank);
+        const nextIdx = avgIdx >= 0 ? avgIdx + 1 : -1;
+        const nextRow = nextIdx >= 0 && nextIdx < order.length ? order[nextIdx] : null;
+        const isRedundant = nextRow && nextRow === userRankLetter;
+
+        if (nextRow && !isRedundant) {
+            const nextAvg = replayStatRankData[dbStatKey][nextRow];
+            if (nextAvg != null && isFinite(Number(nextAvg))) {
+                lines.push(
+                    `- ${fmtDelta(delta(statValue, Number(nextAvg)))} compared to next rank (${getEmojiOfRank(
+                        nextRow
+                    )})`
+                );
+            }
         }
     }
 
-    //duo achievement
-    if (ach.x.ally) {
-        let allyUsername = ach.x.ally.username;
-        achText += ` (With ${formatUsername(allyUsername)})`;
+    return lines.join('\n');
+}
+
+async function getClosestRankForReplay(userValue, statKey, lowerIsBetter = false) {
+    if (!replayStatRankData[statKey]) {
+        const row = await database.LeagueStat.findByPk(statKey);
+        // guard in case the DB returns nothing
+        replayStatRankData[statKey] = row?.values || {};
     }
 
-    if (ach.event) {
-        let eventName = ach.event;
-        achText += ` (${eventName})`
+    let bestRank = 'd';
+    let bestDiff = Infinity;
+
+    for (const [rank, value] of Object.entries(replayStatRankData[statKey])) {
+        if (!value) continue;
+        const diff = Math.abs(Number(userValue) - value);
+
+        if (diff < bestDiff) {
+            bestRank = rank;
+            bestDiff = diff;
+        } else if (diff === bestDiff) {
+            // tie-breaker: bias toward the “better” rank
+            const better =
+                (!lowerIsBetter && value > replayStatRankData[statKey][bestRank]) ||
+                (lowerIsBetter && value < replayStatRankData[statKey][bestRank]);
+            if (better) bestRank = rank;
+        }
     }
 
-    return achText;
+    return bestRank;
 }
 
 module.exports = {
@@ -281,6 +350,8 @@ module.exports = {
     capitalizeFirstLetter,
     getLeagueRankColour,
     getModCombos,
+    buildReplayStatComparisonString,
+    getClosestRankForReplay,
     formatUsername,
     formatAchievement
 }
