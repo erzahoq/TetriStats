@@ -1,5 +1,5 @@
 // Require the necessary discord.js classes
-const { Client, Collection, Events, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, ActivityType, EmbedBuilder } = require('discord.js');
+const { Client, Collection, Events, GatewayIntentBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, ActivityType, EmbedBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder  } = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');
 const { token } = require('./config.json');
@@ -99,7 +99,42 @@ client.on(Events.InteractionCreate, async interaction => {
 				await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
 			}
 		}
-	} else if (interaction.isButton()) {
+	} else if (interaction.isStringSelectMenu()) {
+        const menuId = interaction.customId;
+
+        // Achievements dropdown
+        if (menuId.startsWith("achselect_")) {
+            const interactionId = menuId.split("achselect_")[1];
+            const pageData = interaction.client.pageData?.[interactionId];
+            if (!pageData) return;
+
+            const chosen = interaction.values?.[0];
+            if (!chosen?.startsWith("achd_")) return;
+
+            const [, pageStr, itemStr] = chosen.split("_");
+            const pageIndex = Number(pageStr);
+            const itemIndex = Number(itemStr);
+
+            const ach = pageData.pageAchsByPageIndex?.[pageIndex]?.[itemIndex];
+            if (!ach) return;
+
+            // make sure not to forgor
+            pageData.view = "detail";
+            pageData.lastListPage = pageData.currentPage ?? 0;
+            pageData.currentPage = pageIndex;
+
+            const detailEmbed = buildAchievementDetailEmbed(ach, pageData.textPages?.[pageIndex]);
+
+            const buttonRows = buildAchButtonRows(pageData, pageIndex);
+            const selectRow = buildAchSelectRow(interactionId, pageIndex, pageData.pageAchsByPageIndex?.[pageIndex]);
+            const backRow = buildBackRow(interactionId);
+
+            await interaction.update({
+                embeds: [detailEmbed],
+                components: [...buttonRows, selectRow, backRow],
+            });
+        }
+    } else if (interaction.isButton()) {
         const buttonId = interaction.customId;
         const interactionId = interaction.message.interaction.id;
 
@@ -108,12 +143,32 @@ client.on(Events.InteractionCreate, async interaction => {
         let topNewsRegex = /^topnewspage_[0-3]$/;
         let allNewsRegex = /^allnewspage_[0-3]$/;
         let achPageRegex = /^achpage_[0-9]$/;
+        let achBackRegex = /^achback_.+$/;
         let recordsPageRegex = /^recordspage_.*$/;
         let replayPageRegex = /^replaypage_[0-9]$/;
         let leaguePageRegex = /^leaguepage_\d+$/;
 
+        // Achievements back
+        if (achBackRegex.test(buttonId)) {
+            const storedInteractionId = buttonId.split("achback_")[1];
+            const pageData = interaction.client.pageData?.[storedInteractionId];
+            if (!pageData) return;
+
+            pageData.view = "list";
+            const backTo = (pageData.lastListPage ?? pageData.currentPage ?? 0);
+            pageData.currentPage = backTo;
+
+            const buttonRows = buildAchButtonRows(pageData, backTo);
+            const selectRow = buildAchSelectRow(storedInteractionId, backTo, pageData.pageAchsByPageIndex?.[backTo]);
+
+            await interaction.update({
+                embeds: [pageData.textPages[backTo]],
+                components: [...buttonRows, selectRow]
+            });
+        }
+
         // Profile pages
-        if (profilePageRegex.test(buttonId)) {
+        else if (profilePageRegex.test(buttonId)) {
             await handlePageButtons({
                 interaction, buttonId, interactionId,
                 prefix: 'profilepage',
@@ -146,20 +201,18 @@ client.on(Events.InteractionCreate, async interaction => {
             const pageData = interaction.client.pageData?.[interactionId];
             if (!pageData) return;
             const newPageIndex = parseInt(buttonId.split('_')[1]);
-            for (let i = 0; i < pageData.buttons.length; i++) {
-                pageData.buttons[i].setDisabled(newPageIndex === i);
-            }
-            const rows = [];
-            for (let i = 0; i < pageData.buttons.length; i++) {
-                const rowind = Math.floor(i / 5);
-                rows[rowind] = i % 5 === 0 ? new ActionRowBuilder() : rows[rowind];
-                rows[rowind].addComponents(pageData.buttons[i]);
-            }
+
+            pageData.view = "list";
+            pageData.lastListPage = newPageIndex;
+            pageData.currentPage = newPageIndex;
+
+            const buttonRows = buildAchButtonRows(pageData, newPageIndex);
+            const selectRow = buildAchSelectRow(interactionId, newPageIndex, pageData.pageAchsByPageIndex?.[newPageIndex]);
+
             await interaction.update({
                 embeds: [pageData.textPages[newPageIndex]],
-                components: rows
+                components: [...buttonRows, selectRow]
             });
-            pageData.currentPage = newPageIndex;
         }
 
         // Top news pages
@@ -238,6 +291,7 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 });
 
+
 // When the client is ready, run this code (only once).
 // The distinction between `client: Client<boolean>` and `readyClient: Client<true>` is important for TypeScript developers.
 // It makes some properties non-nullable.
@@ -315,3 +369,91 @@ async function status() {
 
 // Then set the interval to repeat every 5 minutes
 setInterval(status, 300000);
+
+
+//achievement info stupid stuff (im sorry morky)
+function buildAchButtonRows(pageData, activeIndex) {
+    for (let i = 0; i < pageData.buttons.length; i++) {
+        pageData.buttons[i].setDisabled(activeIndex === i);
+    }
+
+    const rows = [];
+    for (let i = 0; i < pageData.buttons.length; i++) {
+        const rowind = Math.floor(i / 5);
+        rows[rowind] = i % 5 === 0 ? new ActionRowBuilder() : rows[rowind];
+        rows[rowind].addComponents(pageData.buttons[i]);
+    }
+    return rows;
+}
+
+function buildAchievementDetailEmbed(ach, listEmbed) {
+    const e = new EmbedBuilder().setTitle(ach.name);
+
+    if (listEmbed?.data?.color) {
+        e.setColor(listEmbed.data.color);
+    }
+
+    const lines = [];
+
+    if (ach.category) lines.push(`**Category:** ${ach.category}`);
+
+    if (ach.rank != null) {
+        const rankMap = { 100: 'issued', 1: 'bronze', 2: 'silver', 3: 'gold', 4: 'platinum', 5: 'diamond' };
+        lines.push(`**Rank:** ${rankMap[ach.rank] ?? ach.rank}`);
+    }
+
+    if (ach.object) lines.push(`**Object:** ${ach.object}`);
+
+    if (ach.nolb) {
+        if (ach.pos != null && ach.total != null) {
+            lines.push(`**Issue:** ${ach.pos}/${ach.total}`);
+        }
+    } else {
+        if (ach.pos != null && ach.total != null) {
+            lines.push(`**Leaderboard:** #${ach.pos + 1} / ${ach.total}`);
+        }
+    }
+
+    if (ach.event) lines.push(`**Event:** ${ach.event}`);
+
+    if (ach.x?.ally?.username) {
+        lines.push(`**Ally:** ${ach.x.ally.username}`);
+    }
+
+    e.setDescription(lines.join('\n') || 'No extra info available.');
+
+    return e;
+}
+
+//these should be in a helper file but im lazy so
+function buildAchSelectRow(messageKey, pageIndex, pageAchs) {
+    const opts = (pageAchs ?? []).slice(0, 25).map((ach, i) => {
+        //value encodes which page + which item
+        return new StringSelectMenuOptionBuilder()
+            .setLabel(ach.name.length > 100 ? ach.name.slice(0, 97) + "..." : ach.name)
+            .setValue(`achd_${pageIndex}_${i}`);
+    });
+
+    //if no achievements on this page, disable menu
+    const menu = new StringSelectMenuBuilder()
+        .setCustomId(`achselect_${messageKey}`)
+        .setPlaceholder(opts.length ? "View an achievement…" : "No achievements on this page")
+        .setMinValues(1)
+        .setMaxValues(1)
+        .setDisabled(opts.length === 0)
+
+    if (opts.length) {
+        menu.addOptions(opts);
+    }
+
+    return new ActionRowBuilder().addComponents(menu);
+}
+
+function buildBackRow(messageKey) {
+    return new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId(`achback_${messageKey}`)
+            .setLabel("Back")
+            .setStyle(ButtonStyle.Secondary)
+    );
+}

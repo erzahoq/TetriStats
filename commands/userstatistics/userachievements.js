@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, ComponentType, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
 import('node-fetch'); // Ensure 'node-fetch' is imported properly
 
 const { formatNumber, escapeUnderscores, getEmojiOfAch, reformatTimestamp, convertToTimeFormat } = require('../../helpers/functions');
@@ -52,8 +52,6 @@ module.exports = {
         }
         let categories = ["general", "league", "solo", "zenith", "legacy", "event"];
         let achList = {};
-        let achDisplays = {};
-        let pages = {};
 
         const colourMapping = {
             "general": "#6dc971",
@@ -75,50 +73,59 @@ module.exports = {
                 }
                 achList[achievement.category].push(achievement);
             }
-
         });
 
-        // loop thru each category
-        categories.forEach(cat => {
-            if (achList[cat]) { // if the achievement list exists
-                var list = formatAchievementListText(achList[cat]);
-                var ind = 0;
-                list.forEach(text => { // go through each var in list and change the displays
-                    achDisplays[`${cat}${ind}`] = text;
-                    ind++;
-                })
-                pages[cat] = ind;
-            } else {
-                if (cat === "event") return; // no text or button if no event achievements
-                achDisplays[`${cat}0`] = `${getEmoji("ach_none")} No ${cat} achievements unlocked yet... :(`
-            }
-        })
-
         let textPages = []
+        let pageAchsByPageIndex = []
         let buttons = []
 
-        Object.entries(achDisplays).forEach(([curCat, text]) => {
-            let trimmedCat = curCat.replace(/\d+/, "")
+        categories.forEach(cat => {
+            if (achList[cat]) { // if the achievement list exists
+                const { pageTexts, pageAchs } = paginateAchievements(achList[cat]);
 
-            // create the embed and respective button
-            textPages.push(new EmbedBuilder()
-                .setColor(colourMapping[trimmedCat])
-                .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
-                .setDescription(`### __[${escapeUnderscores(username.toUpperCase())}](https://ch.tetr.io/u/${username}) -> Achievements -> ${catMap[trimmedCat]}__\n` + text)
-            )
+                for (let ind = 0; ind < pageTexts.length; ind++) {
+                    textPages.push(new EmbedBuilder()
+                        .setColor(colourMapping[cat])
+                        .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
+                        .setDescription(`### __[${escapeUnderscores(username.toUpperCase())}](https://ch.tetr.io/u/${username}) -> Achievements -> ${catMap[cat]}__\n` + pageTexts[ind])
+                    )
 
-            let button = new ButtonBuilder()
-                .setCustomId(`achpage_${buttons.length}`)
-                .setLabel(`${catMap[trimmedCat]}`)
-                .setStyle(ButtonStyle.Primary)
-            if (buttons.length === 0) {
-                button.setDisabled(true)
+                    pageAchsByPageIndex.push(pageAchs[ind] ?? []);
+
+                    let button = new ButtonBuilder()
+                        .setCustomId(`achpage_${buttons.length}`)
+                        .setLabel(`${catMap[cat]}`)
+                        .setStyle(ButtonStyle.Primary)
+
+                    if (buttons.length === 0) {
+                        button.setDisabled(true)
+                    }
+                    if (pageTexts.length > 1) {
+                        button.setLabel(`${catMap[cat]} (${ind + 1})`)
+                    }
+
+                    buttons.push(button)
+                }
+            } else {
+                if (cat === "event") return; // no text or button if no event achievements
+                textPages.push(new EmbedBuilder()
+                    .setColor(colourMapping[cat])
+                    .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
+                    .setDescription(`### __[${escapeUnderscores(username.toUpperCase())}](https://ch.tetr.io/u/${username}) -> Achievements -> ${catMap[cat]}__\n` + `${getEmoji("ach_none")} No ${cat} achievements unlocked yet... :(`)
+                )
+                pageAchsByPageIndex.push([]);
+
+                let button = new ButtonBuilder()
+                    .setCustomId(`achpage_${buttons.length}`)
+                    .setLabel(`${catMap[cat]}`)
+                    .setStyle(ButtonStyle.Primary)
+
+                if (buttons.length === 0) {
+                    button.setDisabled(true)
+                }
+
+                buttons.push(button)
             }
-            if (pages[trimmedCat] > 1) {
-                button.setLabel(`${catMap[trimmedCat]} (${parseInt(curCat.match(/\d+/)) + 1})`)
-            }
-
-            buttons.push(button)
         })
 
         // Initial row of buttons
@@ -129,17 +136,24 @@ module.exports = {
             rows[rowind].addComponents(buttons[i])
         }
 
+        const messageKey = interaction.id;
+        const selectRow = buildAchSelectRow(messageKey, 0, pageAchsByPageIndex[0]);
+
         // Send the initial message with the first page and buttons
         await interaction.editReply({
             embeds: [textPages[0]],
-            components: rows
+            components: [...rows, selectRow]
         });
 
         // Attach pages to the interaction for future reference
         interaction.client.pageData = {
+            ...(interaction.client.pageData ?? {}),
             [interaction.id]: {
                 textPages,
+                pageAchsByPageIndex,
                 currentPage: 0,
+                view: "list",
+                lastListPage: 0,
                 buttons
             }
         };
@@ -159,7 +173,7 @@ function sortByAchievementRank(items) {
     return items.sort((a, b) => sortOrder[a.rank] - sortOrder[b.rank]);
 }
 
-function formatAchievementListText(achlist) {
+function paginateAchievements(achlist) {
     const achievementMapping = {
         100: 'issued',
         1: 'bronze',
@@ -169,17 +183,23 @@ function formatAchievementListText(achlist) {
         5: 'diamond'
     };
 
-    var allText = []
-    var achCount = 0;
-    const pageSize = 15
+    const pageSize = 15;
+    const pageTexts = [];
+    const pageAchs = [];
 
-    if (!achlist) return null;
+    if (!achlist) return {pageTexts: [], pageAchs: []};
 
-    // for every achievement...
-    achlist.forEach(ach => {
-        var achText = ""
+    for (let i = 0; i < achlist.length; i++) {
+        const ach = achlist[i];
+        const pageIndex = Math.floor(i / pageSize);
 
-        achCount++;
+        pageTexts[pageIndex] ??= "";
+        pageAchs[pageIndex] ??= [];
+        pageAchs[pageIndex].push(ach);
+
+        let achText = ""
+
+        //ok this is the same achtext shit
         //format thing because api silly
         let displayVal = formatNumber(Math.round(ach.v));
         if (ach.vt === 2) displayVal = `${convertToTimeFormat(ach.v)}`
@@ -222,21 +242,52 @@ function formatAchievementListText(achlist) {
         }
 
         //duo achievement
-        if (ach.x.ally) {
+        if (ach.x?.ally) {
             let allyUsername = ach.x.ally.username;
             achText += ` (With [${escapeUnderscores(allyUsername).toUpperCase()}](https://ch.tetr.io/u/${allyUsername}))`;
         }
 
+        //why is it like this i could just like do this in 1 line lmao but whatever
         if (ach.event) {
             let eventName = ach.event;
             achText += ` (${eventName})`
         }
 
-        // in case it's undefined, define as ""
-        allText[Math.floor(achCount / pageSize)] = allText[Math.floor(achCount / pageSize)] ?? "";
-        // push the achievement text
-        allText[Math.floor(achCount / pageSize)] += achText
+        pageTexts[pageIndex] += achText;
+    }
+
+    return {pageTexts, pageAchs};
+}
+
+
+function buildAchSelectRow(messageKey, pageIndex, pageAchs) {
+    const opts = (pageAchs ?? []).slice(0, 25).map((ach, i) => {
+        //value encodes which page + which item
+        return new StringSelectMenuOptionBuilder()
+            .setLabel(ach.name.length > 100 ? ach.name.slice(0, 97) + "..." : ach.name)
+            .setValue(`achd_${pageIndex}_${i}`);
     });
 
-    return allText;
+    //if no achievements on this page, disable menu
+    const menu = new StringSelectMenuBuilder()
+        .setCustomId(`achselect_${messageKey}`)
+        .setPlaceholder(opts.length ? "View an achievement…" : "No achievements on this page")
+        .setMinValues(1)
+        .setMaxValues(1)
+        .setDisabled(opts.length === 0)
+
+    if (opts.length) {
+        menu.addOptions(opts);
+    }
+
+    return new ActionRowBuilder().addComponents(menu);
+}
+
+function buildBackRow(messageKey) {
+    return new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId(`achback_${messageKey}`)
+            .setLabel("Back")
+            .setStyle(ButtonStyle.Secondary)
+    );
 }
