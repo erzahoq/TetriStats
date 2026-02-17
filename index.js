@@ -6,6 +6,8 @@ const { token } = require('./config.json');
 const { database } = require('./database.js');
 const { Op } = require('sequelize');
 const { initEmojis } = require('./helpers/emojis');
+const { getEmojiOfAch, escapeUnderscores, convertToTimeFormat, reformatTimestamp } = require('./helpers/functions');
+const { getEmoji } = require('./helpers/emojis');
 
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
@@ -109,7 +111,8 @@ client.on(Events.InteractionCreate, async interaction => {
             if (!pageData) return;
 
             const chosen = interaction.values?.[0];
-            if (!chosen?.startsWith("achd_")) return;
+            if (!chosen || chosen === "achd_none") return;
+
 
             const [, pageStr, itemStr] = chosen.split("_");
             const pageIndex = Number(pageStr);
@@ -123,22 +126,21 @@ client.on(Events.InteractionCreate, async interaction => {
             pageData.lastListPage = pageData.currentPage ?? 0;
             pageData.currentPage = pageIndex;
 
-            const detailEmbed = buildAchievementDetailEmbed(ach, pageData.textPages?.[pageIndex]);
+            const detailEmbed = buildAchievementDetailEmbed(ach, pageData.textPages?.[pageIndex], pageData.username);
 
-            const buttonRows = buildAchButtonRows(pageData, pageIndex);
-            const selectRow = buildAchSelectRow(interactionId, pageIndex, pageData.pageAchsByPageIndex?.[pageIndex]);
-            const backRow = buildBackRow(interactionId);
+            const deleteRow = buildDeleteRow(interactionId, pageData.ownerId);
 
-            await interaction.update({
+            await interaction.reply({
                 embeds: [detailEmbed],
-                components: [...buttonRows, selectRow, backRow],
+                components: [deleteRow],
             });
         }
     } else if (interaction.isButton()) {
         const buttonId = interaction.customId;
-        const interactionId = interaction.message.interaction.id;
+        const interactionId = interaction.message.interaction?.id;
 
         // Regexes
+        //very practical
         let profilePageRegex = /^profilepage_[0-2]$/;
         let topNewsRegex = /^topnewspage_[0-3]$/;
         let allNewsRegex = /^allnewspage_[0-3]$/;
@@ -197,6 +199,20 @@ client.on(Events.InteractionCreate, async interaction => {
         }
 
         // Achievements pages
+        // Achievements delete
+        else if (buttonId.startsWith("achdelete")) {
+            const ownerId = buttonId.split("_")[2];
+            if (interaction.user.id !== ownerId) {
+                //return await interaction.reply({ content: 'You cannot interact with this!', ephemeral: true });
+                //aysm
+            }
+
+            await interaction.deferUpdate();
+            await interaction.message.delete().catch(() => {}); // in case message already deleted by user, don't care about error
+            return;
+        }
+
+
         else if (achPageRegex.test(buttonId)) {
             const pageData = interaction.client.pageData?.[interactionId];
             if (!pageData) return;
@@ -386,39 +402,91 @@ function buildAchButtonRows(pageData, activeIndex) {
     return rows;
 }
 
-function buildAchievementDetailEmbed(ach, listEmbed) {
-    const e = new EmbedBuilder().setTitle(ach.name);
+function buildAchievementDetailEmbed(ach, listEmbed, username) {
+    console.log(ach)
 
+    const achievementMapping = {
+        100: 'issued',
+        1: 'bronze',
+        2: 'silver',
+        3: 'gold',
+        4: 'platinum',
+        5: 'diamond'
+    };
+
+
+    const e = new EmbedBuilder().setColor(listEmbed.data.color || 'ffffff');
     if (listEmbed?.data?.color) {
         e.setColor(listEmbed.data.color);
     }
 
     const lines = [];
 
-    if (ach.category) lines.push(`**Category:** ${ach.category}`);
-
     if (ach.rank != null) {
-        const rankMap = { 100: 'issued', 1: 'bronze', 2: 'silver', 3: 'gold', 4: 'platinum', 5: 'diamond' };
-        lines.push(`**Rank:** ${rankMap[ach.rank] ?? ach.rank}`);
+        emoji = getEmojiOfAch(achievementMapping[ach['rank']]);
     }
 
-    if (ach.object) lines.push(`**Object:** ${ach.object}`);
+    if (ach.category) lines.push(`### __[${escapeUnderscores(username.toUpperCase())}](https://ch.tetr.io/u/${username}) -> Achievements -> ${ach.name}__`);
 
-    if (ach.nolb) {
-        if (ach.pos != null && ach.total != null) {
-            lines.push(`**Issue:** ${ach.pos}/${ach.total}`);
-        }
+    let achText = ""
+
+    //ok this is the same achtext shit
+    //format thing because api silly
+    let displayVal = formatNumber(Math.round(ach.v));
+    if (ach.vt === 2) displayVal = `${convertToTimeFormat(ach.v)}`
+    else if (ach.vt === 3) displayVal = `${convertToTimeFormat(-ach.v)}`
+    else if (ach.vt === 4) displayVal = `${formatNumber(Math.round((ach.v) * 100) / 100)}m (Floor ${Math.floor(ach.a)})`
+    else if (ach.name === "Guardian Angel") displayVal = `${formatNumber(Math.round((ach.v) * 100) / 100)}m` //fuck you OSK you bitch (jk we love you)
+    else if (ach.vt === 5) displayVal = `Obtained ${reformatTimestamp(-ach.v)}`
+    else if (ach.vt === 6) displayVal = formatNumber(-Math.round(ach.v))
+
+    achText += `\n` + getEmojiOfAch(achievementMapping[ach['rank']])
+
+    achText += ` **${displayVal}** ${ach['object']} \n` // show the main info
+
+    if (ach.nolb) { // if it's issued
+        achText += `Issue ${ach['pos']}/${ach['total']}` 
     } else {
-        if (ach.pos != null && ach.total != null) {
-            lines.push(`**Leaderboard:** #${ach.pos + 1} / ${ach.total}`);
+        if (ach['pos'] < 100) { // if you're in the top 100 players
+            achText += `**#${ach['pos'] + 1}** in the world`
+        }
+        else if (ach['pos'] / ach['total'] < 0.01) { // if you're in the top 1%
+            achText += `**#${ach['pos'] + 1}** in the world (Top ${Math.round(ach['pos'] / ach['total'] * 100000) / 1000}%)` // literally just one extra point of precision
+        } 
+        else { // everything else
+            achText += `**#${ach['pos'] + 1}** in the world (Top ${Math.round(ach['pos'] / ach['total'] * 10000) / 100}%)`
         }
     }
 
-    if (ach.event) lines.push(`**Event:** ${ach.event}`);
-
-    if (ach.x?.ally?.username) {
-        lines.push(`**Ally:** ${ach.x.ally.username}`);
+    //duo achievement
+    if (ach.x?.ally) {
+        let allyUsername = ach.x.ally.username;
+        achText += `\n With [${escapeUnderscores(allyUsername).toUpperCase()}](https://ch.tetr.io/u/${allyUsername})`;
     }
+
+    //check for attributes and format
+    if (ach.art > -1) achText += "\n" //sorry
+    if (ach.art === 0) {
+        achText += `\n${getEmoji('au')} **UNRANKED** / This achievement does not contribute to your Achievement Rating.`
+    } else if (ach.art === 2) {
+        achText += `\n${getEmoji('ac')} **COMPETITIVE** / This achievement grants extra Achievement Rating to those who place in its Top 100 leaderboard.`
+    }
+    if (ach.hidden) {
+        achText += `\n${getEmoji('ah')} **HIDDEN** / This achievement is only visible to the worthy.`
+    }
+    if (ach.event) {
+        let eventName = ach.event;
+        let extraText = '';
+        if (ach.category === 'legacy') extraText = " It is no longer available."
+        achText += `\n${getEmoji('ae')} **EVENT** / This achievement was part of the ${eventName} event.${extraText}`;
+    }
+    // i didn't like this formatting it was ugly imo
+
+    if (ach.desc) {
+        achText += `\n\n-# *${ach.desc}*`;
+    }
+
+    lines.push(achText);
 
     e.setDescription(lines.join('\n') || 'No extra info available.');
 
@@ -449,11 +517,11 @@ function buildAchSelectRow(messageKey, pageIndex, pageAchs) {
     return new ActionRowBuilder().addComponents(menu);
 }
 
-function buildBackRow(messageKey) {
+function buildDeleteRow(interactionId, ownerId) {
     return new ActionRowBuilder().addComponents(
         new ButtonBuilder()
-            .setCustomId(`achback_${messageKey}`)
-            .setLabel("Back")
+            .setCustomId(`achdelete_${interactionId}_${ownerId}`)
+            .setLabel("Delete")
             .setStyle(ButtonStyle.Secondary)
     );
 }

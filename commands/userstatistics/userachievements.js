@@ -154,7 +154,8 @@ module.exports = {
                 currentPage: 0,
                 view: "list",
                 lastListPage: 0,
-                buttons
+                buttons,
+                username
             }
         };
     }
@@ -261,33 +262,35 @@ function paginateAchievements(achlist) {
 
 
 function buildAchSelectRow(messageKey, pageIndex, pageAchs) {
-    const opts = (pageAchs ?? []).slice(0, 25).map((ach, i) => {
-        //value encodes which page + which item
-        return new StringSelectMenuOptionBuilder()
-            .setLabel(ach.name.length > 100 ? ach.name.slice(0, 97) + "..." : ach.name)
-            .setValue(`achd_${pageIndex}_${i}`);
-    });
+    const list = pageAchs ?? [];
 
-    //if no achievements on this page, disable menu
     const menu = new StringSelectMenuBuilder()
         .setCustomId(`achselect_${messageKey}`)
-        .setPlaceholder(opts.length ? "View an achievement…" : "No achievements on this page")
         .setMinValues(1)
-        .setMaxValues(1)
-        .setDisabled(opts.length === 0)
+        .setMaxValues(1);
 
-    if (opts.length) {
-        menu.addOptions(opts);
+    if (list.length === 0) {
+        menu
+            .setPlaceholder("No achievements on this page")
+            .setDisabled(true)
+            .addOptions(
+                new StringSelectMenuOptionBuilder()
+                    .setLabel("No achievements available")
+                    .setValue("achd_none") // wait doesnt this just never trigger? nvm
+            );
+    } else {
+        const opts = list.slice(0, 25).map((ach, i) =>
+            new StringSelectMenuOptionBuilder()
+                .setLabel(ach.name.length > 100 ? ach.name.slice(0, 97) + "..." : ach.name)
+                .setValue(`achd_${pageIndex}_${i}`)
+        );
+
+        menu
+            .setPlaceholder("View an achievement…")
+            .setDisabled(false)
+            .addOptions(opts);
     }
 
     return new ActionRowBuilder().addComponents(menu);
 }
 
-function buildBackRow(messageKey) {
-    return new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-            .setCustomId(`achback_${messageKey}`)
-            .setLabel("Back")
-            .setStyle(ButtonStyle.Secondary)
-    );
-}
