@@ -292,7 +292,9 @@ function buildAchievementDetailEmbed(ach, listEmbed, username) {
         let eventName = ach.event;
         let extraText = '';
         if (ach.category === 'legacy') extraText = " It is no longer available."
-        achText += `\n${getEmoji('ae')} **EVENT** / This achievement was part of the ${eventName} event.${extraText}`;
+        let currentText = 'is part';
+        if (ach.category === 'legacy') currentText = "was part"
+        achText += `\n${getEmoji('ae')} **EVENT** / This achievement ${currentText} of the ${eventName} event.${extraText}`;
     }
     // i didn't like this formatting it was ugly imo
 
