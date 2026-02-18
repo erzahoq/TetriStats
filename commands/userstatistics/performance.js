@@ -168,27 +168,48 @@ module.exports = {
     const buttonLabels = availableModes.map(m => m.label);
     const embeds = availableModes.map(m => m.embed);
 
-    const row = new ActionRowBuilder().addComponents(
-      ...buttonLabels.map((label, idx) =>
-        new ButtonBuilder()
-          .setCustomId(`performancepage_${idx}`)
-          .setLabel(label)
-          .setStyle(ButtonStyle.Primary)
-          .setDisabled(idx === 0)
-      )
+    const pages = embeds;
+    const labels = buttonLabels;
+
+    const key = interaction.id;
+
+    // make sure Map exists
+    if (!interaction.client.pageData || !(interaction.client.pageData instanceof Map)) {
+      interaction.client.pageData = new Map();
+    }
+
+    // store session
+    interaction.client.pageData.set(key, {
+      commandName: 'performance',
+      ownerId: interaction.user.id,
+      pages,
+      labels,
+      currentPage: 0,
+      ttlMs: 10 * 60 * 1000,
+      expiresAt: Date.now() + 10 * 60 * 1000,
+    });
+
+    // build buttons (performance:page-<key>-<i>)
+    const buttons = labels.map((label, i) =>
+      new ButtonBuilder()
+        .setCustomId(`performance:page-${key}-${i}`)
+        .setLabel(label)
+        .setStyle(ButtonStyle.Primary)
+        .setDisabled(i === 0)
     );
 
-    await interaction.reply({ embeds: [embeds[0]], components: [row] });
+    // split into rows of 5
+    const rows = [];
+    for (let i = 0; i < buttons.length; i++) {
+      const rowIndex = Math.floor(i / 5);
+      if (!rows[rowIndex]) rows[rowIndex] = new ActionRowBuilder();
+      rows[rowIndex].addComponents(buttons[i]);
+    }
 
-    // store page data for this interaction (for navigation handling elsewhere)
-    interaction.client.pageData = {
-      ...interaction.client.pageData,
-      [interaction.id]: {
-        pages: embeds,
-        currentPage: 0,
-        labels: buttonLabels,
-      },
-    };
+    await interaction.reply({
+      embeds: [pages[0]],
+      components: rows,
+    });
 
   },
 };

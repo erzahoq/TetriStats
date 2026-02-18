@@ -78,40 +78,46 @@ module.exports = {
         // Realize this is just the same as allnews.js
         // deja vu
 
-        // Initial row of buttons
-        const row = new ActionRowBuilder().addComponents(
-            new ButtonBuilder()
-                .setCustomId('topnewspage_0')
-                .setLabel('Page 1')
-                .setStyle(ButtonStyle.Primary)
-                .setDisabled(true), // Disable the first button initially
-            new ButtonBuilder()
-                .setCustomId('topnewspage_1')
-                .setLabel('Page 2')
-                .setStyle(ButtonStyle.Primary),
-            new ButtonBuilder()
-                .setCustomId('topnewspage_2')
-                .setLabel('Page 3')
-                .setStyle(ButtonStyle.Primary),
-            new ButtonBuilder()
-                .setCustomId('topnewspage_3')
-                .setLabel('Page 4')
-                .setStyle(ButtonStyle.Primary),
+        const key = interaction.id;
+        const labels = ['Page 1', 'Page 2', 'Page 3', 'Page 4'];
+
+        // store session in Map
+        if (!interaction.client.pageData || !(interaction.client.pageData instanceof Map)) {
+            interaction.client.pageData = new Map();
+        }
+
+        interaction.client.pageData.set(key, {
+            commandName: 'news-top',
+            ownerId: interaction.user.id,
+            pages,
+            labels,
+            currentPage: 0,
+            ttlMs: 10 * 60 * 1000,
+            expiresAt: Date.now() + 10 * 60 * 1000
+        });
+
+        // build buttons
+        const buttons = labels.map((label, i) =>
+        new ButtonBuilder()
+            .setCustomId(`news-top:page-${key}-${i}`)
+            .setLabel(label)
+            .setStyle(ButtonStyle.Primary)
+            .setDisabled(i === 0)
         );
+
+        // split into rows of 5
+        const rows = [];
+        for (let i = 0; i < buttons.length; i++) {
+        const rowIndex = Math.floor(i / 5);
+        if (!rows[rowIndex]) rows[rowIndex] = new ActionRowBuilder();
+        rows[rowIndex].addComponents(buttons[i]);
+        }
 
         // Send the initial message with the first page and buttons
         await interaction.reply({
-            embeds: [pages[0]],
-            components: [row]
+        embeds: [pages[0]],
+        components: rows
         });
-
-        // Attach pages to the interaction for future reference
-        interaction.client.pageData = {
-            [interaction.id]: {
-                pages,
-                currentPage: 0
-            }
-        };
     }
 };
 

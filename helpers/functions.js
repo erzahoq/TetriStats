@@ -1,7 +1,8 @@
 // silly little file to help with cleanliness
 // if you have any questions uhhhhhh idk ask santa claus or something
-
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { getEmoji } = require('./emojis');
+const { database } = require('../database');
 
 function formatNumber(num) {
     const numStr = num.toString();
@@ -310,6 +311,8 @@ async function buildReplayStatComparisonString(
     return lines.join('\n');
 }
 
+let replayStatRankData = {};
+
 async function getClosestRankForReplay(userValue, statKey, lowerIsBetter = false) {
     if (!replayStatRankData[statKey]) {
         const row = await database.LeagueStat.findByPk(statKey);
@@ -339,6 +342,31 @@ async function getClosestRankForReplay(userValue, statKey, lowerIsBetter = false
     return bestRank;
 }
 
+function ensurePageStore(client) {
+  if (!client.pageData || !(client.pageData instanceof Map)) {
+    client.pageData = new Map();
+  }
+}
+
+// helper to build button rows for paged messages, given the command name, session key, labels, and active index
+function buildPageButtonRows({ commandName, key, labels, activeIndex }) {
+  const buttons = labels.map((label, i) =>
+    new ButtonBuilder()
+      .setCustomId(`${commandName}:page-${key}-${i}`)
+      .setLabel(label)
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(i === activeIndex)
+  );
+
+  const rows = [];
+  for (let i = 0; i < buttons.length; i++) {
+    const rowIndex = Math.floor(i / 5);
+    if (!rows[rowIndex]) rows[rowIndex] = new ActionRowBuilder();
+    rows[rowIndex].addComponents(buttons[i]);
+  }
+  return rows;
+}
+
 module.exports = {
     formatNumber,
     escapeUnderscores,
@@ -354,5 +382,7 @@ module.exports = {
     getLeagueRankColour,
     getModCombos,
     buildReplayStatComparisonString,
-    getClosestRankForReplay
+    getClosestRankForReplay,
+    ensurePageStore,
+    buildPageButtonRows
 }

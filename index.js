@@ -5,9 +5,8 @@ const path = require('node:path');
 const { token } = require('./config.json');
 const { database } = require('./database.js');
 const { Op } = require('sequelize');
-const { initEmojis } = require('./helpers/emojis');
-const { getEmojiOfAch, escapeUnderscores, convertToTimeFormat, reformatTimestamp } = require('./helpers/functions');
-const { getEmoji } = require('./helpers/emojis');
+const { initEmojis, getEmoji } = require('./helpers/emojis');
+const { getEmojiOfAch, escapeUnderscores, convertToTimeFormat, reformatTimestamp, ensurePageStore, buildPageButtonRows } = require('./helpers/functions');
 
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
@@ -30,56 +29,6 @@ for (const folder of commandFolders) {
 			console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
 		}
 	}
-}
-
-/**
- * Generalized page handler for button interactions.
- * Thanks AI :3
- * @param {Object} params
- * @param {Object} params.interaction - The Discord interaction object.
- * @param {string} params.buttonId - The customId of the button.
- * @param {string} params.interactionId - The interaction id for pageData.
- * @param {string} params.prefix - The button customId prefix (e.g. 'profilepage').
- * @param {string} params.pageKey - The key in pageData to use ('pages' or 'textPages').
- * @param {Array<string>} params.labels - The button labels.
- */
-async function handlePageButtons({ interaction, buttonId, interactionId, prefix, pageKey, labels }) {
-    if (interaction.user.id !== interaction.message.interaction.user.id) {
-        return await interaction.reply({ content: 'You cannot interact with this!', ephemeral: true });
-    }
-
-    const pageData = interaction.client.pageData?.[interactionId];
-    if (!pageData) return;
-
-    const newPageIndex = parseInt(buttonId.split('_')[1]);
-    const buttons = labels.map((label, i) =>
-        new ButtonBuilder()
-            .setCustomId(`${prefix}_${i}`)
-            .setLabel(label)
-            .setStyle(ButtonStyle.Primary)
-            .setDisabled(newPageIndex === i)
-    );
-
-    // For achievements, buttons may be split into multiple rows
-    let components;
-    if (prefix === 'achpage') {
-        const rows = [];
-        for (let i = 0; i < buttons.length; i++) {
-            const rowind = Math.floor(i / 5);
-            rows[rowind] = i % 5 === 0 ? new ActionRowBuilder() : rows[rowind];
-            rows[rowind].addComponents(buttons[i]);
-        }
-        components = rows;
-    } else {
-        components = [new ActionRowBuilder().addComponents(buttons)];
-    }
-
-    await interaction.update({
-        embeds: [pageData[pageKey][newPageIndex]],
-        components
-    });
-
-    pageData.currentPage = newPageIndex;
 }
 
 client.on(Events.InteractionCreate, async interaction => {
@@ -107,7 +56,8 @@ client.on(Events.InteractionCreate, async interaction => {
         // Achievements dropdown
         if (menuId.startsWith("achselect_")) {
             const interactionId = menuId.split("achselect_")[1];
-            const pageData = interaction.client.pageData?.[interactionId];
+            ensurePageStore(interaction.client);
+            const pageData = interaction.client.pageData.get(interactionId);
             if (!pageData) return;
 
             const chosen = interaction.values?.[0];
@@ -136,76 +86,22 @@ client.on(Events.InteractionCreate, async interaction => {
             });
         }
     } else if (interaction.isButton()) {
+        //generic paging system (yay)
+        if (parsePageCustomId(interaction.customId)) {
+            const handled = await handleGenericPageButton(interaction);
+            if (handled) return;
+        }
+
         const buttonId = interaction.customId;
         const interactionId = interaction.message.interaction?.id;
 
-        // Regexes
-        //very practical
-        let profilePageRegex = /^profilepage_[0-2]$/;
-        let topNewsRegex = /^topnewspage_[0-3]$/;
-        let allNewsRegex = /^allnewspage_[0-3]$/;
-        let achPageRegex = /^achpage_[0-9]$/;
-        let achBackRegex = /^achback_.+$/;
-        let recordsPageRegex = /^recordspage_.*$/;
-        let replayPageRegex = /^replaypage_[0-9]$/;
-        let leaguePageRegex = /^leaguepage_\d+$/;
-
-        // Achievements back
-        if (achBackRegex.test(buttonId)) {
-            const storedInteractionId = buttonId.split("achback_")[1];
-            const pageData = interaction.client.pageData?.[storedInteractionId];
-            if (!pageData) return;
-
-            pageData.view = "list";
-            const backTo = (pageData.lastListPage ?? pageData.currentPage ?? 0);
-            pageData.currentPage = backTo;
-
-            const buttonRows = buildAchButtonRows(pageData, backTo);
-            const selectRow = buildAchSelectRow(storedInteractionId, backTo, pageData.pageAchsByPageIndex?.[backTo]);
-
-            await interaction.update({
-                embeds: [pageData.textPages[backTo]],
-                components: [...buttonRows, selectRow]
-            });
-        }
-
-        // Profile pages
-        else if (profilePageRegex.test(buttonId)) {
-            await handlePageButtons({
-                interaction, buttonId, interactionId,
-                prefix: 'profilepage',
-                pageKey: 'pages',
-                labels: ['Profile', 'General', 'Gameplay']
-            });
-        }
-
-        // Records pages
-        else if (recordsPageRegex.test(buttonId)) {
-            const pageData = interaction.client.pageData?.[interactionId];
-            if (!pageData) return;
-            const newPageIndex = buttonId.split('_')[1];
-            const newPageButtonIndex = parseInt(buttonId.split('_')[2]);
-            // Update button states
-            for (let i = 0; i < pageData.buttons.length; i++) {
-                pageData.buttons[i].setDisabled(newPageButtonIndex === i);
-            }
-            const row = new ActionRowBuilder();
-            pageData.buttons.forEach(but => row.addComponents(but));
-            await interaction.update({
-                embeds: [pageData.pages[newPageIndex]],
-                components: [row]
-            });
-            pageData.currentPage = newPageIndex;
-        }
-
-        // Achievements pages
         // Achievements delete
-        else if (buttonId.startsWith("achdelete")) {
+        if (buttonId.startsWith("achdelete")) {
             const ownerId = buttonId.split("_")[2];
             if (interaction.user.id !== ownerId) {
-                //return await interaction.reply({ content: 'You cannot interact with this!', ephemeral: true });
-                //aysm
+                return await interaction.reply({ content: 'You cannot interact with this!', ephemeral: true });
             }
+
 
             await interaction.deferUpdate();
             await interaction.message.delete().catch(() => {}); // in case message already deleted by user, don't care about error
@@ -213,97 +109,6 @@ client.on(Events.InteractionCreate, async interaction => {
         }
 
 
-        else if (achPageRegex.test(buttonId)) {
-            const pageData = interaction.client.pageData?.[interactionId];
-            if (!pageData) return;
-            const newPageIndex = parseInt(buttonId.split('_')[1]);
-
-            pageData.view = "list";
-            pageData.lastListPage = newPageIndex;
-            pageData.currentPage = newPageIndex;
-
-            const buttonRows = buildAchButtonRows(pageData, newPageIndex);
-            const selectRow = buildAchSelectRow(interactionId, newPageIndex, pageData.pageAchsByPageIndex?.[newPageIndex]);
-
-            await interaction.update({
-                embeds: [pageData.textPages[newPageIndex]],
-                components: [...buttonRows, selectRow]
-            });
-        }
-
-        // Top news pages
-        else if (topNewsRegex.test(buttonId)) {
-            await handlePageButtons({
-                interaction, buttonId, interactionId,
-                prefix: 'topnewspage',
-                pageKey: 'pages',
-                labels: ['Page 1', 'Page 2', 'Page 3', 'Page 4']
-            });
-        }
-
-        // All news pages
-        else if (allNewsRegex.test(buttonId)) {
-            await handlePageButtons({
-                interaction, buttonId, interactionId,
-                prefix: 'allnewspage',
-                pageKey: 'pages',
-                labels: ['Page 1', 'Page 2', 'Page 3', 'Page 4']
-            });
-        }
-
-        // Replay pages
-        else if (replayPageRegex.test(buttonId)) {
-            const pageData = interaction.client.pageData?.[interactionId];
-            if (!pageData) return;
-
-            // derive labels from number of pages (40l uses 3, zenith uses 4)
-            // this is probably stupid but whatever
-            const labels = pageData.pages && pageData.pages.length === 3
-                ? ['Overview', 'Full', 'Performance']
-                : ['Overview', 'Full', 'Splits', 'Performance'];
-
-            await handlePageButtons({
-                interaction, buttonId, interactionId,
-                prefix: 'replaypage',
-                pageKey: 'pages',
-                labels
-            });
-        }
-
-        // League pages
-        else if (leaguePageRegex.test(buttonId)) {
-            // Dynamically generate labels: "Current", then "Season X" for each season
-            const pageData = interaction.client.pageData?.[interactionId];
-            if (!pageData) return;
-
-            const labels = ['Current'];
-            if (pageData.seasonNumbers) {
-                for (const season of pageData.seasonNumbers) {
-                    labels.push(`Season ${season}`);
-                }
-            }
-
-            await handlePageButtons({
-                interaction, buttonId, interactionId,
-                prefix: 'leaguepage',
-                pageKey: 'pages',
-                labels
-            });
-        }
-
-        // Performance pages
-        let performancePageRegex = /^performancepage_\d+$/;
-        if (performancePageRegex.test(buttonId)) {
-            const pageData = interaction.client.pageData?.[interactionId];
-            if (!pageData) return;
-
-            await handlePageButtons({
-                interaction, buttonId, interactionId,
-                prefix: 'performancepage',
-                pageKey: 'pages',
-                labels: pageData.labels // <-- Correct order
-            });
-        }
     }
 });
 
@@ -361,14 +166,7 @@ async function checkRdAlerts() {
     console.log('Finished checking RD alerts!');
 }
 
-setInterval(checkRdAlerts, 1800000) // every half hour
-
-
-
-function formatNumber(num) {
-    const numStr = num.toString();
-    return numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-}
+setInterval(checkRdAlerts, 30 * 60 * 1000) // every half hour
 
 async function status() {
     try {
@@ -382,9 +180,25 @@ async function status() {
         console.log(`Couldn't fetch player count! ${error.message}`);
     }
 }
+//set the interval to repeat every 5 minutes
+setInterval(status, 5 * 60 * 1000);
 
-// Then set the interval to repeat every 5 minutes
-setInterval(status, 300000);
+//clean up expired page sessions every 10 minutes
+setInterval(() => {
+    if (!client.pageData || !(client.pageData instanceof Map)) return;
+    const now = Date.now();
+    for (const [key, session] of client.pageData.entries()) {
+        if (session?.expiresAt && session.expiresAt <= now) {
+            client.pageData.delete(key);
+        }
+    }
+}, 10 * 60 * 1000);
+
+
+function formatNumber(num) {
+    const numStr = num.toString();
+    return numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
 
 
 //achievement info stupid stuff (im sorry morky)
@@ -527,7 +341,6 @@ function buildAchSelectRow(messageKey, pageIndex, pageAchs) {
     return new ActionRowBuilder().addComponents(menu);
 }
 
-
 function buildDeleteRow(interactionId, ownerId) {
     return new ActionRowBuilder().addComponents(
         new ButtonBuilder()
@@ -535,4 +348,82 @@ function buildDeleteRow(interactionId, ownerId) {
             .setLabel("Delete")
             .setStyle(ButtonStyle.Secondary)
     );
+}
+
+// ==== new (!) page system ====
+// make unique key for paged message/session
+function makePageKey(interaction) {
+    // interaction.id is unique per interaction and already a string so might as well use it for this i think
+    return interaction.id;
+}
+
+
+// get custom id commandName:page-key-index
+function parsePageCustomId(customId) {
+    // for example: "league:page-<key>-<pageIndex>"
+    const [commandName, rest] = customId.split(':');
+    if (!commandName || !rest) return null;
+
+    const parts = rest.split('-');
+    if (parts[0] !== 'page') return null;
+    if (parts.length < 3) return null;
+
+    const pageIndexStr = parts[parts.length - 1];
+    const pageIndex = Number(pageIndexStr);
+    if (!Number.isInteger(pageIndex)) return null;
+
+    const key = parts.slice(1, -1).join('-');
+
+    return { commandName, key, pageIndex };
+}
+
+async function handleGenericPageButton(interaction) {
+    ensurePageStore(interaction.client);
+
+    const parsed = parsePageCustomId(interaction.customId);
+    if (!parsed) return false;
+
+    const { commandName, key, pageIndex } = parsed;
+
+    const session = interaction.client.pageData.get(key);
+    if (!session) {
+        await interaction.reply({ content: "This menu expired (or I restarted). Run the command again.", ephemeral: true });
+        return true;
+    }
+
+    if (session.commandName !== commandName) {
+        await interaction.reply({ content: "This button doesn't match this message.", ephemeral: true });
+        // this shouldnt ever happen if i did everything correctly but just in case :woomy:
+        return true;
+    }
+
+    // check owner (surely this works this time)
+    if (interaction.user.id !== session.ownerId) {
+        await interaction.reply({ content: "You can't interact with this.", ephemeral: true });
+        return true;
+    }
+
+    if (!session.pages?.[pageIndex]) return true;
+
+    session.currentPage = pageIndex;
+    session.expiresAt = Date.now() + (session.ttlMs ?? 10 * 60 * 1000);
+
+    const rows = buildPageButtonRows({
+        commandName: session.commandName,
+        key,
+        labels: session.labels,
+        activeIndex: pageIndex
+    });
+
+    //let some commands append extra components (e.g. the achievements menu)
+    const extra = typeof session.getExtraComponents === 'function'
+        ? await session.getExtraComponents(pageIndex)
+        : [];
+
+    await interaction.update({
+        embeds: [session.pages[pageIndex]],
+        components: [...rows, ...extra]
+    });
+
+    return true;
 }

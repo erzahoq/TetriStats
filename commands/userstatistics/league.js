@@ -199,39 +199,45 @@ module.exports = {
                     );
                 }
 
-                // Create dynamic buttons: "Current", then "Season X" for each season
-                const buttons = [
-                    new ButtonBuilder()
-                        .setCustomId('leaguepage_0')
-                        .setLabel('Current')
-                        .setStyle(ButtonStyle.Primary)
-                        .setDisabled(true) // Default page
-                ];
-                for (let i = 0; i < seasonNumbers.length; i++) {
-                    buttons.push(
-                        new ButtonBuilder()
-                            .setCustomId(`leaguepage_${i + 1}`) // +1 because 0 is "Current"
-                            .setLabel(`Season ${seasonNumbers[i]}`)
-                            .setStyle(ButtonStyle.Primary)
-                    );
+                //paging data
+                const key = interaction.id; //this becomes the <key> in league:page-<key>-<index>
+                const labels = ['Current', ...seasonNumbers.map(s => `Season ${s}`)];
+
+                //make sure Map exists (to be safe, check even if index already does it)
+                if (!interaction.client.pageData || !(interaction.client.pageData instanceof Map)) {
+                    interaction.client.pageData = new Map();
                 }
 
-                const row = new ActionRowBuilder().addComponents(buttons);
+                interaction.client.pageData.set(key, {
+                    commandName: 'league',
+                    ownerId: interaction.user.id,
+                    pages,
+                    labels,
+                    currentPage: 0,
+                    ttlMs: 10 * 60 * 1000,
+                    expiresAt: Date.now() + 10 * 60 * 1000
+                });
+
+                const buttons = labels.map((label, i) => //more map magic idk
+                    new ButtonBuilder()
+                        .setCustomId(`league:page-${key}-${i}`)
+                        .setLabel(label)
+                        .setStyle(ButtonStyle.Primary)
+                        .setDisabled(i === 0)
+                );
+
+                // yes
+                const rows = [];
+                for (let i = 0; i < buttons.length; i++) {
+                    const rowIndex = Math.floor(i / 5);
+                    if (!rows[rowIndex]) rows[rowIndex] = new ActionRowBuilder();
+                    rows[rowIndex].addComponents(buttons[i]);
+                }
 
                 await interaction.reply({
                     embeds: [pages[0]],
-                    components: [row]
+                    components: rows
                 });
-
-                // Store pages and button count for later use
-                interaction.client.pageData = {
-                    ...interaction.client.pageData,
-                    [interaction.id]: {
-                        pages,
-                        currentPage: 0,
-                        seasonNumbers // Save for reference if needed
-                    }
-                };
             }
 
         } catch (error) {

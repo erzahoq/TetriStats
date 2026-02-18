@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, InteractionContextType, MessageFlags, ApplicationIntegrationType } = require('discord.js');
 import("node-fetch");
 
-const { formatNumber, escapeUnderscores, convertToTimeFormat, reformatTimestamp, getModEmoji } = require('../../helpers/functions');
+const { formatNumber, escapeUnderscores, convertToTimeFormat, reformatTimestamp, getModEmoji, ensurePageStore, buildPageButtonRows } = require('../../helpers/functions');
 const { getUser } = require('../../helpers/getuser');
 const { getEmoji } = require('../../helpers/emojis');
 
@@ -94,21 +94,36 @@ module.exports = {
             buttons.push(button)
         })
 
-        const row = new ActionRowBuilder()
-            .addComponents(buttons);
+        // SURELY this is better
+        //nvm it made it crash so i fixed it
+        //client.pageData = new Map(); THIS CRASHES THE BOT SO DONT ENABLE IT :aysm:
+        const key = interaction.id;
+        const commandName = 'records';
 
-        await interaction.editReply({
-            embeds: [pages['40l']],
-            components: [row]
+        const labels = buttons.map(b => b.data.label); // same order as buttons were built
+        const pageList = Object.values(pages);         // embeds in the same order as buttons/pages
+
+        ensurePageStore(interaction.client);
+            interaction.client.pageData.set(key, {
+            commandName,
+            ownerId: interaction.user.id,
+            pages: pageList,
+            labels,
+            currentPage: 0,
+            ttlMs: 10 * 60 * 1000,
+            expiresAt: Date.now() + 10 * 60 * 1000,
         });
 
-        interaction.client.pageData = {
-            [interaction.id]: {
-                pages,
-                currentPage: 0,
-                buttons
-            }
-        };
+        // rebuild buttons using the shared format: records:page-<key>-<i>
+        const rows = buildPageButtonRows({ commandName, key, labels, activeIndex: 0 });
+
+        // edit reply to use new rows
+        await interaction.editReply({
+            embeds: [pageList[0]],
+            components: rows,
+        });
+
+
 
     }
 }

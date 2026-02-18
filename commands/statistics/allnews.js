@@ -59,7 +59,7 @@ module.exports = {
                     message += ` (${convertToTimeFormat(userData.result)})`
                 }
             } else if (user.type === 'supporter') {
-                message += `- ${getEmoji(supporter_star)} [${(userData.username).toUpperCase()}](https://ch.tetr.io/u/${userData.username}) has become a Supporter!`
+                message += `- ${getEmoji("supporter_star"/*oops :3*/)} [${(userData.username).toUpperCase()}](https://ch.tetr.io/u/${userData.username}) has become a Supporter!`
             } else if (user.type === 'rankup') {
                 message += `- ${getEmojiOfRank(userData.rank)} [${(userData.username).toUpperCase()}](https://ch.tetr.io/u/${userData.username}) achieved ${capitalizeFirstLetter(userData.rank) /*me when i reuse code :3*/} rank!`
             } else {
@@ -87,39 +87,46 @@ module.exports = {
                 .setDescription("### __Recent news (global)__\n" + pageData[3].join('\n')),
         ];
 
-        // Initial row of buttons
-        const row = new ActionRowBuilder().addComponents(
-            new ButtonBuilder()
-                .setCustomId('allnewspage_0')
-                .setLabel('Page 1')
-                .setStyle(ButtonStyle.Primary)
-                .setDisabled(true), // Disable the first button initially
-            new ButtonBuilder()
-                .setCustomId('allnewspage_1')
-                .setLabel('Page 2')
-                .setStyle(ButtonStyle.Primary),
-            new ButtonBuilder()
-                .setCustomId('allnewspage_2')
-                .setLabel('Page 3')
-                .setStyle(ButtonStyle.Primary),
-            new ButtonBuilder()
-                .setCustomId('allnewspage_3')
-                .setLabel('Page 4')
-                .setStyle(ButtonStyle.Primary),
+        const key = interaction.id;
+        const labels = ['Page 1', 'Page 2', 'Page 3', 'Page 4'];
+
+        const buttons = labels.map((label, i) =>
+        new ButtonBuilder()
+            .setCustomId(`news-all:page-${key}-${i}`)
+            .setLabel(label)
+            .setStyle(ButtonStyle.Primary)
+            .setDisabled(i === 0)
         );
+
+        // split into rows of 5
+        const rows = [];
+        for (let i = 0; i < buttons.length; i++) {
+        const rowIndex = Math.floor(i / 5);
+        if (!rows[rowIndex]) rows[rowIndex] = new ActionRowBuilder();
+        rows[rowIndex].addComponents(buttons[i]);
+        }
+
 
         // Send the initial message with the first page and buttons
         await interaction.reply({
             embeds: [pages[0]],
-            components: [row]
+            components: rows
         });
 
-        // Attach pages to the interaction for future reference
-        interaction.client.pageData = {
-            [interaction.id]: {
-                pages,
-                currentPage: 0
-            }
-        };
+        //store the page data for paging i guess
+        if (!interaction.client.pageData || !(interaction.client.pageData instanceof Map)) {
+            interaction.client.pageData = new Map();
+        }
+
+        interaction.client.pageData.set(key, {
+            commandName: 'news-all',
+            ownerId: interaction.user.id,
+            pages,
+            labels,
+            currentPage: 0,
+            ttlMs: 10 * 60 * 1000,
+            expiresAt: Date.now() + 10 * 60 * 1000
+        });
+
     }
 };

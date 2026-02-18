@@ -21,6 +21,8 @@ const {
   getEmojiOfRank,
   reformatTimestamp,
   calculateLevel,
+  ensurePageStore,
+  buildPageButtonRows,
 } = require('../../helpers/functions');
 
 const { getUser } = require('../../helpers/getuser');
@@ -174,26 +176,31 @@ ${formatLeaguePreview(summaryData, country)} ${formatZenith(summaryData, country
         .setTimestamp(),
     ];
 
-    //initial row of buttons
-    const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId('profilepage_0').setLabel('Profile').setStyle(ButtonStyle.Primary).setDisabled(true), //disable the first button initially
-      new ButtonBuilder().setCustomId('profilepage_1').setLabel('General').setStyle(ButtonStyle.Primary),
-      new ButtonBuilder().setCustomId('profilepage_2').setLabel('Gameplay').setStyle(ButtonStyle.Primary),
-    );
+    const key = interaction.id;
+    const commandName = 'user';
+    const labels = ['Profile', 'General', 'Gameplay'];
 
-    //send the initial message with the first page and buttons
-    await interaction.reply({
-      embeds: [pages[0]],
-      components: [row],
+    // store session safely (Map)
+    ensurePageStore(interaction.client);
+    interaction.client.pageData.set(key, {
+      commandName,
+      ownerId: interaction.user.id,
+      pages,
+      labels,
+      currentPage: 0,
+      ttlMs: 10 * 60 * 1000,
+      expiresAt: Date.now() + 10 * 60 * 1000,
     });
 
-    //attach pages to the interaction for future reference
-    interaction.client.pageData = {
-      [interaction.id]: {
-        pages,
-        currentPage: 0,
-      },
-    };
+    // build standard buttons (customIds like `user:page-<key>-<i>`)
+    const rows = buildPageButtonRows({ commandName, key, labels, activeIndex: 0 });
+
+    // send initial page
+    await interaction.reply({
+      embeds: [pages[0]],
+      components: rows,
+    });
+
   },
 };
 

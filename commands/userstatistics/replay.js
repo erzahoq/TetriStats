@@ -1,11 +1,8 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, InteractionContextType, ApplicationIntegrationType, MessageFlags } = require('discord.js');
+const { EmbedBuilder, InteractionContextType, ApplicationIntegrationType, MessageFlags } = require('discord.js');
 
-const { formatNumber, escapeUnderscores, countryCodeToEmoji, convertToTimeFormat, buildReplayStatComparisonString, getEmojiOfAch, getEmojiOfRank, reformatTimestamp, getModCombos, addRankComparisonField, buildModeHeaderEmbed } = require('../../helpers/functions');
+const { formatNumber, escapeUnderscores, countryCodeToEmoji, convertToTimeFormat, buildReplayStatComparisonString, ensurePageStore, buildPageButtonRows, getModCombos } = require('../../helpers/functions');
 const { getEmoji } = require('../../helpers/emojis');
-const { database } = require('../../database'); 
-
-let replayStatRankData = {};
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -58,8 +55,6 @@ module.exports = {
             // choose emoji for quickplay vs quickplay expert (zenithex)
             let quickplayEmoji = 'quickplay';
             if (replay.gamemode === 'zenithex') quickplayEmoji = 'quickplayexpert';
-            
-            let row; //for buttons
 
             //general stats
             const date = new Date(replay.ts);
@@ -321,27 +316,7 @@ ${splitFormat(zenithStats.splits)}
 ${perfStatBlock}
 -# [${escapeUnderscores(replay.users[0].username).toUpperCase()}](https://ch.tetr.io/u/${replay.users[0].username}) ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}`),
                 ]
-                
-                //initial row of buttons
-                row = new ActionRowBuilder().addComponents(
-                    new ButtonBuilder()
-                        .setCustomId('replaypage_0')
-                        .setLabel('Overview')
-                        .setStyle(ButtonStyle.Primary)
-                        .setDisabled(true), //disable the first button initially
-                    new ButtonBuilder()
-                        .setCustomId('replaypage_1')
-                        .setLabel('Full')
-                        .setStyle(ButtonStyle.Primary),
-                    new ButtonBuilder()
-                        .setCustomId('replaypage_2')
-                        .setLabel('Splits')
-                        .setStyle(ButtonStyle.Primary),
-                    new ButtonBuilder()
-                        .setCustomId('replaypage_3')
-                        .setLabel('Performance')
-                        .setStyle(ButtonStyle.Primary)
-                );
+
             } else if (replay.gamemode === '40l') {
 
                 // silly performance stuff idk
@@ -450,24 +425,7 @@ ${perfStatBlock}
 ${perfStatBlock}
 -# [${escapeUnderscores(replay.users[0].username).toUpperCase()}](https://ch.tetr.io/u/${replay.users[0].username}) ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}`),
                 ]
-                
-                //initial row of buttons
-                row = new ActionRowBuilder().addComponents(
-                    new ButtonBuilder()
-                        .setCustomId('replaypage_0')
-                        .setLabel('Overview')
-                        .setStyle(ButtonStyle.Primary)
-                        .setDisabled(true), //disable the first button initially
-                    new ButtonBuilder()
-                        .setCustomId('replaypage_1')
-                        .setLabel('Full')
-                        .setStyle(ButtonStyle.Primary),
-                    new ButtonBuilder()
-                        .setCustomId('replaypage_2')
-                        .setLabel('Performance')
-                        .setStyle(ButtonStyle.Primary)
-                );
-
+            
             } else if (replay.gamemode === 'blitz') {
                 const score = replayStats.score;
                 const pps = replayData.results.aggregatestats.pps;
@@ -564,40 +522,35 @@ ${perfStatBlock}
 ${perfStatBlock}
 -# [${escapeUnderscores(replay.users[0].username).toUpperCase()}](https://ch.tetr.io/u/${replay.users[0].username}) ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}`),
                 ]
-                
-                //initial row of buttons
-                row = new ActionRowBuilder().addComponents(
-                    new ButtonBuilder()
-                        .setCustomId('replaypage_0')
-                        .setLabel('Overview')
-                        .setStyle(ButtonStyle.Primary)
-                        .setDisabled(true), //disable the first button initially
-                    new ButtonBuilder()
-                        .setCustomId('replaypage_1')
-                        .setLabel('Full')
-                        .setStyle(ButtonStyle.Primary),
-                    new ButtonBuilder()
-                        .setCustomId('replaypage_2')
-                        .setLabel('Performance')
-                        .setStyle(ButtonStyle.Primary)
-                );                
+                             
             } else {
                 return interaction.editReply({content: 'This type of replay file has not been accounted for yet, please contact the developers if you believe this is a mistake.'})
             }
 
-            //send the initial message with the first page and buttons
-            await interaction.editReply({
-                embeds: [pages[0]],
-                components: [row]
+            const key = interaction.id;
+            const commandName = 'analyzereplay';
+
+            const labels = (pages.length === 4)
+                ? ['Overview', 'Full', 'Splits', 'Performance']
+                : ['Overview', 'Full', 'Performance'];
+
+            ensurePageStore(interaction.client);
+            interaction.client.pageData.set(key, {
+                commandName,
+                ownerId: interaction.user.id,
+                pages,
+                labels,
+                currentPage: 0,
+                ttlMs: 10 * 60 * 1000,
+                expiresAt: Date.now() + 10 * 60 * 1000,
             });
 
-            //attach pages to the interaction for future reference
-            interaction.client.pageData = {
-                [interaction.id]: {
-                    pages,
-                    currentPage: 0
-                }
-            };
+
+            const rows = buildPageButtonRows({ commandName, key, labels, activeIndex: 0 });
+
+            await interaction.editReply({ embeds: [pages[0]], components: rows });
+
+
             
         } catch (error) {
             console.error('Error analyzing replay:', error);
