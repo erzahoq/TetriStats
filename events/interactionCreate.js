@@ -47,9 +47,12 @@ module.exports = {
                         );
                         return;
                     } else {
-                        await buttonCommand.buttons[split[1].split("-")[0]](
+                        let params = split[1].split("-");
+                        const buttonId = params.shift();
+
+                        await buttonCommand.buttons[buttonId](
                             interaction,
-                            split[1].split("-")[1]
+                            ...params
                         );
                     }
                 }
@@ -79,9 +82,12 @@ module.exports = {
                         );
                         return;
                     } else {
-                        await buttonCommand.dropdowns[split[1].split("-")[0]](
+                        let params = split[1].split("-");
+                        const buttonId = params.shift();
+
+                        await buttonCommand.dropdowns[buttonId](
                             interaction,
-                            split[1].split("-")[1]
+                            ...params
                         );
                     }
                 }
