@@ -15,12 +15,10 @@ module.exports = {
                 interaction.isChatInputCommand() ||
                 interaction.isMessageContextMenuCommand()
             ) {
-                const command = interaction.client.commands[interaction.commandName];
+                const command = interaction.client.commands.get(interaction.commandName);
 
                 if (!command) {
-                    console.log(
-                        `[ERROR] No command matching ${interaction.commandName} was found.`
-                    );
+                    console.log(`[ERROR] No command matching ${interaction.commandName} was found.`);
                     return;
                 }
 
@@ -39,7 +37,7 @@ module.exports = {
 
                 const buttonId = interaction.customId;
                 const split = buttonId.split(":");
-                const buttonCommand = interaction.client.commands[split[0]];
+                const buttonCommand = interaction.client.commands.get(split[0]);
 
                 if (split[1]) {
                     if (!buttonCommand || !buttonCommand.buttons) {
@@ -71,7 +69,7 @@ module.exports = {
 
                 const dropdownId = interaction.component.customId;
                 const split = dropdownId.split(":");
-                const buttonCommand = interaction.client.commands[split[0]];
+                const buttonCommand = interaction.client.commands.get(split[0]);
 
                 if (split[1]) {
                     if (!buttonCommand || !buttonCommand.dropdowns) {
@@ -88,7 +86,7 @@ module.exports = {
                     }
                 }
             } else if (interaction.isAutocomplete()) {
-                const command = interaction.client.commands[interaction.commandName];
+                const command = interaction.client.commands.get(interaction.commandName);
 
                 if (!command || !command.autocomplete) {
                     console.error(
@@ -102,7 +100,7 @@ module.exports = {
             } else if (interaction.isModalSubmit()) {
                 const modalId = interaction.customId;
                 const split = modalId.split(":");
-                const modalCommand = interaction.client.commands[split[0]];
+                const modalCommand = interaction.client.commands.get(split[0]);
 
                 if (
                     !modalCommand ||
@@ -144,7 +142,7 @@ module.exports = {
                     new EmbedBuilder()
                         .setTitle("An error occurred!")
                         .setDescription(
-                            `wuh oh, something broke\ndon't worry! the developer has been informed of this failure and will fix this bug ASAP.\n\n${error}`
+                            `wuh oh, something broke\ndon't worry! the developer has been informed of this failure and will fix this bug ASAP.`
                         )
                         .setColor("#ff0000"),
                 ],

@@ -3,9 +3,8 @@ const { Client, Collection, Events, GatewayIntentBits, ActionRowBuilder, ButtonB
 const fs = require('node:fs');
 const path = require('node:path');
 const { token } = require('./config.json');
-const { database } = require('./database.js');
-const { initEmojis, getEmoji } = require('./helpers/emojis');
-const { getEmojiOfAch, escapeUnderscores, convertToTimeFormat, reformatTimestamp, formatUsername } = require('./helpers/formatters');
+const { getEmoji } = require('./helpers/emojis');
+const { formatNumber, escapeUnderscores, convertToTimeFormat, reformatTimestamp, formatUsername } = require('./helpers/formatters');
 
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
@@ -27,6 +26,20 @@ for (const folder of commandFolders) {
 		} else {
 			console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
 		}
+	}
+}
+
+const eventsPath = path.join(__dirname, 'events');
+const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith('.js'));
+
+for (const file of eventFiles) {
+	const filePath = path.join(eventsPath, file);
+	const event = require(filePath);
+	
+	if (event.once) {
+		client.once(event.name, (...args) => event.execute(...args));
+	} else {
+		client.on(event.name, (...args) => event.execute(...args));
 	}
 }
 
@@ -305,19 +318,6 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 });
 
-
-// When the client is ready, run this code (only once).
-// The distinction between `client: Client<boolean>` and `readyClient: Client<true>` is important for TypeScript developers.
-// It makes some properties non-nullable.
-client.once(Events.ClientReady, async readyClient => {
-    console.log(`Ready! Logged in as ${readyClient.user.tag}`);
-    await initEmojis(readyClient); // Initialize emojis
-    status();
-    checkRdAlerts().catch(err => {
-        console.error('[RD] checkRdAlerts crashed:', err);
-    });
-});
-
 // Log in to Discord with your client's token
 client.login(token);
 
@@ -330,60 +330,6 @@ process.on('unhandledRejection', (reason) => {
 process.on('uncaughtException', (err) => {
   console.error('Uncaught exception:', err);
 });
-
-
-async function checkRdAlerts() {
-    console.log('Checking RD alerts...');
-    const userList = await database.User.findAll();
-    let resp;
-    for (const user of userList) {
-        resp = await user.checkAlert(); // check if alert is needed
-        // console.log(`Checked for ${user.userId}, got ${resp}`);
-        if (!(resp instanceof Error) && resp) { // make sure it doesn't error, and also is true
-            console.log('Alerting ' + user.userId);
-            const userToMessage = await client.users.fetch(user.userId);
-            userToMessage.send({
-                embeds: [
-                    new EmbedBuilder()
-                    .setColor('ffdd22')
-                    .setDescription('Your Tetra League rating deviation has begun rising!')
-                    .setTitle('RD Alert')
-            ]}).catch(
-                (err) => console.log(`Couldn't alert user ${user.userId}! ${err.message}`) // means we can't DM user, cope
-            )
-        }
-        if (resp instanceof Error) {
-            console.log(`RD alert check errored for ${user.userId}! ${resp.message}`);
-        }
-    }
-    console.log('Finished checking RD alerts!');
-}
-
-setInterval(checkRdAlerts, 1800000) // every half hour
-
-
-
-function formatNumber(num) {
-    const numStr = num.toString();
-    return numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-}
-
-async function status() {
-    try {
-        const response = await fetch('https://ch.tetr.io/api/general/stats'); // Get stats data
-        let responseData = await response.json();
-        let totalAccounts = responseData.data.usercount;
-
-        // console.log('Successfully fetched player count!');
-        client.user.setActivity(`${formatNumber(totalAccounts)} TETR.IO players`, { type: ActivityType.Watching });
-    } catch (error) {
-        console.log(`Couldn't fetch player count! ${error.message}`);
-    }
-}
-
-// Then set the interval to repeat every 5 minutes
-setInterval(status, 300000);
-
 
 //achievement info stupid stuff (im sorry morky)
 function buildAchButtonRows(pageData, activeIndex) {
