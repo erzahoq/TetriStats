@@ -411,8 +411,6 @@ function formatAchievement(ach) {
     if (ach.event) {
         let eventName = ach.event;
         achText += ` (${eventName})`
-        const isObtainable = ach.category !== 'legacy'
-        achText += `\n${getEmoji('ae')} **EVENT** / This achievement ${isObtainable ? "is" : "was"} part of the ${eventName} event.${!isObtainable ? "It is no longer obtainable." : ""}`;
     }
 
     return achText;
