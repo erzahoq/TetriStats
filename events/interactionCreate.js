@@ -68,7 +68,7 @@ module.exports = {
                 if (buttonId.startsWith("achdelete")) {
                     const ownerId = buttonId.split("_")[2];
                     if (interaction.user.id !== ownerId) {
-                        return await interaction.reply({ content: 'You cannot interact with this!', ephemeral: true });
+                        return await interaction.reply({ content: 'You cannot interact with this!', flags: MessageFlags.Ephemeral });
                     }
 
                     await interaction.deferUpdate();
@@ -249,19 +249,19 @@ async function handleGenericPageButton(interaction) {
 
     const session = interaction.client.pageData.get(key);
     if (!session) {
-        await interaction.reply({ content: "This menu expired (or I restarted). Run the command again.", ephemeral: true });
+        await interaction.reply({ content: "This menu expired (or I restarted). Run the command again.", flags: MessageFlags.Ephemeral });
         return true;
     }
 
     if (session.commandName !== commandName) {
-        await interaction.reply({ content: "This button doesn't match this message.", ephemeral: true });
+        await interaction.reply({ content: "This button doesn't match this message.", flags: MessageFlags.Ephemeral });
         // this shouldnt ever happen if i did everything correctly but just in case :woomy:
         return true;
     }
 
     // check owner (surely this works this time)
     if (interaction.user.id !== session.ownerId) {
-        await interaction.reply({ content: "You can't interact with this.", ephemeral: true });
+        await interaction.reply({ content: "You can't interact with this.", flags: MessageFlags.Ephemeral });
         return true;
     }
 

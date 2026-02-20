@@ -1,15 +1,11 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
+const { EmbedBuilder, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
 
 const { formatNumber, countryCodeToEmoji, formatTime, getEmojiOfRank, getModCombos, formatISOString, formatUsername, buildPageButtonRows } = require('../../helpers/formatters');
 const { getEmoji } = require('../../helpers/emojis');
 const { database } = require('../../database'); 
 
 let replayStatRankData = {};
-
-
-// TODO: reformat this hell
-
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -492,7 +488,6 @@ async function getClosestRankForReplay(userValue, statKey, lowerIsBetter = false
 
 //this is probably bigger than i should make functions but oh well
 //next time ill split it up better
-// TODO test this function to make sure it actually works w/ the database (since i don't have a copy)
 async function buildReplayStatComparisonString(
     dbStatKey,
     statName,
