@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { EmbedBuilder, InteractionContextType, ApplicationIntegrationType, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle, embedLength } = require('discord.js');
 
-const { formatNumber, getLeagueRankColour, getEmojiOfRank, escapeUnderscores, formatUsername } = require('../../helpers/formatters');
+const { formatNumber, getLeagueRankColour, getEmojiOfRank, escapeUnderscores, formatUsername, buildPageButtonRows } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
 const { getEmoji } = require('../../helpers/emojis');
 
@@ -47,62 +47,39 @@ module.exports = {
         const past = leagueData.past;
 
         const currentEmbed = createLeagueEmbed(leagueData, user);
+        const pages = [currentEmbed];
 
-        if (!past || Object.keys(past).length === 0) {
-            await interaction.reply({
-                embeds: [currentEmbed]
-            });
-            return;
-        } 
-        // past data exists, time to format
-        
-        // Build pages: first is current, then each season
-        const pages = [
-            currentEmbed
-        ];
+        if (past && Object.keys(past).length !== 0) {
+            const seasonNumbers = Object.keys(past).map(Number).sort((a, b) => a - b);
+            for (const season of seasonNumbers) {
+                const seasonData = past[season];
+                const thisSeasonEmbed = createLeagueEmbed(seasonData, user, season);
 
-        // Add a page for each season in order
-        const seasonNumbers = Object.keys(past).map(Number).sort((a, b) => a - b);
-        for (const season of seasonNumbers) {
-            const seasonData = past[season];
-            const thisSeasonEmbed = createLeagueEmbed(seasonData, user, season);
-
-            pages.push(thisSeasonEmbed);
+                pages.push(thisSeasonEmbed);
+            }
         }
 
-        // Create dynamic buttons: "Current", then "Season X" for each season
-        const buttons = [
-            new ButtonBuilder()
-                .setCustomId('leaguepage_0')
-                .setLabel('Current')
-                .setStyle(ButtonStyle.Primary)
-                .setDisabled(true) // Default page
-        ];
-        for (let i = 0; i < seasonNumbers.length; i++) {
-            buttons.push(
-                new ButtonBuilder()
-                    .setCustomId(`leaguepage_${i + 1}`) // +1 because 0 is "Current"
-                    .setLabel(`Season ${seasonNumbers[i]}`)
-                    .setStyle(ButtonStyle.Primary)
-            );
-        }
+        //paging data
+        const key = interaction.id; //this becomes the <key> in league:page-<key>-<index>
+        const labels = ['Current', ...seasonNumbers.map(s => `Season ${s}`)];
 
-        const row = new ActionRowBuilder().addComponents(buttons);
+        interaction.client.pageData.set(key, {
+            commandName: 'league',
+            ownerId: interaction.user.id,
+            pages,
+            labels,
+            currentPage: 0,
+            ttlMs: 10 * 60 * 1000,
+            expiresAt: Date.now() + 10 * 60 * 1000
+        });
+
+        // yes
+        const rows = buildPageButtonRows({ commandName: "league", key, labels })
 
         await interaction.reply({
             embeds: [pages[0]],
-            components: [row]
+            components: rows
         });
-
-        // Store pages and button count for later use
-        interaction.client.pageData = {
-            ...interaction.client.pageData,
-            [interaction.id]: {
-                pages,
-                currentPage: 0,
-                seasonNumbers // Save for reference if needed
-            }
-        };
     }
 };
 

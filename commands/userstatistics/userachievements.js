@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
 import('node-fetch'); // Ensure 'node-fetch' is imported properly
 
-const { formatNumber, formatISOString, formatTime, formatUsername, formatAchievement } = require('../../helpers/formatters');
+const { formatNumber, formatISOString, formatTime, formatUsername, formatAchievement, buildPageButtonRows } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
 const { getEmoji } = require('../../helpers/emojis');
 
@@ -75,9 +75,10 @@ module.exports = {
             }
         });
 
-        let textPages = []
-        let pageAchsByPageIndex = []
-        let buttons = []
+        let textPages = [];
+        let pageAchsByPageIndex = [];
+        let labels = [];
+
 
         categories.forEach(cat => {
             if (achList[cat]) { // if the achievement list exists
@@ -92,19 +93,11 @@ module.exports = {
 
                     pageAchsByPageIndex.push(pageAchs[ind] ?? []);
 
-                    let button = new ButtonBuilder()
-                        .setCustomId(`achpage_${buttons.length}`)
-                        .setLabel(`${catMap[cat]}`)
-                        .setStyle(ButtonStyle.Primary)
+                    //new logic
+                    let label = `${catMap[cat]}`;
+                    if (pageTexts.length > 1) label = `${catMap[cat]} (${ind + 1})`;
+                    labels.push(label);
 
-                    if (buttons.length === 0) {
-                        button.setDisabled(true)
-                    }
-                    if (pageTexts.length > 1) {
-                        button.setLabel(`${catMap[cat]} (${ind + 1})`)
-                    }
-
-                    buttons.push(button)
                 }
             } else {
                 if (cat === "event") return; // no text or button if no event achievements
@@ -115,49 +108,48 @@ module.exports = {
                 )
                 pageAchsByPageIndex.push([]);
 
-                let button = new ButtonBuilder()
-                    .setCustomId(`achpage_${buttons.length}`)
-                    .setLabel(`${catMap[cat]}`)
-                    .setStyle(ButtonStyle.Primary)
-
-                if (buttons.length === 0) {
-                    button.setDisabled(true)
-                }
-
-                buttons.push(button)
+                labels.push(`${catMap[cat]}`);
             }
         })
 
-        // Initial row of buttons
-        const rows = [];
-        for (var i = 0; i < buttons.length; i++) {
-            var rowind = Math.floor(i/5)
-            rows[rowind] = i % 5 == 0 ? new ActionRowBuilder() : rows[rowind];
-            rows[rowind].addComponents(buttons[i])
-        }
+        const key = interaction.id;
+        const commandName = 'userachievements';
 
-        const messageKey = interaction.id;
-        const selectRow = buildAchSelectRow(messageKey, 0, pageAchsByPageIndex[0]);
+        interaction.client.pageData.set(key, {
+            commandName,
+            ownerId: interaction.user.id,
 
-        // Send the initial message with the first page and buttons
-        await interaction.editReply({
-            embeds: [textPages[0]],
-            components: [...rows, selectRow]
+            //pager expects these
+            pages: textPages,
+            labels,
+            currentPage: 0,
+            ttlMs: 10 * 60 * 1000,
+            expiresAt: Date.now() + 10 * 60 * 1000,
+
+            //keep these for the dropdown handler
+            textPages,
+            pageAchsByPageIndex,
+            username,
+
+            //dropdown is “extra components” (please work please work please work)
+            getExtraComponents: async (pageIndex) => {
+                return [buildAchSelectRow(key, pageIndex, pageAchsByPageIndex?.[pageIndex] ?? [])];
+            },
         });
 
-        // Attach pages to the interaction for future reference
-        interaction.client.pageData = {
-            ...(interaction.client.pageData ?? {}),
-            [interaction.id]: {
-                textPages,
-                pageAchsByPageIndex,
-                currentPage: 0,
-                view: "list",
-                lastListPage: 0,
-                buttons,
-                username
-            }
-        };
+        const pageButtons = buildPageButtonRows({
+        commandName,
+        key,
+        labels,
+        activeIndex: 0,
+        });
+
+        const selectRow = buildAchSelectRow(key, 0, pageAchsByPageIndex?.[0] ?? []);
+
+        await interaction.editReply({
+        embeds: [textPages[0]],
+        components: [...pageButtons, selectRow],
+        });
     }
 };
 

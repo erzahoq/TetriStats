@@ -1,6 +1,6 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, InteractionContextType, MessageFlags } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, InteractionContextType, MessageFlags } = require('discord.js');
 
-const { formatISOString, formatUsername } = require('../../helpers/formatters');
+const { formatISOString, formatUsername, buildPageButtonRows } = require('../../helpers/formatters');
 const { getEmoji } = require('../../helpers/emojis');
 
 
@@ -77,40 +77,27 @@ module.exports = {
         // Realize this is just the same as allnews.js
         // deja vu
 
-        // Initial row of buttons
-        const row = new ActionRowBuilder().addComponents(
-            new ButtonBuilder()
-                .setCustomId('topnewspage_0')
-                .setLabel('Page 1')
-                .setStyle(ButtonStyle.Primary)
-                .setDisabled(true), // Disable the first button initially
-            new ButtonBuilder()
-                .setCustomId('topnewspage_1')
-                .setLabel('Page 2')
-                .setStyle(ButtonStyle.Primary),
-            new ButtonBuilder()
-                .setCustomId('topnewspage_2')
-                .setLabel('Page 3')
-                .setStyle(ButtonStyle.Primary),
-            new ButtonBuilder()
-                .setCustomId('topnewspage_3')
-                .setLabel('Page 4')
-                .setStyle(ButtonStyle.Primary),
-        );
+        const key = interaction.id;
+        const labels = ['Page 1', 'Page 2', 'Page 3', 'Page 4'];
+
+        interaction.client.pageData.set(key, {
+            commandName: 'news-top',
+            ownerId: interaction.user.id,
+            pages,
+            labels,
+            currentPage: 0,
+            ttlMs: 10 * 60 * 1000,
+            expiresAt: Date.now() + 10 * 60 * 1000
+        });
+
+        // split into rows of 5
+        const rows = buildPageButtonRows({ commandName: "news-top", key, labels });
 
         // Send the initial message with the first page and buttons
         await interaction.reply({
             embeds: [pages[0]],
-            components: [row]
+            components: rows
         });
-
-        // Attach pages to the interaction for future reference
-        interaction.client.pageData = {
-            [interaction.id]: {
-                pages,
-                currentPage: 0
-            }
-        };
     }
 };
 

@@ -1,6 +1,6 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, InteractionContextType, MessageFlags, ApplicationIntegrationType } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, InteractionContextType, MessageFlags, ApplicationIntegrationType } = require('discord.js');
 
-const { formatNumber, escapeUnderscores, convertToTimeFormat, reformatTimestamp, getModEmoji, formatUsername } = require('../../helpers/formatters');
+const { formatNumber, formatTime, formatISOString, formatUsername, buildPageButtonRows } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
 const { getEmoji } = require('../../helpers/emojis');
 
@@ -93,21 +93,32 @@ module.exports = {
             buttons.push(button)
         })
 
-        const row = new ActionRowBuilder()
-            .addComponents(buttons);
+        const key = interaction.id;
+        const commandName = 'records';
 
-        await interaction.editReply({
-            embeds: [pages['40l']],
-            components: [row]
+        const labels = buttons.map(b => b.data.label); // same order as buttons were built
+        const pageList = Object.values(pages);         // embeds in the same order as buttons/pages
+
+        interaction.client.pageData.set(key, {
+            commandName,
+            ownerId: interaction.user.id,
+            pages: pageList,
+            labels,
+            currentPage: 0,
+            ttlMs: 10 * 60 * 1000,
+            expiresAt: Date.now() + 10 * 60 * 1000,
         });
 
-        interaction.client.pageData = {
-            [interaction.id]: {
-                pages,
-                currentPage: 0,
-                buttons
-            }
-        };
+        // rebuild buttons using the shared format: records:page-<key>-<i>
+        const rows = buildPageButtonRows({ commandName, key, labels });
+
+        // edit reply to use new rows
+        await interaction.editReply({
+            embeds: [pageList[0]],
+            components: rows,
+        });
+
+
 
     }
 }
@@ -145,7 +156,7 @@ function formatRecord(record) {
 
     // Determine the type of record and format accordingly
     if (record.gamemode === '40l') {
-        formatted += `**${convertToTimeFormat(stats.finaltime)}**`;
+        formatted += `**${formatTime(stats.finaltime)}**`;
     } 
     else if (record.gamemode === 'blitz') {
         formatted += `**${formatNumber(stats.score)}**`;
@@ -203,7 +214,7 @@ function formatRecord(record) {
 
     // Add timestamp and replay link
     formatted += `
-  - [${reformatTimestamp(record.ts)}](https://tetr.io/#R:${record.replayid})`;
+  - [${formatISOString(record.ts)}](https://tetr.io/#R:${record.replayid})`;
 
     return formatted;
 }

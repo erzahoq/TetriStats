@@ -1,7 +1,8 @@
 // silly little file to help with cleanliness
 // if you have any questions uhhhhhh idk ask santa claus or something
-
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { getEmoji } = require('./emojis');
+const { database } = require('../database');
 
 function formatNumber(num, decimalPlaces = 0) {
     let numStr = Math.floor(num).toString();
@@ -310,6 +311,8 @@ async function buildReplayStatComparisonString(
     return lines.join('\n');
 }
 
+let replayStatRankData = {};
+
 async function getClosestRankForReplay(userValue, statKey, lowerIsBetter = false) {
     if (!replayStatRankData[statKey]) {
         const row = await database.LeagueStat.findByPk(statKey);
@@ -408,11 +411,31 @@ function formatAchievement(ach) {
     if (ach.event) {
         let eventName = ach.event;
         achText += ` (${eventName})`
+        const isObtainable = ach.category !== 'legacy'
+        achText += `\n${getEmoji('ae')} **EVENT** / This achievement ${isObtainable ? "is" : "was"} part of the ${eventName} event.${!isObtainable ? "It is no longer obtainable." : ""}`;
     }
 
     return achText;
 }
 
+// helper to build button rows for paged messages, given the command name, session key, labels, and active index
+function buildPageButtonRows({ commandName, key, labels, activeIndex = 0 }) {
+  const buttons = labels.map((label, i) =>
+    new ButtonBuilder()
+      .setCustomId(`${commandName}:page-${key}-${i}`)
+      .setLabel(label)
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(i === activeIndex)
+  );
+
+  const rows = [];
+  for (let i = 0; i < buttons.length; i++) {
+    const rowIndex = Math.floor(i / 5);
+    if (!rows[rowIndex]) rows[rowIndex] = new ActionRowBuilder();
+    rows[rowIndex].addComponents(buttons[i]);
+  }
+  return rows;
+}
 
 module.exports = {
     formatNumber,
@@ -429,5 +452,6 @@ module.exports = {
     buildReplayStatComparisonString,
     getClosestRankForReplay,
     formatUsername,
-    formatAchievement
+    formatAchievement,
+    buildPageButtonRows
 }

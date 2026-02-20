@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, InteractionContextType, MessageFlags } = require('discord.js');
-const { formatTime, getEmojiOfRank, formatISOString, capitalizeFirstLetter, formatNumber, formatUsername } = require('../../helpers/formatters');
+const { formatTime, getEmojiOfRank, formatISOString, capitalizeFirstLetter, formatNumber, formatUsername, buildPageButtonRows } = require('../../helpers/formatters');
 const { getEmoji } = require('../../helpers/emojis');
 
 
@@ -57,7 +57,7 @@ module.exports = {
                     message += ` (${formatTime(userData.result)})`
                 }
             } else if (user.type === 'supporter') {
-                message += `- ${getEmoji('supporter_star')} ${formatUsername(userData.username)} has become a Supporter!`
+                message += `- ${getEmoji("supporter_star")} ${formatUsername(userData.username)} has become a Supporter!`
             } else if (user.type === 'rankup') {
                 message += `- ${getEmojiOfRank(userData.rank)} ${formatUsername(userData.username)} achieved ${capitalizeFirstLetter(userData.rank)} rank!`
             } else {
@@ -84,37 +84,25 @@ module.exports = {
                 .setDescription("### __Recent news (global)__\n" + pageData[3].join('\n')),
         ];
 
-        const row = new ActionRowBuilder().addComponents(
-            new ButtonBuilder()
-                .setCustomId('allnewspage_0')
-                .setLabel('Page 1')
-                .setStyle(ButtonStyle.Primary)
-                .setDisabled(true),
-            new ButtonBuilder()
-                .setCustomId('allnewspage_1')
-                .setLabel('Page 2')
-                .setStyle(ButtonStyle.Primary),
-            new ButtonBuilder()
-                .setCustomId('allnewspage_2')
-                .setLabel('Page 3')
-                .setStyle(ButtonStyle.Primary),
-            new ButtonBuilder()
-                .setCustomId('allnewspage_3')
-                .setLabel('Page 4')
-                .setStyle(ButtonStyle.Primary),
-        );
+        const key = interaction.id;
+        const labels = ['Page 1', 'Page 2', 'Page 3', 'Page 4'];
+
+        const rows = buildPageButtonRows({ commandName: "news-all", key, labels })
 
         await interaction.reply({
             embeds: [pages[0]],
-            components: [row]
+            components: rows
         });
 
-        // Attach pages to the interaction for future reference
-        interaction.client.pageData = {
-            [interaction.id]: {
-                pages,
-                currentPage: 0
-            }
-        };
+        interaction.client.pageData.set(key, {
+            commandName: 'news-all',
+            ownerId: interaction.user.id,
+            pages,
+            labels,
+            currentPage: 0,
+            ttlMs: 10 * 60 * 1000,
+            expiresAt: Date.now() + 10 * 60 * 1000
+        });
+
     }
 };

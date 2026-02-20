@@ -15,6 +15,9 @@ module.exports = {
         
         checkRdAlerts(client);
         setInterval(() => checkRdAlerts(client), 1000 * 60 * 30);
+
+        client.pageData = new Map();
+        setInterval(() => cleanPageData(client), 1000 * 60 * 10)
     }
 }
 
@@ -56,4 +59,13 @@ async function checkRdAlerts(client) {
         }
     }
     console.log('Finished checking RD alerts!');
+}
+
+function cleanPageData(client) {
+    const now = Date.now();
+    for (const [key, session] of client.pageData.entries()) {
+        if (session?.expiresAt && session.expiresAt <= now) {
+            client.pageData.delete(key);
+        }
+    }
 }
