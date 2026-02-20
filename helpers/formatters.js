@@ -68,7 +68,7 @@ function formatPlaytime(playtime) {
 
 function getEmojiOfRank(rank) {
     if (!rank) return;
-    let formattedRank = 'rank_' + rank.toLowerCase().replace("+", "plus").replace("-", "minus");
+    const formattedRank = 'rank_' + rank.toLowerCase().replace("+", "plus").replace("-", "minus");
     return getEmoji(formattedRank)
 }
 
@@ -207,7 +207,7 @@ async function buildReplayStatComparisonString(
     effectiveRank,
     extras = { lowerIsBetter: false, isTime: false, decimals: 2, isPercentage: false }
 ) {
-    if (statValue == null || !isFinite(Number(statValue))) return null;
+    if (statValue === null || !isFinite(Number(statValue))) return null;
 
     const lowerIsBetter = !!extras.lowerIsBetter;
     const decimals = Number.isInteger(extras.decimals) ? extras.decimals : 2;
@@ -249,12 +249,12 @@ async function buildReplayStatComparisonString(
     const avgRank = await getClosestRankForReplay(statValue, dbStatKey, lowerIsBetter);
     const avgRankValue = replayStatRankData[dbStatKey][avgRank];
     const deltaToAvg =
-        avgRankValue != null && isFinite(Number(avgRankValue))
+        avgRankValue !== null && isFinite(Number(avgRankValue))
             ? delta(statValue, Number(avgRankValue))
             : null;
 
     //user’s baseline rank
-    let userRankLabel = null;
+    let userRankLabel;
     let userRankValue = null;
 
     if (effectiveRank && effectiveRank !== 'z') {
@@ -265,7 +265,7 @@ async function buildReplayStatComparisonString(
     }
 
     const deltaToUser =
-        userRankValue != null && isFinite(Number(userRankValue))
+        userRankValue !== null && isFinite(Number(userRankValue))
             ? delta(statValue, Number(userRankValue))
             : null;
 
@@ -298,7 +298,7 @@ async function buildReplayStatComparisonString(
 
         if (nextRow && !isRedundant) {
             const nextAvg = replayStatRankData[dbStatKey][nextRow];
-            if (nextAvg != null && isFinite(Number(nextAvg))) {
+            if (nextAvg !== null && isFinite(Number(nextAvg))) {
                 lines.push(
                     `- ${fmtDelta(delta(statValue, Number(nextAvg)))} compared to next rank (${getEmojiOfRank(
                         nextRow
@@ -311,7 +311,7 @@ async function buildReplayStatComparisonString(
     return lines.join('\n');
 }
 
-let replayStatRankData = {};
+const replayStatRankData = {};
 
 async function getClosestRankForReplay(userValue, statKey, lowerIsBetter = false) {
     if (!replayStatRankData[statKey]) {
@@ -370,7 +370,7 @@ function formatAchievement(ach) {
     else if (ach.vt === 5) displayVal = `Obtained ${formatISOString(-ach.v)}`
     else if (ach.vt === 6) displayVal = formatNumber(-Math.round(ach.v))
 
-    achText = getEmoji('ach_' + achievementMapping[ach['rank']])
+    let achText = getEmoji('ach_' + achievementMapping[ach.rank])
 
     //check for attributes and format
     if (ach.art === 0) {
@@ -404,12 +404,12 @@ function formatAchievement(ach) {
 
     //duo achievement
     if (ach.x?.ally) {
-        let allyUsername = ach.x.ally.username;
+        const allyUsername = ach.x.ally.username;
         achText += ` (With ${formatUsername(allyUsername)})`;
     }
 
     if (ach.event) {
-        let eventName = ach.event;
+        const eventName = ach.event;
         achText += ` (${eventName})`
     }
 

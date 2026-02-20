@@ -22,8 +22,6 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply() // defer because this one can take a while (it's 10 API calls :gladeline:)
 
-        let records;
-
         const user = await getUser(interaction.options.getString('user').toLowerCase()); // calls API only once
 
         if (user === "no such user") {
@@ -38,7 +36,7 @@ module.exports = {
             });
         }
 
-        records = await fetchAll(user._id)
+        const records = await fetchAll(user._id)
 
         // mappings and vars
         const gametypeMapping = {
@@ -57,8 +55,8 @@ module.exports = {
             'league': '#c51111'
         };
 
-        let pages = {};
-        let buttons = [];
+        const pages = {};
+        const buttons = [];
 
         // loop through each category and what was fetched (see fetchAll)
         Object.entries(records).forEach(([category, fetched]) => {
@@ -75,11 +73,11 @@ module.exports = {
 
             // do the description
             let desc = `### __${formatUsername(user.username)} -> Records -> ${gametypeMapping[category]}__\n`;
-            if (fetched['top']) {
+            if (fetched.top) {
                 desc += `- ${getEmoji('news_lblocal')} Personal best
-  ${formatRecord(fetched['top'])}\n\n`
+  ${formatRecord(fetched.top)}\n\n`
             }
-            fetched['all'].forEach((rec) => {
+            fetched.all.forEach((rec) => {
                 desc += `${formatRecord(rec)}\n`;
             })
 
@@ -125,7 +123,7 @@ module.exports = {
 
 async function fetchAll(user) {
     const toFetch = ['40l', 'blitz', 'zenith', 'zenithex', 'league'];
-    let responses = {};
+    const responses = {};
 
     // go through each category and fetch them
     for (const item of toFetch) {
@@ -134,7 +132,7 @@ async function fetchAll(user) {
         // fetch the last 10 games
         let allResponse = await fetch(`https://ch.tetr.io/api/users/${user}/records/${item}/recent?limit=${maxItems}`);
         allResponse = await allResponse.json();
-        responses[item]['all'] = allResponse.data.entries;
+        responses[item].all = allResponse.data.entries;
 
         // ignore league because it doesn't have a top
         if (item === 'league') {
@@ -144,7 +142,7 @@ async function fetchAll(user) {
         // fetch the top game
         let topResponse = await fetch(`https://ch.tetr.io/api/users/${user}/records/${item}/top?limit=1`);
         topResponse = await topResponse.json();
-        responses[item]['top'] = topResponse.data.entries[0];
+        responses[item].top = topResponse.data.entries[0];
     }
 
     return responses;

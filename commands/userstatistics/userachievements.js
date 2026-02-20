@@ -1,7 +1,7 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
 import('node-fetch'); // Ensure 'node-fetch' is imported properly
 
-const { formatNumber, formatISOString, formatTime, formatUsername, formatAchievement, buildPageButtonRows } = require('../../helpers/formatters');
+const { formatUsername, formatAchievement, buildPageButtonRows } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
 const { getEmoji } = require('../../helpers/emojis');
 
@@ -50,8 +50,8 @@ module.exports = {
             "legacy": "Legacy",
             "event": "Event"
         }
-        let categories = ["general", "league", "solo", "zenith", "legacy", "event"];
-        let achList = {};
+        const categories = ["general", "league", "solo", "zenith", "legacy", "event"];
+        const achList = {};
 
         const colourMapping = {
             "general": "#6dc971",
@@ -63,7 +63,7 @@ module.exports = {
         };
 
         //magic voodoo sorting raah
-        let sortedAchs = sortByAchievementRank(achs);
+        const sortedAchs = sortByAchievementRank(achs);
 
         sortedAchs.forEach(achievement => {
             //check if the user actually has this achievement lmao
@@ -75,9 +75,9 @@ module.exports = {
             }
         });
 
-        let textPages = [];
-        let pageAchsByPageIndex = [];
-        let labels = [];
+        const textPages = [];
+        const pageAchsByPageIndex = [];
+        const labels = [];
 
 
         categories.forEach(cat => {
@@ -132,7 +132,7 @@ module.exports = {
             username,
 
             //dropdown is “extra components” (please work please work please work)
-            getExtraComponents: async (pageIndex) => {
+            getExtraComponents: (pageIndex) => {
                 return [buildAchSelectRow(key, pageIndex, pageAchsByPageIndex?.[pageIndex] ?? [])];
             },
         });
@@ -181,7 +181,7 @@ function paginateAchievements(achlist) {
         pageAchs[pageIndex] ??= [];
         pageAchs[pageIndex].push(ach);
 
-        let achText = "\n- " + formatAchievement(ach);
+        const achText = "\n- " + formatAchievement(ach);
         pageTexts[pageIndex] += achText;
     }
     

@@ -24,8 +24,8 @@ module.exports = {
 async function status(client) {
     try {
         const response = await fetch('https://ch.tetr.io/api/general/stats'); // Get stats data
-        let responseData = await response.json();
-        let totalAccounts = responseData.data.usercount;
+        const responseData = await response.json();
+        const totalAccounts = responseData.data.usercount;
 
         // console.log('Successfully fetched player count!');
         client.user.setActivity(`${formatNumber(totalAccounts)} TETR.IO players`, { type: ActivityType.Watching });

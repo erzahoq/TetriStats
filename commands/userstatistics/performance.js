@@ -1,9 +1,9 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
-const { formatNumber, escapeUnderscores, getEmojiOfRank, getLeagueRankColour, formatUsername, buildPageButtonRows } = require('../../helpers/formatters');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
+const { formatNumber, getEmojiOfRank, getLeagueRankColour, formatUsername, buildPageButtonRows } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
 const { database } = require('../../database');
 
-let statRankData = {};
+const statRankData = {};
 
 const getAltitude = (res) => Number(res?.stats?.zenith?.altitude ?? -Infinity);
 
@@ -48,19 +48,19 @@ module.exports = {
       });
     }
 
-    let response = await fetch(`https://ch.tetr.io/api/users/${user._id}/summaries`);
+    const response = await fetch(`https://ch.tetr.io/api/users/${user._id}/summaries`);
     let userStats = await response.json();
     userStats = userStats.data;
 
     delete userStats.zen;
     delete userStats.achievements;
 
-    let leagueData = userStats.league;
-    let linesData = userStats['40l'].record?.results;
-    let blitzData = userStats.blitz.record?.results;
+    const leagueData = userStats.league;
+    const linesData = userStats['40l'].record?.results;
+    const blitzData = userStats.blitz.record?.results;
 
-    let zenithData = pickBestZenithResults(userStats.zenith);
-    let zenithExData = pickBestZenithResults(userStats.zenithex);
+    const zenithData = pickBestZenithResults(userStats.zenith);
+    const zenithExData = pickBestZenithResults(userStats.zenithex);
 
     const userLeagueRank = leagueData?.rank ?? null;
 
@@ -129,9 +129,9 @@ module.exports = {
 
     const playedLeague = !!(leagueData && (
       Number(leagueData.played) > 0 ||
-      leagueData.pps != null ||
-      leagueData.apm != null ||
-      leagueData.vs != null
+      leagueData.pps ||
+      leagueData.apm ||
+      leagueData.vs
     ));
 
     const played40L = !!(linesData && (Number(linesData.played) > 0 || Number(linesData?.stats?.finaltime) > 0));
@@ -195,7 +195,7 @@ module.exports = {
 };
 
 function getEmbed(username, mode, userId, recordNotExists, userRank, userPercentile) {
-  let statusLine = '';
+  let statusLine;
   if (recordNotExists) {
     statusLine = `Hasn't played any ${mode} games yet!`;
   } else if (userRank && userRank !== 'z') {
@@ -256,7 +256,7 @@ async function addEmbedField(
   effectiveRank,
   extras = { lowerIsBetter: false, isTime: false, decimals: 2, isPercentage: false }
 ) {
-  if (statValue == null || !isFinite(Number(statValue))) return;
+  if (statValue === null || !isFinite(Number(statValue))) return;
 
   const lowerIsBetter = !!extras.lowerIsBetter;
   const decimals = Number.isInteger(extras.decimals) ? extras.decimals : 2;
@@ -289,7 +289,7 @@ async function addEmbedField(
   const deltaToAvg = delta(statValue, Number(statRankData[dbStatKey][avgRank]));
 
   // 2. determine the "user rank baseline": ranked letter OR percentile_rank letter 
-  let userRankLabel = null;
+  let userRankLabel;
   let userRankValue = null;
 
   if (effectiveRank && effectiveRank !== 'z') {
@@ -300,7 +300,7 @@ async function addEmbedField(
   }
 
   const deltaToUser =
-    userRankValue != null
+    userRankValue !== null
       ? delta(statValue, userRankValue)
       : null;
 
@@ -335,7 +335,7 @@ async function addEmbedField(
 
     if (nextRow && !isRedundant) {
       const nextAvg = statRankData[dbStatKey][nextRow];
-      if (nextAvg != null && isFinite(Number(nextAvg))) {
+      if (nextAvg !== null && isFinite(Number(nextAvg))) {
         lines.push(
           `- ${fmtDelta(delta(statValue, Number(nextAvg)))} compared to next rank (${getEmojiOfRank(nextRow)})`
         );

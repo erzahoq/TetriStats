@@ -44,8 +44,8 @@ module.exports = {
             });
         }
 
-        let response1 = await fetch(`https://ch.tetr.io/api/users/${user1._id}`);
-        let response2 = await fetch(`https://ch.tetr.io/api/users/${user2._id}`);
+        const response1 = await fetch(`https://ch.tetr.io/api/users/${user1._id}`);
+        const response2 = await fetch(`https://ch.tetr.io/api/users/${user2._id}`);
 
         let userStats1 = await response1.json();
         let userStats2 = await response2.json();
@@ -118,8 +118,8 @@ interaction.editReply({ embeds: [comparisonEmbed] });
 function calculateTR(tr) {
     if (tr === -1) {
         return "N/A";
-    } else {
+    } 
         return formatNumber(Math.round(tr));
-    }
+    
 }
 

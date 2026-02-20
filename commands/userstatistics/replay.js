@@ -5,7 +5,7 @@ const { formatNumber, countryCodeToEmoji, formatTime, getEmojiOfRank, getModComb
 const { getEmoji } = require('../../helpers/emojis');
 const { database } = require('../../database'); 
 
-let replayStatRankData = {};
+const replayStatRankData = {};
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -45,11 +45,11 @@ module.exports = {
             // with the right structure but it's a start and should catch most user errors
         }
 
-        let replayData = replay.replay;
-        let replayStats = replayData.results.stats;
+        const replayData = replay.replay;
+        const replayStats = replayData.results.stats;
 
         //initially define list of pages 
-        let pages = [];
+        let pages;
 
         //check the gamemode
         let gamemode = "Unknown";
@@ -58,16 +58,12 @@ module.exports = {
         if (replay.gamemode === '40l') gamemode = "40 Lines";
         if (replay.gamemode === 'blitz') gamemode = "Blitz";
 
-        // choose emoji for quickplay vs quickplay expert (zenithex)
-        let quickplayEmoji = 'quickplay';
-        if (replay.gamemode === 'zenithex') quickplayEmoji = 'quickplayexpert';
-
         // common stats
         const replayLinkFormat = `[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id})`;
         const formattedDate = formatISOString(replay.ts);
-        const finesse = (replayStats.finesse.perfectpieces / replayStats.piecesplaced) ?? -1;
+        const finesse = replayStats.finesse ? (replayStats.finesse.perfectpieces / replayStats.piecesplaced) : -1;
 
-        let inputCounts = {};
+        const inputCounts = {};
         for (const h of ["hardDrop", "softDrop", "hold", "moveLeft", "moveRight", "rotateCW", "rotateCCW", "rotate180"]) inputCounts[h] = 0;
         for (const frameEvent of replayData.events) {
             if (frameEvent.type === 'keydown') {
@@ -93,7 +89,7 @@ module.exports = {
   - Made ${replayStats.finesse.faults} faults
   - Placed ${replayStats.finesse.perfectpieces} pieces perfectly`}`;
 
-        let performanceStrings = [];
+        const performanceStrings = [];
         let performanceDisclaimer = "";
         // skips the "compared to rank" line for performance tab
         // TODO maybe add an API call here to get an actual rank
@@ -107,12 +103,12 @@ module.exports = {
         // Zenith gamemode :3
         // expert and normal are together because their stats are extremely similar
         if (replay.gamemode === "zenith" || replay.gamemode === "zenithex") {     
-            let combos = getModCombos(replayData.options.zenith_mods)
+            const combos = getModCombos(replayData.options.zenith_mods)
 
-            let emojis = combos.emojis || "";
-            let flavour = combos.flavour || "";
-            let foundEntry = combos.name || "";
-            let mods = combos.mods || [];
+            const emojis = combos.emojis || "";
+            const flavour = combos.flavour || "";
+            const foundEntry = combos.name || "";
+            const mods = combos.mods || [];
 
             let modString = `${emojis} **${foundEntry}**\n-# *${flavour}*`
 
@@ -495,7 +491,7 @@ async function buildReplayStatComparisonString(
     effectiveRank,
     extras = { lowerIsBetter: false, isTime: false, decimals: 2, isPercentage: false }
 ) {
-    if (statValue == null || !isFinite(Number(statValue))) return null;
+    if (statValue === null || !isFinite(Number(statValue))) return null;
 
     const lowerIsBetter = !!extras.lowerIsBetter;
     const decimals = Number.isInteger(extras.decimals) ? extras.decimals : 2;
@@ -537,12 +533,12 @@ async function buildReplayStatComparisonString(
     const avgRank = await getClosestRankForReplay(statValue, dbStatKey, lowerIsBetter);
     const avgRankValue = replayStatRankData[dbStatKey][avgRank];
     const deltaToAvg =
-        avgRankValue != null && isFinite(Number(avgRankValue))
+        avgRankValue !== null && isFinite(Number(avgRankValue))
             ? delta(statValue, Number(avgRankValue))
             : null;
 
     //user’s baseline rank
-    let userRankLabel = null;
+    let userRankLabel;
     let userRankValue = null;
 
     if (effectiveRank && effectiveRank !== 'z') {
@@ -553,7 +549,7 @@ async function buildReplayStatComparisonString(
     }
 
     const deltaToUser =
-        userRankValue != null && isFinite(Number(userRankValue))
+        userRankValue !== null && isFinite(Number(userRankValue))
             ? delta(statValue, Number(userRankValue))
             : null;
 
@@ -586,7 +582,7 @@ async function buildReplayStatComparisonString(
 
         if (nextRow && !isRedundant) {
             const nextAvg = replayStatRankData[dbStatKey][nextRow];
-            if (nextAvg != null && isFinite(Number(nextAvg))) {
+            if (nextAvg !== null && isFinite(Number(nextAvg))) {
                 lines.push(
                     `- ${fmtDelta(delta(statValue, Number(nextAvg)))} compared to next rank (${getEmojiOfRank(
                         nextRow

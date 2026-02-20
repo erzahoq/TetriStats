@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder, InteractionContextType, ApplicationIntegrationType, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle, embedLength } = require('discord.js');
+const { EmbedBuilder, InteractionContextType, ApplicationIntegrationType, MessageFlags } = require('discord.js');
 
-const { formatNumber, getLeagueRankColour, getEmojiOfRank, escapeUnderscores, formatUsername, buildPageButtonRows } = require('../../helpers/formatters');
+const { formatNumber, getLeagueRankColour, getEmojiOfRank, formatUsername, buildPageButtonRows } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
 const { getEmoji } = require('../../helpers/emojis');
 
@@ -49,8 +49,8 @@ module.exports = {
         const currentEmbed = createLeagueEmbed(leagueData, user);
         const pages = [currentEmbed];
 
+        const seasonNumbers = Object.keys(past).map(Number).sort((a, b) => a - b);
         if (past && Object.keys(past).length !== 0) {
-            const seasonNumbers = Object.keys(past).map(Number).sort((a, b) => a - b);
             for (const season of seasonNumbers) {
                 const seasonData = past[season];
                 const thisSeasonEmbed = createLeagueEmbed(seasonData, user, season);
@@ -84,7 +84,8 @@ module.exports = {
 };
 
 function createLeagueEmbed(leagueData, user, past = 0) {
-    const { apm, pps, vs, tr, glicko, rd, prev_rank, next_rank, rank, standing, standing_local, decaying, bestrank, percentile, gxe } = leagueData;
+    const { apm, pps, vs, tr, glicko, rd, rank, standing, standing_local: localStanding, decaying, bestrank, percentile, gxe } = leagueData;
+    let { prev_rank: prevRank, next_rank: nextRank } = leagueData;
     const gamesPlayed = leagueData.gamesplayed || 0;
     const gamesWon = leagueData.gameswon || 0;
     const winRate = gamesPlayed > 0 ? formatNumber((gamesWon / gamesPlayed) * 100, 2) : 'N/A';
@@ -109,18 +110,18 @@ function createLeagueEmbed(leagueData, user, past = 0) {
 
     let rankBar;
 
-    if (!next_rank && prev_rank === 'x') {
-        next_rank = 'top'
+    if (!nextRank && prevRank === 'x') {
+        nextRank = 'top'
     }
-    if (!prev_rank && next_rank === 'd+') {
-        prev_rank = "d"
+    if (!prevRank && nextRank === 'd+') {
+        prevRank = "d"
     }
 
     const Currently = past ? `Was` : `Currently`;
     const Has = past ? `Had` : `Has`;
 
     let description = `### __${formatUsername(user.username)} -> Tetra League${past ? ` -> Season ${past}` : ""}__\n`;
-    description += `## ${tr < 0 || rank == "z" ? `${Currently} unranked ${getEmojiOfRank('z')}` : `${Currently} ranked ${getEmojiOfRank(rank)}`}\n`;
+    description += `## ${tr < 0 || rank === "z" ? `${Currently} unranked ${getEmojiOfRank('z')}` : `${Currently} ranked ${getEmojiOfRank(rank)}`}\n`;
 
     if (tr < 0) {
         description += `- **${Has} played ${gamesPlayed}/10 rating games**\n`;
@@ -145,12 +146,12 @@ function createLeagueEmbed(leagueData, user, past = 0) {
             if (percentile < 0.005) {
                 description += `  - Ranked #${standing} worldwide\n`;
                 if (standing !== 1) {
-                    description += `  - Ranked #${standing_local} locally\n`;
+                    description += `  - Ranked #${localStanding} locally\n`;
                 }
             } else {
-                description += `  - Ranked #${standing} worldwide (Top ${formatNumber(percentile * 100, 1)}%)\n  - Ranked #${standing_local} locally\n`;
+                description += `  - Ranked #${standing} worldwide (Top ${formatNumber(percentile * 100, 1)}%)\n  - Ranked #${localStanding} locally\n`;
             }
-            rankBar = `${getEmojiOfRank(prev_rank)} ${generateProgressBar("Ranked", (leagueData.prev_at - standing) / (leagueData.prev_at - leagueData.next_at), 15)} ${getEmojiOfRank(next_rank)}`;
+            rankBar = `${getEmojiOfRank(prevRank)} ${generateProgressBar("Ranked", (leagueData.prev_at - standing) / (leagueData.prev_at - leagueData.next_at), 15)} ${getEmojiOfRank(nextRank)}`;
             if (bestrank && bestrank !== rank) {
                 description += `  - ${Has} reached ${getEmojiOfRank(bestrank)}\n`;
             }

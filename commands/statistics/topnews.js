@@ -34,7 +34,7 @@ module.exports = {
         }
 
         // Initialize message
-        let pageData = [];
+        const pageData = [];
         for (let i = 0; i < pageCount; i++) {
             pageData.push([]);
         }

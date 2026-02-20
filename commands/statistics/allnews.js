@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, InteractionContextType, MessageFlags } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, InteractionContextType, MessageFlags } = require('discord.js');
 const { formatTime, getEmojiOfRank, formatISOString, capitalizeFirstLetter, formatNumber, formatUsername, buildPageButtonRows } = require('../../helpers/formatters');
 const { getEmoji } = require('../../helpers/emojis');
 
@@ -36,7 +36,7 @@ module.exports = {
         }
 
         // Initialize message
-        let pageData = [];
+        const pageData = [];
         for (let i = 0; i < pageCount; i++) {
             pageData.push([]);
         }

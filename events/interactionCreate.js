@@ -3,7 +3,10 @@ const {
     DiscordAPIError,
     Events,
     EmbedBuilder,
-    MessageFlags
+    MessageFlags,
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle
 } = require("discord.js");
 const { buildPageButtonRows, formatUsername, formatNumber, formatTime } = require("../helpers/formatters");
 const { getEmoji } = require("../helpers/emojis");
@@ -110,7 +113,9 @@ module.exports = {
                         await interaction.reply(reply);
                     }
                 }
-            } catch {}
+            } catch {
+                // message was deleted or something
+            }
         }
     },
 };
@@ -136,10 +141,6 @@ function buildAchievementDetailEmbed(ach, listEmbed, username) {
 
     const lines = [];
 
-    if (ach.rank != null) {
-        emoji = getEmoji("ach_" + achievementMapping[ach['rank']]);
-    }
-
     if (ach.category) lines.push(`### __${formatUsername(username)} -> Achievements -> ${ach.name}__`);
 
     let achText = ""
@@ -154,28 +155,28 @@ function buildAchievementDetailEmbed(ach, listEmbed, username) {
     else if (ach.vt === 5) displayVal = `Obtained ${formatTime(-ach.v)}`
     else if (ach.vt === 6) displayVal = formatNumber(-Math.round(ach.v))
 
-    achText += `\n` + getEmoji("ach_" + achievementMapping[ach['rank']])
+    achText += `\n` + getEmoji("ach_" + achievementMapping[ach.rank])
 
-    achText += ` **${displayVal}** ${ach['object']} \n` // show the main info
+    achText += ` **${displayVal}** ${ach.object} \n` // show the main info
 
     if (ach.nolb) { // if it's issued
-        achText += `Issue ${ach['pos']}/${ach['total']}` 
+        achText += `Issue ${ach.pos}/${ach.total}` 
     } else {
-        if (ach['pos'] < 100) { // if you're in the top 100 players
-            achText += `**#${ach['pos'] + 1}** in the world`
+        if (ach.pos < 100) { // if you're in the top 100 players
+            achText += `**#${ach.pos + 1}** in the world`
         }
         else {
             let precision = 2;
-            const achPercentile = ach['pos'] / ach['total'] * 100
+            const achPercentile = ach.pos / ach.total * 100
             if (achPercentile < 0.01) precision = 3;
 
-            achText += `**#${ach['pos'] + 1}** in the world (Top ${formatNumber(achPercentile, precision)}%)` // literally just one extra point of precision
+            achText += `**#${ach.pos + 1}** in the world (Top ${formatNumber(achPercentile, precision)}%)` // literally just one extra point of precision
         } 
     }
 
     //duo achievement
     if (ach.x?.ally) {
-        let allyUsername = ach.x.ally.username;
+        const allyUsername = ach.x.ally.username;
         achText += `\n With ${formatUsername(allyUsername)}`;
     }
 
@@ -190,7 +191,7 @@ function buildAchievementDetailEmbed(ach, listEmbed, username) {
         achText += `\n${getEmoji('ah')} **HIDDEN** / This achievement is only visible to the worthy.`
     }
     if (ach.event) {
-        let eventName = ach.event;
+        const eventName = ach.event;
         let extraText = '';
         if (ach.category === 'legacy') extraText = " It is no longer available."
         let currentText = 'is part';

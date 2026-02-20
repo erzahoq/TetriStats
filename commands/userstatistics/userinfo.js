@@ -211,9 +211,9 @@ function gamesWonConvert(gamesWon, gamesPlayed) {
 function formatBadges(badgelist) {
   if (badgelist.length > 0) {
     return `\n  - As well as ${badgelist.length} badges`;
-  } else {
+  } 
     return ``;
-  }
+  
 }
 
 function formatGamesPlayed(gamesplayed, gameswon, gamestime) {
@@ -221,9 +221,9 @@ function formatGamesPlayed(gamesplayed, gameswon, gamestime) {
     return `\n- Played ${gamesplayed} games
   - Won ${gamesWonConvert(gameswon, gamesplayed)} of them
   - Has ${formatPlaytime(gamestime)} of playtime`;
-  } else {
+  } 
     return '\n- Has hidden games played';
-  }
+  
 }
 
 function starConvert(supporterTier) {
@@ -255,49 +255,24 @@ function formatConnections(connections) {
 
 //small and cute league function (will purr at you if it gets the chance)
 function formatLeaguePreview(statistics, country) {
-  const leagueStats = statistics['league'];
+  const leagueStats = statistics.league;
 
-  let gamesPlayed = leagueStats.gamesplayed;
-  let gamesWon = leagueStats.gameswon;
-  let ratingDeviation = leagueStats.rd;
+  const gamesPlayed = leagueStats.gamesplayed;
+  const gamesWon = leagueStats.gameswon;
+  const ratingDeviation = leagueStats.rd;
   let rating = leagueStats.tr;
-  let rank = leagueStats.rank;
-  let estRank = leagueStats.percentile_rank;
-
-  let progressToNextRank = (leagueStats.prev_at - leagueStats.standing) / (leagueStats.prev_at - leagueStats.next_at);
-
-  let prevRank = leagueStats.prev_rank;
-  let nextRank = leagueStats.next_rank;
-
-  if (!nextRank && prevRank === 'x') {
-    prevRank = 'x+';
-    nextRank = 'top';
-  }
-
-  if (!prevRank && nextRank === 'd+') {
-    prevRank = 'd';
-  }
-
-  prevRank = getEmojiOfRank(prevRank);
-  nextRank = getEmojiOfRank(nextRank);
-
-  let recordDisplay = Math.round(10000 * (gamesWon / gamesPlayed)) / 100;
+  const rank = leagueStats.rank;
+  const estRank = leagueStats.percentile_rank;
 
   if (rating < 0) {
-    if (leagueStats.gamesplayed === 0) {
-      recordDisplay = 0;
-    }
     rating = `${leagueStats.gamesplayed}/10 rating games`;
-    progressToNextRank = leagueStats.gamesplayed / 10;
-    prevRank = '';
-    nextRank = getEmoji('rank_z');
   } else {
     rating = `${formatNumber(rating, 2)} TR`;
   }
 
   let standing = '';
 
-  if (rank != leagueStats.bestrank && gamesPlayed !== 0 && leagueStats.bestRank) {
+  if (rank !== leagueStats.bestrank && gamesPlayed !== 0 && leagueStats.bestRank) {
     standing += `\n  - Has reached ${getEmojiOfRank(leagueStats.bestrank)}`;
   }
 
@@ -319,34 +294,34 @@ function formatLeaguePreview(statistics, country) {
 
 function format40Lines(statistics, country) {
   if (statistics['40l'].record) {
-    let flStatistics = statistics['40l'];
-    let results = flStatistics.record.results;
+    const flStatistics = statistics['40l'];
+    const results = flStatistics.record.results;
     return `\n- ${getEmoji('40lines')} **40 Lines in ${formatTime(results.stats.finaltime)}**
   - Ranked #${formatNumber(flStatistics.rank)} ${formatCountry(flStatistics.rank_local, country)}
   - [Submitted ${formatISOString(flStatistics.record.ts)}](https://tetr.io/#R:${flStatistics.record.replayid})
   - ${formatNumber(results.aggregatestats.pps, 2)} PPS | ${formatNumber(results.stats.finesse.faults)} finesse faults`;
-  } else {
+  } 
     return '';
-  }
+  
 }
 
 function formatBlitz(statistics, country) {
-  if (statistics['blitz'].record) {
-    let blStatistics = statistics['blitz'];
+  if (statistics.blitz.record) {
+    const blStatistics = statistics.blitz;
     return `\n- ${getEmoji('blitz')} **${formatNumber(blStatistics.record.results.stats.score)} points in Blitz**
   - Ranked #${formatNumber(blStatistics.rank)} ${formatCountry(blStatistics.rank_local, country)}
   - [Submitted ${formatISOString(blStatistics.record.ts)}](https://tetr.io/#R:${blStatistics.record.replayid})
   - ${formatNumber(blStatistics.record.results.aggregatestats.pps, 2)} PPS | ${formatNumber(blStatistics.record.results.stats.score / blStatistics.record.results.stats.piecesplaced, 2)} Points/Piece`;
-  } else {
+  } 
     return '';
-  }
+  
 }
 
 function formatZenith(statistics, country, expert = false) {
   const zenithVer = expert ? 'zenithex' : 'zenith';
   const zenithVerLong = expert ? 'Quick Play EXPERT' : 'Quick Play';
   let zenithText = '';
-  let zStatistics = statistics[zenithVer];
+  const zStatistics = statistics[zenithVer];
 
   if (statistics[zenithVer].record) {
     zenithText = `\n- ${getEmoji('quickplay')} **${formatNumber(zStatistics.record.results.stats.zenith.altitude, 2)}m in ${zenithVerLong}**
@@ -370,31 +345,31 @@ function formatZenith(statistics, country, expert = false) {
 }
 
 function formatZen(statistics) {
-  if (statistics['zen']) {
-    let zenStatistics = statistics['zen'];
+  if (statistics.zen) {
+    const zenStatistics = statistics.zen;
     return `\n- ${getEmoji('zen')} **Level ${zenStatistics.level} in Zen**
   - ${formatNumber(Math.round(zenStatistics.score))} points`;
-  } else {
+  } 
     return '';
-  }
+  
 }
 
 function formatDisplayedAchs(displayed = [], all = []) {
   let displayCase = '\n  - Displayed achievements:';
 
   all.forEach((achievement) => {
-    if (displayed.includes(achievement['k'])) {
+    if (displayed.includes(achievement.k)) {
       displayCase += `\n    - ` + formatAchievement(achievement);
     }
   });
 
-  if (displayCase != '\n  - Displayed achievements:') return displayCase;
+  if (displayCase !== '\n  - Displayed achievements:') return displayCase;
   return '';
 }
 
 function formatCountry(localRank, country) {
   if (localRank > 0) return `(#${formatNumber(localRank)} ${country})`;
-  else return '';
+  return '';
 }
 
 function formatOldUsernames(usernameArray) {
