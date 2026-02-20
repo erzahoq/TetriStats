@@ -342,7 +342,7 @@ async function getClosestRankForReplay(userValue, statKey, lowerIsBetter = false
     return bestRank;
 }
 
-function formatUsername(name, asLink = false) {
+function formatUsername(name, asLink = true) {
     const formatted = escapeUnderscores(name.toUpperCase());
 
     if (asLink) {
