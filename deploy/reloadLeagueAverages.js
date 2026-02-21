@@ -407,6 +407,7 @@ async function calculateRankAverages() {
                     });
                 }
                 dbObjects[statGroup][stat].values[rank] = rankTotals[statGroup][stat];
+                dbObjects[statGroup][stat].seenCount[rank] = seenCount;
             }
         }
 
@@ -417,6 +418,7 @@ async function calculateRankAverages() {
     for (const group of Object.keys(dbObjects)) {
         for (const stat of Object.keys(dbObjects[group])) {
             dbObjects[group][stat].changed('values', true);
+            dbObjects[group][stat].changed('seenCount', true);
             await dbObjects[group][stat].save();
         }
     }

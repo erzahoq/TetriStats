@@ -18,6 +18,11 @@ module.exports = (sequelize) => {
         values: {
             type: DataTypes.JSON,
             defaultValue: {},
+        },
+
+        seenCount: {
+            type: DataTypes.JSON,
+            defaultValue: {},
         }
     }, {
         sequelize,
