@@ -11,7 +11,7 @@ module.exports = {
             .setDescription("Enable alerts?")
         ),
 	async execute(interaction) {
-        let [user, _created] = await database.User.findOrCreate({ where: { userId: interaction.user.id } })
+        const [user, ] = await database.User.findOrCreate({ where: { userId: interaction.user.id } })
 
         const enabled = interaction.options.getBoolean("enabled") ?? !user.alertsEnabled;
 

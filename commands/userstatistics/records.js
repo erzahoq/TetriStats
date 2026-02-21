@@ -1,7 +1,6 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, InteractionContextType, MessageFlags, ApplicationIntegrationType } = require('discord.js');
-import("node-fetch");
+const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, InteractionContextType, MessageFlags, ApplicationIntegrationType } = require('discord.js');
 
-const { formatNumber, escapeUnderscores, convertToTimeFormat, reformatTimestamp, getModEmoji, ensurePageStore, buildPageButtonRows } = require('../../helpers/functions');
+const { formatNumber, formatTime, formatISOString, formatUsername, buildPageButtonRows } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
 const { getEmoji } = require('../../helpers/emojis');
 
@@ -23,8 +22,6 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply() // defer because this one can take a while (it's 10 API calls :gladeline:)
 
-        let records;
-
         const user = await getUser(interaction.options.getString('user').toLowerCase()); // calls API only once
 
         if (user === "no such user") {
@@ -39,7 +36,7 @@ module.exports = {
             });
         }
 
-        records = await fetchAll(user._id)
+        const records = await fetchAll(user._id)
 
         // mappings and vars
         const gametypeMapping = {
@@ -58,8 +55,8 @@ module.exports = {
             'league': '#c51111'
         };
 
-        let pages = {};
-        let buttons = [];
+        const pages = {};
+        const buttons = [];
 
         // loop through each category and what was fetched (see fetchAll)
         Object.entries(records).forEach(([category, fetched]) => {
@@ -75,12 +72,12 @@ module.exports = {
                 .setStyle(ButtonStyle.Primary)
 
             // do the description
-            let desc = `### __[${escapeUnderscores(user.username.toUpperCase())}](https://ch.tetr.io/u/${user.username}) -> Records -> ${gametypeMapping[category]}__\n`;
-            if (fetched['top']) {
+            let desc = `### __${formatUsername(user.username)} -> Records -> ${gametypeMapping[category]}__\n`;
+            if (fetched.top) {
                 desc += `- ${getEmoji('news_lblocal')} Personal best
-  ${formatRecord(fetched['top'])}\n\n`
+  ${formatRecord(fetched.top)}\n\n`
             }
-            fetched['all'].forEach((rec) => {
+            fetched.all.forEach((rec) => {
                 desc += `${formatRecord(rec)}\n`;
             })
 
@@ -94,17 +91,13 @@ module.exports = {
             buttons.push(button)
         })
 
-        // SURELY this is better
-        //nvm it made it crash so i fixed it
-        //client.pageData = new Map(); THIS CRASHES THE BOT SO DONT ENABLE IT :aysm:
         const key = interaction.id;
         const commandName = 'records';
 
         const labels = buttons.map(b => b.data.label); // same order as buttons were built
         const pageList = Object.values(pages);         // embeds in the same order as buttons/pages
 
-        ensurePageStore(interaction.client);
-            interaction.client.pageData.set(key, {
+        interaction.client.pageData.set(key, {
             commandName,
             ownerId: interaction.user.id,
             pages: pageList,
@@ -115,7 +108,7 @@ module.exports = {
         });
 
         // rebuild buttons using the shared format: records:page-<key>-<i>
-        const rows = buildPageButtonRows({ commandName, key, labels, activeIndex: 0 });
+        const rows = buildPageButtonRows({ commandName, key, labels });
 
         // edit reply to use new rows
         await interaction.editReply({
@@ -130,7 +123,7 @@ module.exports = {
 
 async function fetchAll(user) {
     const toFetch = ['40l', 'blitz', 'zenith', 'zenithex', 'league'];
-    let responses = {};
+    const responses = {};
 
     // go through each category and fetch them
     for (const item of toFetch) {
@@ -139,7 +132,7 @@ async function fetchAll(user) {
         // fetch the last 10 games
         let allResponse = await fetch(`https://ch.tetr.io/api/users/${user}/records/${item}/recent?limit=${maxItems}`);
         allResponse = await allResponse.json();
-        responses[item]['all'] = allResponse.data.entries;
+        responses[item].all = allResponse.data.entries;
 
         // ignore league because it doesn't have a top
         if (item === 'league') {
@@ -149,7 +142,7 @@ async function fetchAll(user) {
         // fetch the top game
         let topResponse = await fetch(`https://ch.tetr.io/api/users/${user}/records/${item}/top?limit=1`);
         topResponse = await topResponse.json();
-        responses[item]['top'] = topResponse.data.entries[0];
+        responses[item].top = topResponse.data.entries[0];
     }
 
     return responses;
@@ -161,20 +154,20 @@ function formatRecord(record) {
 
     // Determine the type of record and format accordingly
     if (record.gamemode === '40l') {
-        formatted += `**${convertToTimeFormat(stats.finaltime)}**`;
+        formatted += `**${formatTime(stats.finaltime)}**`;
     } 
     else if (record.gamemode === 'blitz') {
         formatted += `**${formatNumber(stats.score)}**`;
     } 
     else if (record.gamemode === 'zenithex' || record.gamemode === 'zenith') {
-        formatted += `**${formatNumber(Math.round(stats.zenith.altitude * 10) / 10)}m**`;
+        formatted += `**${formatNumber(stats.zenith.altitude, 1)}m**`;
         stats = record.results.aggregatestats; // PPS and VS Score are in aggregate
 
         // Add any active mod emojis
         if (record.extras.zenith.mods) {
             formatted += ' ';
             record.extras.zenith.mods.forEach(mod => {
-                formatted += getModEmoji(mod);
+                formatted += getEmoji("mod_" + mod);
             });
         }
     } 
@@ -198,7 +191,7 @@ function formatRecord(record) {
                 formatted += `**❌ DEFEAT** (by Disqualification)`;
                 stats = players[1].stats;
         }
-        formatted += ` vs **${escapeUnderscores(record.otherusers[0].username)}**`;
+        formatted += ` vs **${formatUsername(record.otherusers[0].username, false)}**`;
     } 
     else {
         formatted += `[Invalid gamemode.]`; // Should never happen
@@ -207,19 +200,19 @@ function formatRecord(record) {
     // Add general performance stats (APM, PPS, VS Score)
     if (['zenith', 'zenithex', 'league'].includes(record.gamemode)) {
         formatted += `
-  - **APM:** ${formatNumber(Math.round(stats.apm * 100) / 100)}
-  - **PPS:** ${formatNumber(Math.round(stats.pps * 100) / 100)}
-  - **VS Score:** ${formatNumber(Math.round(stats.vsscore * 100) / 100)}`;
+  - **APM:** ${formatNumber(stats.apm, 2)}
+  - **PPS:** ${formatNumber(stats.pps, 2)}
+  - **VS Score:** ${formatNumber(stats.vsscore, 2)}`;
     } 
     else {
         formatted += `
-  - **PPS:** ${formatNumber(Math.round(record.results.aggregatestats.pps * 100) / 100)}
-  - **Finesse:** ${Math.round(stats.finesse.perfectpieces / stats.piecesplaced * 10000) / 100}% (${stats.finesse.faults} faults)`;
+  - **PPS:** ${formatNumber(record.results.aggregatestats.pps, 2)}
+  - **Finesse:** ${formatNumber(stats.finesse.perfectpieces / stats.piecesplaced * 100, 2)}% (${formatNumber(stats.finesse.faults)} faults)`;
     }
 
     // Add timestamp and replay link
     formatted += `
-  - [${reformatTimestamp(record.ts)}](https://tetr.io/#R:${record.replayid})`;
+  - [${formatISOString(record.ts)}](https://tetr.io/#R:${record.replayid})`;
 
     return formatted;
 }

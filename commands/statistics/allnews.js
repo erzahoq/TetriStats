@@ -1,7 +1,5 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, InteractionContextType, MessageFlags } = require('discord.js');
-import("node-fetch");
-
-const { convertToTimeFormat, getEmojiOfRank, reformatTimestamp, capitalizeFirstLetter } = require('../../helpers/functions');
+const { SlashCommandBuilder, EmbedBuilder, InteractionContextType, MessageFlags } = require('discord.js');
+const { formatTime, getEmojiOfRank, formatISOString, capitalizeFirstLetter, formatNumber, formatUsername, buildPageButtonRows } = require('../../helpers/formatters');
 const { getEmoji } = require('../../helpers/emojis');
 
 
@@ -38,7 +36,7 @@ module.exports = {
         }
 
         // Initialize message
-        let pageData = [];
+        const pageData = [];
         for (let i = 0; i < pageCount; i++) {
             pageData.push([]);
         }
@@ -51,27 +49,26 @@ module.exports = {
 
             // Handle different types of stuff :3
             if (user.type === 'personalbest') {
-                message += `- ${getEmoji("news_lblocal")} [${(userData.username).toUpperCase()}](https://ch.tetr.io/u/${userData.username}) got a new PB in ${gametypeMapping[userData.gametype]}!`
+                message += `- ${getEmoji("news_lblocal")} ${formatUsername(userData.username)} got a new PB in ${gametypeMapping[userData.gametype]}!`
 
                 if (userData.gametype === 'zenith' || userData.gametype === 'zenithex') {
-                    message += ` (${Math.round(userData.result * 10) / 10}m)`
+                    message += ` (${formatNumber(userData.result, 1)}m)`
                 } else {
-                    message += ` (${convertToTimeFormat(userData.result)})`
+                    message += ` (${formatTime(userData.result)})`
                 }
             } else if (user.type === 'supporter') {
-                message += `- ${getEmoji("supporter_star"/*oops :3*/)} [${(userData.username).toUpperCase()}](https://ch.tetr.io/u/${userData.username}) has become a Supporter!`
+                message += `- ${getEmoji("supporter_star")} ${formatUsername(userData.username)} has become a Supporter!`
             } else if (user.type === 'rankup') {
-                message += `- ${getEmojiOfRank(userData.rank)} [${(userData.username).toUpperCase()}](https://ch.tetr.io/u/${userData.username}) achieved ${capitalizeFirstLetter(userData.rank) /*me when i reuse code :3*/} rank!`
+                message += `- ${getEmojiOfRank(userData.rank)} ${formatUsername(userData.username)} achieved ${capitalizeFirstLetter(userData.rank)} rank!`
             } else {
                 message += user.type;
             }
-            message += ` (${reformatTimestamp(user.ts)})`;
+            message += ` (${formatISOString(user.ts)})`;
 
             // Put the message in the page
             pageData[Math.floor(i / itemsPerPage)].push(message);
         }
 
-        // hardcoded pages
         const pages = [
             new EmbedBuilder()
                 .setColor("#f58484")
@@ -90,33 +87,12 @@ module.exports = {
         const key = interaction.id;
         const labels = ['Page 1', 'Page 2', 'Page 3', 'Page 4'];
 
-        const buttons = labels.map((label, i) =>
-        new ButtonBuilder()
-            .setCustomId(`news-all:page-${key}-${i}`)
-            .setLabel(label)
-            .setStyle(ButtonStyle.Primary)
-            .setDisabled(i === 0)
-        );
+        const rows = buildPageButtonRows({ commandName: "news-all", key, labels })
 
-        // split into rows of 5
-        const rows = [];
-        for (let i = 0; i < buttons.length; i++) {
-        const rowIndex = Math.floor(i / 5);
-        if (!rows[rowIndex]) rows[rowIndex] = new ActionRowBuilder();
-        rows[rowIndex].addComponents(buttons[i]);
-        }
-
-
-        // Send the initial message with the first page and buttons
         await interaction.reply({
             embeds: [pages[0]],
             components: rows
         });
-
-        //store the page data for paging i guess
-        if (!interaction.client.pageData || !(interaction.client.pageData instanceof Map)) {
-            interaction.client.pageData = new Map();
-        }
 
         interaction.client.pageData.set(key, {
             commandName: 'news-all',

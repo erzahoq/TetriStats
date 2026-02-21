@@ -1,9 +1,9 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
-const { formatNumber, escapeUnderscores, getEmojiOfRank, getLeagueRankColour } = require('../../helpers/functions');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
+const { formatNumber, getEmojiOfRank, getLeagueRankColour, formatUsername, buildPageButtonRows } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
 const { database } = require('../../database');
 
-let statRankData = {};
+const statRankData = {};
 
 const getAltitude = (res) => Number(res?.stats?.zenith?.altitude ?? -Infinity);
 
@@ -48,19 +48,19 @@ module.exports = {
       });
     }
 
-    let response = await fetch(`https://ch.tetr.io/api/users/${user._id}/summaries`);
+    const response = await fetch(`https://ch.tetr.io/api/users/${user._id}/summaries`);
     let userStats = await response.json();
     userStats = userStats.data;
 
     delete userStats.zen;
     delete userStats.achievements;
 
-    let leagueData = userStats.league;
-    let linesData = userStats['40l'].record?.results;
-    let blitzData = userStats.blitz.record?.results;
+    const leagueData = userStats.league;
+    const linesData = userStats['40l'].record?.results;
+    const blitzData = userStats.blitz.record?.results;
 
-    let zenithData = pickBestZenithResults(userStats.zenith);
-    let zenithExData = pickBestZenithResults(userStats.zenithex);
+    const zenithData = pickBestZenithResults(userStats.zenith);
+    const zenithExData = pickBestZenithResults(userStats.zenithex);
 
     const userLeagueRank = leagueData?.rank ?? null;
 
@@ -129,9 +129,9 @@ module.exports = {
 
     const playedLeague = !!(leagueData && (
       Number(leagueData.played) > 0 ||
-      leagueData.pps != null ||
-      leagueData.apm != null ||
-      leagueData.vs != null
+      leagueData.pps ||
+      leagueData.apm ||
+      leagueData.vs
     ));
 
     const played40L = !!(linesData && (Number(linesData.played) > 0 || Number(linesData?.stats?.finaltime) > 0));
@@ -155,7 +155,7 @@ module.exports = {
     if (availableModes.length === 0) {
       const newUserEmbed = new EmbedBuilder()
         .setDescription(
-          `### __[${escapeUnderscores(user.username).toUpperCase()}](https://tetr.io/u/${user.username}) -> Performance__\n` +
+          `### __${formatUsername(user.username)} -> Performance__\n` +
           `No recorded games yet.`
         )
         .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.png`)
@@ -173,11 +173,6 @@ module.exports = {
 
     const key = interaction.id;
 
-    // make sure Map exists
-    if (!interaction.client.pageData || !(interaction.client.pageData instanceof Map)) {
-      interaction.client.pageData = new Map();
-    }
-
     // store session
     interaction.client.pageData.set(key, {
       commandName: 'performance',
@@ -189,22 +184,7 @@ module.exports = {
       expiresAt: Date.now() + 10 * 60 * 1000,
     });
 
-    // build buttons (performance:page-<key>-<i>)
-    const buttons = labels.map((label, i) =>
-      new ButtonBuilder()
-        .setCustomId(`performance:page-${key}-${i}`)
-        .setLabel(label)
-        .setStyle(ButtonStyle.Primary)
-        .setDisabled(i === 0)
-    );
-
-    // split into rows of 5
-    const rows = [];
-    for (let i = 0; i < buttons.length; i++) {
-      const rowIndex = Math.floor(i / 5);
-      if (!rows[rowIndex]) rows[rowIndex] = new ActionRowBuilder();
-      rows[rowIndex].addComponents(buttons[i]);
-    }
+    const rows = buildPageButtonRows({ commandName: "performance", key, labels });
 
     await interaction.reply({
       embeds: [pages[0]],
@@ -215,7 +195,7 @@ module.exports = {
 };
 
 function getEmbed(username, mode, userId, recordNotExists, userRank, userPercentile) {
-  let statusLine = '';
+  let statusLine;
   if (recordNotExists) {
     statusLine = `Hasn't played any ${mode} games yet!`;
   } else if (userRank && userRank !== 'z') {
@@ -233,7 +213,7 @@ function getEmbed(username, mode, userId, recordNotExists, userRank, userPercent
         : getLeagueRankColour(userRank)
     )
     .setDescription(
-      `### __[${escapeUnderscores(username).toUpperCase()}](https://tetr.io/u/${username}) -> Performance -> ${mode}__\n${statusLine}`
+      `### __${formatUsername(username)} -> Performance -> ${mode}__\n${statusLine}`
     )
     .setThumbnail(`https://tetr.io/user-content/avatars/${userId}.png`)
     .setURL(`https://tetr.io/u/${username}`);
@@ -276,7 +256,7 @@ async function addEmbedField(
   effectiveRank,
   extras = { lowerIsBetter: false, isTime: false, decimals: 2, isPercentage: false }
 ) {
-  if (statValue == null || !isFinite(Number(statValue))) return;
+  if (statValue === null || !isFinite(Number(statValue))) return;
 
   const lowerIsBetter = !!extras.lowerIsBetter;
   const decimals = Number.isInteger(extras.decimals) ? extras.decimals : 2;
@@ -288,24 +268,20 @@ async function addEmbedField(
     if (extras.isTime) {
       const seconds = value / 1000;
       if (value >= 60000) return `${Math.floor(seconds / 60)}:${(seconds % 60).toFixed(2).padStart(5, '0')}`;
-      return seconds.toFixed(2) + 's';
+      return formatNumber(seconds, 2) + 's';
     }
 
-    if (extras.isPercentage) return (value * 100).toFixed(2) + '%';
-    if (decimals === 0) return formatNumber(Math.round(value));
-    
-    const decimalShift = 10 ** decimals;
-    return formatNumber(Math.floor(value)) + '.' + (Math.floor(value * decimalShift) % decimalShift).toString().padStart(decimals, '0');
+    if (extras.isPercentage) return formatNumber(value * 100, 2) + '%';
+    return formatNumber(value, decimals);
   };
 
   const fmtDelta = (deltaValue) => {
     const sign = deltaValue > 0 ? '+' : deltaValue === 0 ? '±' : '';
 
-    if (extras.isTime) return `${sign}${(deltaValue / 1000).toFixed(2)}s`;
-    if (extras.isPercentage) return `${sign}${(deltaValue * 100).toFixed(2)}%`;
-    if (decimals === 0) return `${sign}${formatNumber(Math.round(deltaValue))}`;
+    if (extras.isTime) return `${sign}${formatNumber(deltaValue / 1000, 2)}s`;
+    if (extras.isPercentage) return `${sign}${formatNumber(deltaValue * 100, 2)}%`;
 
-    return `${sign}${Number(deltaValue).toFixed(decimals)}`;
+    return `${sign}${formatNumber(deltaValue, decimals)}`;
   };
 
   // 1. determine the "average rank" for this stat value
@@ -313,7 +289,7 @@ async function addEmbedField(
   const deltaToAvg = delta(statValue, Number(statRankData[dbStatKey][avgRank]));
 
   // 2. determine the "user rank baseline": ranked letter OR percentile_rank letter 
-  let userRankLabel = null;
+  let userRankLabel;
   let userRankValue = null;
 
   if (effectiveRank && effectiveRank !== 'z') {
@@ -324,7 +300,7 @@ async function addEmbedField(
   }
 
   const deltaToUser =
-    userRankValue != null
+    userRankValue !== null
       ? delta(statValue, userRankValue)
       : null;
 
@@ -359,7 +335,7 @@ async function addEmbedField(
 
     if (nextRow && !isRedundant) {
       const nextAvg = statRankData[dbStatKey][nextRow];
-      if (nextAvg != null && isFinite(Number(nextAvg))) {
+      if (nextAvg !== null && isFinite(Number(nextAvg))) {
         lines.push(
           `- ${fmtDelta(delta(statValue, Number(nextAvg)))} compared to next rank (${getEmojiOfRank(nextRow)})`
         );

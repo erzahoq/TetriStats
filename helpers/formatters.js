@@ -4,9 +4,19 @@ const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { getEmoji } = require('./emojis');
 const { database } = require('../database');
 
-function formatNumber(num) {
-    const numStr = num.toString();
-    return numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+function formatNumber(num, decimalPlaces = 0) {
+    let numStr = Math.floor(num).toString();
+    if (num < 0) {
+        numStr = Math.ceil(num).toString(); // round towards zero
+    }
+
+    numStr = numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+    if (decimalPlaces > 0) {
+        const decimalPart = Math.round((num - Math.floor(num)) * (10 ** decimalPlaces)).toString().padStart(decimalPlaces, '0');
+        numStr += '.' + decimalPart;
+    }
+    return numStr;
 }
 
 function escapeUnderscores(input) {
@@ -31,8 +41,7 @@ function countryCodeToEmoji(countryCode) {
     return String.fromCodePoint(...codePoints);
 }
 
-// functions.js
-function convertToTimeFormat(inputMs) {
+function formatTime(inputMs) {
     const ms = Math.abs(inputMs);           // normalize to positive
     const totalSeconds = ms / 1000;
     const minutes = Math.floor(totalSeconds / 60);
@@ -44,39 +53,36 @@ function convertToTimeFormat(inputMs) {
     return `${minutes}:${formattedSeconds}`; // e.g., 0:40.597
 }
 
-
-function playtimeConvert(playtime) {
+function formatPlaytime(playtime) {
     if (playtime === 'Hidden') {
         return playtime;
     } 
-    return `${Math.round((playtime/3600) * 10) / 10} Hours`
-}
 
-function getEmojiOfAch(name) { // kinda dumb but whatever, ill fix it later
-    return getEmoji(`ach_${name}`)
-}
+    const hours = playtime % 24;
+    const days = Math.floor(playtime / 24);
 
-function getModEmoji(emoji) {
-    return getEmoji(`mod_${emoji}`)
+    let result = '';
+    if (days > 0) {
+        result += `${formatNumber(days)} Days and `;
+    }
+    result += `${formatNumber(hours, 2)} Hours`;
+    return result;
 }
 
 function getEmojiOfRank(rank) {
-    if (!rank) {
-        return;
-    }
-    let formattedRank = 'rank_' + rank.toLowerCase().replace("+", "plus").replace("-", "minus");
+    if (!rank) return;
+    const formattedRank = 'rank_' + rank.toLowerCase().replace("+", "plus").replace("-", "minus");
     return getEmoji(formattedRank)
 }
 
-function reformatTimestamp(isoString) {
-    if (!isoString) {
-        return "Before account creation was tracked"
+function formatISOString(isoString, accountCreation = false) {
+    if (!isoString && accountCreation) {
+        return "before account creation was tracked"
+    } else if (!isoString) {
+        return "who knows when"
     }
 
-    // Create a Date object from the ISO string
     const date = new Date(isoString);
-
-    // Return the Unix timestamp by dividing the milliseconds by 1000
     return `<t:${Math.floor(date.getTime() / 1000)}:R>`;
 }
 
@@ -120,7 +126,6 @@ function getModCombos(mods) {
         return [];
     }
 
-    let combo = "";
     let foundEntry = null;
 
     // define combos
@@ -169,14 +174,12 @@ function getModCombos(mods) {
         if (entry.mods) {
             const reqSet = new Set(entry.mods);
             if (modsSet.size === reqSet.size && entry.mods.every(m => modsSet.has(m))) {
-                combo = entry.name;
                 foundEntry = entry;
                 break;
             }
         } else if (entry.allowedMods && Number.isInteger(entry.count)) {
             // match when mods contains exactly `count` items in allowedMods
             if (modsSet.size === entry.count && [...modsSet].every(m => entry.allowedMods.includes(m))) {
-                combo = entry.name;
                 foundEntry = entry;
                 break;
             }
@@ -207,7 +210,7 @@ async function buildReplayStatComparisonString(
     effectiveRank,
     extras = { lowerIsBetter: false, isTime: false, decimals: 2, isPercentage: false }
 ) {
-    if (statValue == null || !isFinite(Number(statValue))) return null;
+    if (statValue === null || !isFinite(Number(statValue))) return null;
 
     const lowerIsBetter = !!extras.lowerIsBetter;
     const decimals = Number.isInteger(extras.decimals) ? extras.decimals : 2;
@@ -249,12 +252,12 @@ async function buildReplayStatComparisonString(
     const avgRank = await getClosestRankForReplay(statValue, dbStatKey, lowerIsBetter);
     const avgRankValue = replayStatRankData[dbStatKey][avgRank];
     const deltaToAvg =
-        avgRankValue != null && isFinite(Number(avgRankValue))
+        avgRankValue !== null && isFinite(Number(avgRankValue))
             ? delta(statValue, Number(avgRankValue))
             : null;
 
     //user’s baseline rank
-    let userRankLabel = null;
+    let userRankLabel;
     let userRankValue = null;
 
     if (effectiveRank && effectiveRank !== 'z') {
@@ -265,7 +268,7 @@ async function buildReplayStatComparisonString(
     }
 
     const deltaToUser =
-        userRankValue != null && isFinite(Number(userRankValue))
+        userRankValue !== null && isFinite(Number(userRankValue))
             ? delta(statValue, Number(userRankValue))
             : null;
 
@@ -298,7 +301,7 @@ async function buildReplayStatComparisonString(
 
         if (nextRow && !isRedundant) {
             const nextAvg = replayStatRankData[dbStatKey][nextRow];
-            if (nextAvg != null && isFinite(Number(nextAvg))) {
+            if (nextAvg !== null && isFinite(Number(nextAvg))) {
                 lines.push(
                     `- ${fmtDelta(delta(statValue, Number(nextAvg)))} compared to next rank (${getEmojiOfRank(
                         nextRow
@@ -311,7 +314,7 @@ async function buildReplayStatComparisonString(
     return lines.join('\n');
 }
 
-let replayStatRankData = {};
+const replayStatRankData = {};
 
 async function getClosestRankForReplay(userValue, statKey, lowerIsBetter = false) {
     if (!replayStatRankData[statKey]) {
@@ -342,14 +345,82 @@ async function getClosestRankForReplay(userValue, statKey, lowerIsBetter = false
     return bestRank;
 }
 
-function ensurePageStore(client) {
-  if (!client.pageData || !(client.pageData instanceof Map)) {
-    client.pageData = new Map();
-  }
+function formatUsername(name, asLink = true) {
+    const formatted = escapeUnderscores(name.toUpperCase());
+
+    if (asLink) {
+        return `[${formatted}](https://ch.tetr.io/u/${formatted})`;
+    }
+    return formatted;
+}
+
+function formatAchievement(ach) {
+    const achievementMapping = {
+        100: 'issued',
+        1: 'bronze',
+        2: 'silver',
+        3: 'gold',
+        4: 'platinum',
+        5: 'diamond'
+    };
+
+    //format thing because api silly
+    let displayVal = formatNumber(Math.round(ach.v));
+    if (ach.vt === 2) displayVal = `${formatTime(ach.v)}`
+    else if (ach.vt === 3) displayVal = `${formatTime(-ach.v)}`
+    else if (ach.vt === 4) displayVal = `${formatNumber(ach.v, 2)}m (Floor ${Math.floor(ach.a)})`
+    else if (ach.name === "Guardian Angel") displayVal = `${formatNumber(ach.v, 2)}m` //fuck you OSK you bitch (jk we love you)
+    else if (ach.vt === 5) displayVal = `Obtained ${formatISOString(-ach.v)}`
+    else if (ach.vt === 6) displayVal = formatNumber(-Math.round(ach.v))
+
+    let achText = getEmoji('ach_' + achievementMapping[ach.rank])
+
+    //check for attributes and format
+    if (ach.art === 0) {
+        achText += getEmoji('au')
+    } else if (ach.art === 2) {
+        achText += getEmoji('ac')
+    }
+    if (ach.hidden) {
+        achText += getEmoji('ah')
+    }
+    if (ach.event) {
+        achText += getEmoji('ae')
+    }
+    // i didn't like this formatting it was ugly imo
+
+    achText += ` **${ach.name}** - **${displayVal}** ${ach.object}` // show the main info
+
+    if (ach.nolb) { // if it's issued
+        achText += ` (Issue ${ach.pos}/${ach.total})` 
+    } else {
+        if (ach.pos < 100) { // if you're in the top 100 players
+            achText += ` (**#${ach.pos + 1}**)`
+        }
+        else if (ach.pos / ach.total < 0.01) { // if you're in the top 1%
+            achText += ` (Top ${formatNumber(100 * ach.pos / ach.total, 3)}%, #${ach.pos})` // literally just one extra point of precision
+        } 
+        else { // everything else
+            achText += ` (Top ${formatNumber(100 * ach.pos / ach.total, 2)}%)`
+        }
+    }
+
+    //duo achievement
+    if (ach.x?.ally) {
+        const allyUsername = ach.x.ally.username;
+        achText += ` (With ${formatUsername(allyUsername)})`;
+    }
+
+    if (ach.event) {
+        const eventName = ach.event;
+        achText += ` (${eventName})`
+    }
+
+    return achText;
 }
 
 // helper to build button rows for paged messages, given the command name, session key, labels, and active index
-function buildPageButtonRows({ commandName, key, labels, activeIndex }) {
+function buildPageButtonRows({ commandName, key, labels, activeIndex = 0 }) {
   const buttons = labels.map((label, i) =>
     new ButtonBuilder()
       .setCustomId(`${commandName}:page-${key}-${i}`)
@@ -371,18 +442,17 @@ module.exports = {
     formatNumber,
     escapeUnderscores,
     countryCodeToEmoji,
-    convertToTimeFormat,
-    playtimeConvert,
-    getEmojiOfAch,
+    formatTime,
+    formatPlaytime,
     getEmojiOfRank,
-    reformatTimestamp,
+    formatISOString,
     calculateLevel,
     capitalizeFirstLetter,
-    getModEmoji,
     getLeagueRankColour,
     getModCombos,
     buildReplayStatComparisonString,
     getClosestRankForReplay,
-    ensurePageStore,
+    formatUsername,
+    formatAchievement,
     buildPageButtonRows
 }

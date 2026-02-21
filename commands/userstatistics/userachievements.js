@@ -1,15 +1,7 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
 import('node-fetch'); // Ensure 'node-fetch' is imported properly
 
-const {
-  formatNumber,
-  escapeUnderscores,
-  getEmojiOfAch,
-  reformatTimestamp,
-  convertToTimeFormat,
-  ensurePageStore,
-  buildPageButtonRows,
-} = require('../../helpers/functions');
+const { formatUsername, formatAchievement, buildPageButtonRows } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
 const { getEmoji } = require('../../helpers/emojis');
 
@@ -58,8 +50,8 @@ module.exports = {
             "legacy": "Legacy",
             "event": "Event"
         }
-        let categories = ["general", "league", "solo", "zenith", "legacy", "event"];
-        let achList = {};
+        const categories = ["general", "league", "solo", "zenith", "legacy", "event"];
+        const achList = {};
 
         const colourMapping = {
             "general": "#6dc971",
@@ -71,7 +63,7 @@ module.exports = {
         };
 
         //magic voodoo sorting raah
-        let sortedAchs = sortByAchievementRank(achs);
+        const sortedAchs = sortByAchievementRank(achs);
 
         sortedAchs.forEach(achievement => {
             //check if the user actually has this achievement lmao
@@ -83,9 +75,9 @@ module.exports = {
             }
         });
 
-        let textPages = [];
-        let pageAchsByPageIndex = [];
-        let labels = [];
+        const textPages = [];
+        const pageAchsByPageIndex = [];
+        const labels = [];
 
 
         categories.forEach(cat => {
@@ -96,7 +88,7 @@ module.exports = {
                     textPages.push(new EmbedBuilder()
                         .setColor(colourMapping[cat])
                         .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
-                        .setDescription(`### __[${escapeUnderscores(username.toUpperCase())}](https://ch.tetr.io/u/${username}) -> Achievements -> ${catMap[cat]}__\n` + pageTexts[ind])
+                        .setDescription(`### __${formatUsername(username)} -> Achievements -> ${catMap[cat]}__\n` + pageTexts[ind])
                     )
 
                     pageAchsByPageIndex.push(pageAchs[ind] ?? []);
@@ -112,7 +104,7 @@ module.exports = {
                 textPages.push(new EmbedBuilder()
                     .setColor(colourMapping[cat])
                     .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
-                    .setDescription(`### __[${escapeUnderscores(username.toUpperCase())}](https://ch.tetr.io/u/${username}) -> Achievements -> ${catMap[cat]}__\n` + `${getEmoji("ach_none")} No ${cat} achievements unlocked yet... :(`)
+                    .setDescription(`### __${formatUsername(username)} -> Achievements -> ${catMap[cat]}__\n` + `${getEmoji("ach_none")} No ${cat} achievements unlocked yet... :(`)
                 )
                 pageAchsByPageIndex.push([]);
 
@@ -122,8 +114,6 @@ module.exports = {
 
         const key = interaction.id;
         const commandName = 'userachievements';
-
-        ensurePageStore(interaction.client);
 
         interaction.client.pageData.set(key, {
             commandName,
@@ -142,7 +132,7 @@ module.exports = {
             username,
 
             //dropdown is “extra components” (please work please work please work)
-            getExtraComponents: async (pageIndex) => {
+            getExtraComponents: (pageIndex) => {
                 return [buildAchSelectRow(key, pageIndex, pageAchsByPageIndex?.[pageIndex] ?? [])];
             },
         });
@@ -177,15 +167,6 @@ function sortByAchievementRank(items) {
 }
 
 function paginateAchievements(achlist) {
-    const achievementMapping = {
-        100: 'issued',
-        1: 'bronze',
-        2: 'silver',
-        3: 'gold',
-        4: 'platinum',
-        5: 'diamond'
-    };
-
     const pageSize = 15;
     const pageTexts = [];
     const pageAchs = [];
@@ -200,65 +181,10 @@ function paginateAchievements(achlist) {
         pageAchs[pageIndex] ??= [];
         pageAchs[pageIndex].push(ach);
 
-        let achText = ""
-
-        //ok this is the same achtext shit
-        //format thing because api silly
-        let displayVal = formatNumber(Math.round(ach.v));
-        if (ach.vt === 2) displayVal = `${convertToTimeFormat(ach.v)}`
-        else if (ach.vt === 3) displayVal = `${convertToTimeFormat(-ach.v)}`
-        else if (ach.vt === 4) displayVal = `${formatNumber(Math.round((ach.v) * 100) / 100)}m (Floor ${Math.floor(ach.a)})`
-        else if (ach.name === "Guardian Angel") displayVal = `${formatNumber(Math.round((ach.v) * 100) / 100)}m` //fuck you OSK you bitch (jk we love you)
-        else if (ach.vt === 5) displayVal = `Obtained ${reformatTimestamp(-ach.v)}`
-        else if (ach.vt === 6) displayVal = formatNumber(-Math.round(ach.v))
-
-        achText += `\n- ` + getEmojiOfAch(achievementMapping[ach['rank']])
-
-        //check for attributes and format
-        if (ach.art === 0) {
-            achText += getEmoji('au')
-        } else if (ach.art === 2) {
-            achText += getEmoji('ac')
-        }
-        if (ach.hidden) {
-            achText += getEmoji('ah')
-        }
-        if (ach.event) {
-            achText += getEmoji('ae')
-        }
-        // i didn't like this formatting it was ugly imo
-
-        achText += ` **${ach['name']}** - **${displayVal}** ${ach['object']}` // show the main info
-
-        if (ach.nolb) { // if it's issued
-            achText += ` (Issue ${ach['pos']}/${ach['total']})` 
-        } else {
-            if (ach['pos'] < 100) { // if you're in the top 100 players
-                achText += ` (**#${ach['pos'] + 1}**)`
-            }
-            else if (ach['pos'] / ach['total'] < 0.01) { // if you're in the top 1%
-                achText += ` (Top ${Math.round(ach['pos'] / ach['total'] * 100000) / 1000}%)` // literally just one extra point of precision
-            } 
-            else { // everything else
-                achText += ` (Top ${Math.round(ach['pos'] / ach['total'] * 10000) / 100}%)`
-            }
-        }
-
-        //duo achievement
-        if (ach.x?.ally) {
-            let allyUsername = ach.x.ally.username;
-            achText += ` (With [${escapeUnderscores(allyUsername).toUpperCase()}](https://ch.tetr.io/u/${allyUsername}))`;
-        }
-
-        //why is it like this i could just like do this in 1 line lmao but whatever
-        if (ach.event) {
-            let eventName = ach.event;
-            achText += ` (${eventName})`
-        }
-
+        const achText = "\n- " + formatAchievement(ach);
         pageTexts[pageIndex] += achText;
     }
-
+    
     return {pageTexts, pageAchs};
 }
 
@@ -295,4 +221,3 @@ function buildAchSelectRow(messageKey, pageIndex, pageAchs) {
 
     return new ActionRowBuilder().addComponents(menu);
 }
-

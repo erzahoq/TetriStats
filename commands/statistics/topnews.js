@@ -1,7 +1,6 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, InteractionContextType, MessageFlags } = require('discord.js');
-import("node-fetch");
+const { SlashCommandBuilder, EmbedBuilder, InteractionContextType, MessageFlags } = require('discord.js');
 
-const { reformatTimestamp, capitalizeFirstLetter } = require('../../helpers/functions');
+const { formatISOString, formatUsername, buildPageButtonRows } = require('../../helpers/formatters');
 const { getEmoji } = require('../../helpers/emojis');
 
 
@@ -35,7 +34,7 @@ module.exports = {
         }
 
         // Initialize message
-        let pageData = [];
+        const pageData = [];
         for (let i = 0; i < pageCount; i++) {
             pageData.push([]);
         }
@@ -49,11 +48,11 @@ module.exports = {
             if (user.type === 'leaderboard') {
                 let rank = userData.rank;
                 if (rank > 4) rank = 4;
-                message += `- ${getEmoji(`news_lb${rank}`)} [${(userData.username).toUpperCase()}](https://ch.tetr.io/u/${userData.username}) reached #${userData.rank} in ${gametypeMapping[userData.gametype]}`;
+                message += `- ${getEmoji(`news_lb${rank}`)} ${formatUsername(userData.username)} reached #${userData.rank} in ${gametypeMapping[userData.gametype]}!`;
             } else if (user.type === 'badge') {
-                message += `- ${getEmoji("news_badge")} [${(userData.username).toUpperCase()}](https://ch.tetr.io/u/${userData.username}) received the "${userData.label}" badge`;
+                message += `- ${getEmoji("news_badge")} ${formatUsername(userData.username)} received the "${userData.label}" badge!`;
             }
-            message += ` (${reformatTimestamp(user.ts)})`;
+            message += ` (${formatISOString(user.ts)})`;
 
             // Put the message in the page
             pageData[Math.floor(i / itemsPerPage)].push(message);
@@ -81,11 +80,6 @@ module.exports = {
         const key = interaction.id;
         const labels = ['Page 1', 'Page 2', 'Page 3', 'Page 4'];
 
-        // store session in Map
-        if (!interaction.client.pageData || !(interaction.client.pageData instanceof Map)) {
-            interaction.client.pageData = new Map();
-        }
-
         interaction.client.pageData.set(key, {
             commandName: 'news-top',
             ownerId: interaction.user.id,
@@ -96,27 +90,13 @@ module.exports = {
             expiresAt: Date.now() + 10 * 60 * 1000
         });
 
-        // build buttons
-        const buttons = labels.map((label, i) =>
-        new ButtonBuilder()
-            .setCustomId(`news-top:page-${key}-${i}`)
-            .setLabel(label)
-            .setStyle(ButtonStyle.Primary)
-            .setDisabled(i === 0)
-        );
-
         // split into rows of 5
-        const rows = [];
-        for (let i = 0; i < buttons.length; i++) {
-        const rowIndex = Math.floor(i / 5);
-        if (!rows[rowIndex]) rows[rowIndex] = new ActionRowBuilder();
-        rows[rowIndex].addComponents(buttons[i]);
-        }
+        const rows = buildPageButtonRows({ commandName: "news-top", key, labels });
 
         // Send the initial message with the first page and buttons
         await interaction.reply({
-        embeds: [pages[0]],
-        components: rows
+            embeds: [pages[0]],
+            components: rows
         });
     }
 };

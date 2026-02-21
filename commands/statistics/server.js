@@ -1,7 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, InteractionContextType, MessageFlags } = require('discord.js');
-import("node-fetch");
 
-const { formatNumber } = require('../../helpers/functions');
+const { formatNumber } = require('../../helpers/formatters');
 
 
 module.exports = {
@@ -34,21 +33,21 @@ module.exports = {
 `### __TETR.IO -> Server Statistics__
 
 - Total of **${formatNumber(data.usercount)} Players**
-  - ${formatNumber(data.usercount - data.anoncount)} are registered (*${Math.round(10000 * ((data.usercount - data.anoncount) / data.usercount)) / 100}%*)
-  - ${formatNumber(data.rankedcount)} are ranked (*${Math.round(10000 * (data.rankedcount / data.totalaccounts)) / 100}% of total, ${Math.round(10000 * (data.rankedcount / (data.usercount - data.anoncount))) / 100}% of registered*)
-  - ${formatNumber(data.anoncount)} are anonymous (*${Math.round(10000 * (data.anoncount / data.usercount)) / 100}%*)
+  - ${formatNumber(data.usercount - data.anoncount)} are registered (*${formatNumber(100 * (data.usercount - data.anoncount) / data.usercount, 2)}%*)
+  - ${formatNumber(data.rankedcount)} are ranked (*${formatNumber(100 * data.rankedcount / data.totalaccounts, 2)}% of total, ${formatNumber(100 * data.rankedcount / (data.usercount - data.anoncount), 2)}% of registered*)
+  - ${formatNumber(data.anoncount)} are anonymous (*${formatNumber(100 * data.anoncount / data.usercount, 2)}%*)
 - **${formatNumber(data.gamesplayed)} Games** played
-  - ${formatNumber(data.gamesfinished)} were finished (*${Math.round(10000 * (data.gamesfinished / data.gamesplayed)) / 100}%*)
-  - ${formatNumber(data.recordcount)} were saved as replays (*${Math.round(10000 * (data.recordcount / data.gamesplayed)) / 100}%*)
-  - A total of ${Math.round(data.gamesplayed_delta * 10) / 10} games per second
-  - Or ${formatNumber(Math.round(gamesPlayedOverTime * 60 * 60 * 100) / 100)} games per hour
-- **${formatNumber(Math.round(secondsToDays(data.gametime) * 10) / 10)} Days** of playtime
-  - Or ${formatNumber(Math.round(data.gametime))} seconds
-  - Or ${formatNumber(Math.round(secondsToYears(data.gametime) * 10) / 10)} years
+  - ${formatNumber(data.gamesfinished)} were finished (*${formatNumber(100 * data.gamesfinished / data.gamesplayed, 2)}%*)
+  - ${formatNumber(data.recordcount)} were saved as replays (*${formatNumber(100 * data.recordcount / data.gamesplayed, 2)}%*)
+  - A total of ${formatNumber(data.gamesplayed_delta, 1)} games per second
+  - Or ${formatNumber(gamesPlayedOverTime * 60 * 60, 2)} games per hour
+- **${formatNumber(secondsToDays(data.gametime), 1)} Days** of playtime
+  - Or ${formatNumber(data.gametime)} seconds
+  - Or ${formatNumber(secondsToYears(data.gametime), 2)} years
 - **${formatNumber(data.piecesplaced)} Pieces** placed
-  - ${Math.round(data.piecesplaced / data.gametime * 100) / 100} pieces per second on average
-  - ${formatNumber(data.inputs)} Inputs (${Math.round(data.inputs / data.piecesplaced * 100) / 100} per piece)
-  - ${Math.round(data.inputs / data.gametime * 100) / 100} inputs per second on average
+  - ${formatNumber(data.piecesplaced / data.gametime, 2)} pieces per second on average
+  - ${formatNumber(data.inputs)} Inputs (${formatNumber(data.inputs / data.piecesplaced, 3)} per piece)
+  - ${formatNumber(data.inputs / data.gametime, 3)} inputs per second on average
 `)
     
       await interaction.reply({ embeds: [serverEmbed] });

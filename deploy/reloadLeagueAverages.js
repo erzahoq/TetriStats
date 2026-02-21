@@ -128,7 +128,7 @@ async function fetchAllLeagueUsers() {
 }
 
 function chooseRandomUsers() {
-    let oldRankList = {...rankUserList};
+    const oldRankList = {...rankUserList};
     rankUserList = {};
 
     for (const rank of RANKS) {
@@ -194,7 +194,9 @@ async function fetchUserAverages() {
                         console.error(`failed to fetch data for ${username} after ${maxRetries} retries: ${error.message}; trying next user...`);
                         
                         if (totalErrors >= MAX_ERRORS) {
-                            throw new Error("something went very wrong! gave up after " + MAX_ERRORS + " failures");
+                            throw new Error("something went very wrong! gave up after " + MAX_ERRORS + " failures", {
+                                cause: error
+                            });
                         }
                         break;
                     }
@@ -215,7 +217,7 @@ async function fetchUserAverages() {
 async function calculateRankAverages() {
     await database.LeagueStat.destroy({ where: {} });
     
-    let dbObjects = {};
+    const dbObjects = {};
     const BASE_RANK_TOTAL = {
       sprint: {
         time: 0,
@@ -385,7 +387,7 @@ async function calculateRankAverages() {
         
         for (const statGroup in rankTotals) {
             for (const stat in rankTotals[statGroup]) {
-                let seenCount = dataSeenCount[statGroup][stat] || dataSeenCount[statGroup].overall;
+                const seenCount = dataSeenCount[statGroup][stat] || dataSeenCount[statGroup].overall;
                 rankTotals[statGroup][stat] /= (seenCount || 1);
 
                 if (!dbObjects[statGroup][stat]) {
@@ -428,7 +430,7 @@ function printBar(progress, total, durationEach = null) {
     console.log(toLog);
 }
 
-async function sleep(ms) {
+function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 

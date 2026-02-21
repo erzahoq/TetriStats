@@ -142,7 +142,7 @@ module.exports = {
             ]
         }
 
-        if (ping == "infinite ms") {
+        if (ping === "infinite ms") {
             pingMsgs = [
                 "ping so high it's looped back to negative",
                 "reality is collapsing, try again later",
