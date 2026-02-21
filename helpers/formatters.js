@@ -5,18 +5,23 @@ const { getEmoji } = require('./emojis');
 const { database } = require('../database');
 
 function formatNumber(num, decimalPlaces = 0) {
-    let numStr = Math.floor(num).toString();
-    if (num < 0) {
-        numStr = Math.ceil(num).toString(); // round towards zero
-    }
+    const isNegative = num < 0;
+    const absNum = Math.abs(num);
 
-    numStr = numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    const factor = 10 ** decimalPlaces;
+    const rounded = Math.round(absNum * factor) / factor;
+
+    let [integerPart, decimalPart] = rounded.toString().split('.');
+
+    // Add commas
+    integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
     if (decimalPlaces > 0) {
-        const decimalPart = Math.round((num - Math.floor(num)) * (10 ** decimalPlaces)).toString().padStart(decimalPlaces, '0');
-        numStr += '.' + decimalPart;
+        decimalPart = (decimalPart || '').padEnd(decimalPlaces, '0');
+        return `${isNegative ? '-' : ''}${integerPart}.${decimalPart}`;
     }
-    return numStr;
+
+    return `${isNegative ? '-' : ''}${integerPart}`;
 }
 
 function escapeUnderscores(input) {
