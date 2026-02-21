@@ -6,12 +6,15 @@ const { database } = require('../database');
 
 function formatNumber(num, decimalPlaces = 0) {
     let numStr = Math.floor(num).toString();
+    if (num < 0) {
+        numStr = Math.ceil(num).toString(); // round towards zero
+    }
+
     numStr = numStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
     if (decimalPlaces > 0) {
-        const decimal = num - Math.floor(num);
-        const decimalStr = decimal.toFixed(decimalPlaces).substring(2);
-        numStr += '.' + decimalStr;
+        const decimalPart = Math.round((num - Math.floor(num)) * (10 ** decimalPlaces)).toString().padStart(decimalPlaces, '0');
+        numStr += '.' + decimalPart;
     }
     return numStr;
 }
@@ -56,7 +59,7 @@ function formatPlaytime(playtime) {
     } 
 
     const hours = playtime % 24;
-    const days = Math.floor(hours / 24);
+    const days = Math.floor(playtime / 24);
 
     let result = '';
     if (days > 0) {

@@ -20,12 +20,12 @@ async function getUser(user) {
         const response = await fetch(`https://ch.tetr.io/api/users/search/discord:id:${userID}`);
         const stats = await response.json();
 
-        if (stats.data.users[0] === undefined) {
-            return "no such user"
-        }
-
         if (!stats.success) {
             return "server error"
+        }
+
+        if (stats.data.users[0] === undefined) {
+            return "no such user"
         }
 
         return {
@@ -33,21 +33,21 @@ async function getUser(user) {
             "username": stats.data.users[0].username
         }; // return tetrio small info
     } 
-        const response = await fetch(`https://ch.tetr.io/api/users/${user}`);
-        const stats = await response.json();
+    const response = await fetch(`https://ch.tetr.io/api/users/${user}`);
+    const stats = await response.json();
 
-        if (!stats.success) {
-            if (stats.error.msg === "No such user! | Either you mistyped something, or the account no longer exists.") {
-                return "no such user"
-            } 
-                return "server error"
-            
-        }
+    if (!stats.success) {
+        if (stats.error.msg === "No such user! | Either you mistyped something, or the account no longer exists.") {
+            return "no such user"
+        } 
+            return "server error"
+        
+    }
 
-        return {
-            "_id": stats.data._id,
-            "username": stats.data.username
-        }; // return tetrio small info
+    return {
+        "_id": stats.data._id,
+        "username": stats.data.username
+    }; // return tetrio small info
     
 }
 

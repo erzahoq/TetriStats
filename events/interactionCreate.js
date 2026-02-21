@@ -8,7 +8,7 @@ const {
     ButtonBuilder,
     ButtonStyle
 } = require("discord.js");
-const { buildPageButtonRows, formatUsername, formatNumber, formatTime } = require("../helpers/formatters");
+const { buildPageButtonRows, formatUsername, formatNumber, formatTime, formatISOString } = require("../helpers/formatters");
 const { getEmoji } = require("../helpers/emojis");
 
 module.exports = {
@@ -122,8 +122,6 @@ module.exports = {
 
 
 function buildAchievementDetailEmbed(ach, listEmbed, username) {
-    console.log(ach)
-
     const achievementMapping = {
         100: 'issued',
         1: 'bronze',
@@ -134,7 +132,7 @@ function buildAchievementDetailEmbed(ach, listEmbed, username) {
     };
 
 
-    const e = new EmbedBuilder().setColor(listEmbed.data.color || 'ffffff');
+    const e = new EmbedBuilder().setColor(listEmbed?.data?.color || 'ffffff');
     if (listEmbed?.data?.color) {
         e.setColor(listEmbed.data.color);
     }
@@ -151,15 +149,15 @@ function buildAchievementDetailEmbed(ach, listEmbed, username) {
     if (ach.vt === 2) displayVal = `${formatTime(ach.v)}`
     else if (ach.vt === 3) displayVal = `${formatTime(-ach.v)}`
     else if (ach.vt === 4) displayVal = `${formatNumber(ach.v)}m (Floor ${Math.floor(ach.a)})`
-    else if (ach.name === "Guardian Angel") displayVal = `${formatNumber(ach)}m` //fuck you OSK you bitch (jk we love you)
-    else if (ach.vt === 5) displayVal = `Obtained ${formatTime(-ach.v)}`
+    else if (ach.name === "Guardian Angel") displayVal = `${formatNumber(ach.v)}m` //fuck you OSK you bitch (jk we love you)
+    else if (ach.vt === 5) displayVal = `Obtained ${formatISOString(new Date(-ach.v).toISOString())}`
     else if (ach.vt === 6) displayVal = formatNumber(-Math.round(ach.v))
 
     achText += `\n` + getEmoji("ach_" + achievementMapping[ach.rank])
 
     achText += ` **${displayVal}** ${ach.object} \n` // show the main info
 
-    if (ach.nolb) { // if it's issued
+    if (ach.vt === 5) { // if it's issued
         achText += `Issue ${ach.pos}/${ach.total}` 
     } else {
         if (ach.pos < 100) { // if you're in the top 100 players
