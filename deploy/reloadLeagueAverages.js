@@ -276,6 +276,16 @@ async function calculateRankAverages() {
     }
     printBar(1, RANKS.length+2);
 
+    const possibleAchievements = [];
+    for (const rank of RANKS) {
+        for (const userData of userDataList[rank]) {
+            for (const achievement of userData.achievements || []) {
+                if (!possibleAchievements.includes(achievement.n)) {
+                    possibleAchievements.push(achievement.n);
+                }
+            }
+        }
+    }
 
     for (const rank of RANKS) {
         console.log(`calculating averages for rank ${rank}...`);
@@ -370,11 +380,11 @@ async function calculateRankAverages() {
 
                 if (achievement.rank === 100) {
                     // issued achievement; calculate for percentage instead
-                    if (achievement.pos) {
-                        rankTotals.achievements[achievement.n]++;
-                    }
+                    rankTotals.achievements[achievement.n]++;
 
-                    dataSeenCount.achievements[achievement.n]++;
+                    if (!dataSeenCount.achievements[achievement.n]) {
+                        dataSeenCount.achievements[achievement.n] = userDataList[rank].length;
+                    }
                     continue;
                 }
 
