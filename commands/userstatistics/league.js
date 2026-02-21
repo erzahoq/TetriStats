@@ -59,6 +59,11 @@ module.exports = {
             }
         }
 
+        if (pages.length === 1) {
+            await interaction.reply({ embeds: pages });
+            return;
+        }
+
         //paging data
         const key = interaction.id; //this becomes the <key> in league:page-<key>-<index>
         const labels = ['Current', ...seasonNumbers.map(s => `Season ${s}`)];

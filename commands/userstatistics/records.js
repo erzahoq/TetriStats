@@ -72,7 +72,8 @@ module.exports = {
                 .setStyle(ButtonStyle.Primary)
 
             // do the description
-            let desc = `### __${formatUsername(user.username)} -> Records -> ${gametypeMapping[category]}__\n`;
+            const title = `### __${formatUsername(user.username)} -> Records -> ${gametypeMapping[category]}__`
+            let desc = `${title}\n`;
             if (fetched.top) {
                 desc += `- ${getEmoji('news_lblocal')} Personal best
   ${formatRecord(fetched.top)}\n\n`
@@ -81,8 +82,8 @@ module.exports = {
                 desc += `${formatRecord(rec)}\n`;
             })
 
-            if (desc === '') {
-                desc = `${getEmoji('ach_none')} No ${gametypeMapping[category]} records yet...`
+            if (desc.trim() === title) {
+                desc += `${getEmoji('ach_none')} No ${gametypeMapping[category]} records yet...`
             }
 
             // set description and push to list

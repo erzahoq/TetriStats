@@ -53,19 +53,29 @@ function formatTime(inputMs) {
     return `${minutes}:${formattedSeconds}`; // e.g., 0:40.597
 }
 
-function formatPlaytime(playtime) {
+function formatPlaytime(playtime, hoursOnly = false) {
     if (playtime === 'Hidden') {
         return playtime;
     } 
 
-    const hours = playtime % 24;
-    const days = Math.floor(playtime / 24);
+    const hours = playtime / 60 / 60;
+    if (hoursOnly) {
+        return formatNumber(hours, 2) + ' Hours';
+    }
+
+    const formattedHours = hours % 24;
+    const days = Math.floor(hours / 24);
 
     let result = '';
     if (days > 0) {
         result += `${formatNumber(days)} Days and `;
     }
-    result += `${formatNumber(hours, 2)} Hours`;
+    result += `${formatNumber(formattedHours, 2)} Hours`;
+
+    if (hours < 1) {
+        const minutes = playtime / 60;
+        result = `${formatNumber(minutes, 2)} Minutes`;
+    }
     return result;
 }
 

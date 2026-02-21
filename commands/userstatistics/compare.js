@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, InteractionContextType, ApplicationIntegrationType, MessageFlags } = require('discord.js');
 
-const { formatNumber, escapeUnderscores, countryCodeToEmoji, formatPlaytime, getEmojiOfRank, calculateLevel } = require('../../helpers/formatters');
+const { formatNumber, escapeUnderscores, countryCodeToEmoji, formatPlaytime, getEmojiOfRank, calculateLevel, formatUsername } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser')
 
 module.exports = {
@@ -66,9 +66,7 @@ module.exports = {
         // thanks chatgpt 4.5 very cool
         const comparisonEmbed = new EmbedBuilder()
             .setColor('#5865F2') // Discord blurple is visually pleasing
-            .setTitle(`📊 ${escapeUnderscores(userStats1.username.toUpperCase())} vs ${escapeUnderscores(userStats2.username.toUpperCase())}`)
-            .setDescription(`Comparison of TETR.IO statistics between **${userStats1.username.toUpperCase()}** ${getEmojiOfRank(userSummary1.league.rank)} and **${userStats2.username.toUpperCase()}** ${getEmojiOfRank(userSummary2.league.rank)}.`)
-            .setThumbnail('https://tetr.io/res/logo/logo-light.svg') // Add TETR.IO logo
+            .setDescription(`### __Compare -> ${formatUsername(userStats1.username)} vs ${formatUsername(userStats2.username)}__`)
             .addFields(
                 { name: 'Statistic', value: `
                 **Country**
@@ -83,10 +81,10 @@ module.exports = {
                 **Attack Per Minute**`, inline: true },
 
                 { name: `${escapeUnderscores(userStats1.username.toUpperCase())}`, value: `
-                ${countryCodeToEmoji(userStats1.country) || '🌐'}
+                ${countryCodeToEmoji(userStats1.country) || '?'}
                 ${userStats1.gamesplayed===-1?"N/A":formatNumber(userStats1.gamesplayed)}
                 ${userStats1.gameswon===-1?"N/A":`${formatNumber(userStats1.gameswon)} (${formatNumber(userStats1.gameswon / userStats1.gamesplayed * 100, 2)}%)`}
-                ${formatPlaytime(userStats1.gametime)}
+                ${formatPlaytime(userStats1.gametime, true)}
                 ${formatNumber(Math.floor(calculateLevel(userStats1.xp)))}
                 ${formatNumber(userStats1.ar)} AR
                 ${getEmojiOfRank(userSummary1.league.rank)}
@@ -95,10 +93,10 @@ module.exports = {
                 ${(userSummary1.league.apm || 0).toFixed(2)} APM`, inline: true },
 
                 { name: `${escapeUnderscores(userStats2.username.toUpperCase())}`, value: `
-                ${countryCodeToEmoji(userStats2.country) || '🌐'}
+                ${countryCodeToEmoji(userStats2.country) || '?'}
                 ${userStats2.gamesplayed===-1?"N/A":formatNumber(userStats2.gamesplayed)}
                 ${userStats2.gameswon===-1?"N/A":formatNumber(userStats2.gameswon)} (${formatNumber(userStats2.gameswon / userStats2.gamesplayed * 100, 2)}%)
-                ${formatPlaytime(userStats2.gametime)}
+                ${formatPlaytime(userStats2.gametime, true)}
                 ${formatNumber(Math.floor(calculateLevel(userStats2.xp)))}
                 ${formatNumber(userStats2.ar)} AR
                 ${getEmojiOfRank(userSummary2.league.rank)}
@@ -106,8 +104,7 @@ module.exports = {
                 ${(userSummary2.league.pps || 0).toFixed(2)} PPS
                 ${(userSummary2.league.apm || 0).toFixed(2)} APM`, inline: true }
             )
-            .setTimestamp()
-            .setFooter({ text: 'TetriStats • Data from TETR.IO' });
+            .setTimestamp();
 
 
 interaction.editReply({ embeds: [comparisonEmbed] });

@@ -284,7 +284,7 @@ function formatLeaguePreview(statistics, country) {
   }
 
   if (gamesPlayed !== 0) {
-    standing += `\n    - Won ${gamesWon}/${gamesPlayed} games (${formatNumber(gamesWon / gamesPlayed * 100, 2)}%)\n    - ${
+    standing += `\n  - Won ${gamesWon}/${gamesPlayed} games (${formatNumber(gamesWon / gamesPlayed * 100, 2)}%)\n  - ${
       leagueStats.vs || 'N/A'
     } VS score`;
   }
