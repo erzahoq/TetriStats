@@ -220,7 +220,7 @@ function formatGamesPlayed(gamesplayed, gameswon, gamestime) {
   if (gamesplayed > -1) {
     return `\n- Played ${gamesplayed} games
   - Won ${gamesWonConvert(gameswon, gamesplayed)} of them
-  - Has ${formatPlaytime(gamestime)} of playtime`;
+  -  ${formatPlaytime(gamestime, true)} played (${formatPlaytime(gamestime)})`;
   } 
     return '\n- Has hidden games played';
   

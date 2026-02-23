@@ -73,7 +73,7 @@ function formatPlaytime(playtime, hoursOnly = false) {
 
     const hours = playtime / 60 / 60;
     if (hoursOnly) {
-        return formatNumber(hours, 2) + ' hours';
+        return formatNumber(hours, 1) + ' hours';
     }
 
     const formattedHours = hours % 24;
@@ -83,11 +83,11 @@ function formatPlaytime(playtime, hoursOnly = false) {
     if (days > 0) {
         result += `${formatNumber(days)} days, `;
     }
-    result += `${formatNumber(formattedHours, 2)} hours`;
+    result += `${formatNumber(formattedHours, 0)} hours`;
 
     if (hours < 1) {
         const minutes = playtime / 60;
-        result = `${formatNumber(minutes, 2)} minutes`;
+        result = `${formatNumber(minutes, 0)} minutes`;
     }
     return result;
 }
