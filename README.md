@@ -16,7 +16,7 @@ View user profiles with detailed info, including PPS, VS score, TR, displayed ac
 ## Replay Analysis
 
 Upload .ttr replay files and get a breakdown of the replay, alongside a performance report for each statistic.
-TetriStats compares replay statistics with **nearly 10,000 users** to provide up-to-date rank data.
+TetriStats compares replay statistics with **nearly 12,000 users** to provide up-to-date rank data.
 
 ![Example of performance breakdown in a replay](github-images/replay.png)
 
@@ -49,12 +49,13 @@ Use the `/performance` command and get rated on each gamemode, and where to impr
 - View recent world records with `/news-top`
 
 ## Installation & Usage
+TetriStats can be added to both your user applications and as a server bot!
 
-To invite TetriStats to your server:
+To add TetriStats:
 
-[➡️ Click here to add TetriStats to your Discord server](https://discord.com/oauth2/authorize?client_id=1277041428274479124)
+[➡️ Click here to add TetriStats](https://discord.com/oauth2/authorize?client_id=1277041428274479124)
 
-After inviting, try commands like /stats, /compare, /league, or /records to get started!
+After inviting, try commands like /user, /compare, /league, or /performance to get started!
 ## Links
 
 - [GitHub](https://github.com/erzahoq/TetriStats)
@@ -66,3 +67,4 @@ After inviting, try commands like /stats, /compare, /league, or /records to get 
 - Created by [@erzahoq](https://github.com/erzahoq) and [@monkeyswithpie](https://github.com/monkeyswithpie)
 - Uses the [TETR.IO public API](https://tetr.io/about/api/)
 - Game and data provided by osk, creator of TETR.IO
+
