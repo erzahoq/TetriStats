@@ -258,7 +258,7 @@ function formatAchievementDelta(delta, ach) {
   if (ach.vt === 0 || ach.vt === 5) return null;
 
   const d = Number(delta);
-  const sign = d > 0 ? '-' : d < 0 ? '+' : '±';
+  const sign = d > 0 ? '+' : d < 0 ? '-' : '±';
   const abs = Math.abs(d);
 
   switch (ach.vt) {
