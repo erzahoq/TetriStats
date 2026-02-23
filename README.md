@@ -43,7 +43,7 @@ Use the `/performance` command and get rated on each gamemode, and where to impr
 
 ## ...And Much More!
 
-- See achievements of a user with `/achievement-info`
+- See achievements of a user with `/userachievements`, and view specific achievement statistics
 - Compare two users with `/compare`
 - View general server stats with `/server-stats`
 - View recent world records with `/news-top`
@@ -67,4 +67,5 @@ After inviting, try commands like /user, /compare, /league, or /performance to g
 - Created by [@erzahoq](https://github.com/erzahoq) and [@monkeyswithpie](https://github.com/monkeyswithpie)
 - Uses the [TETR.IO public API](https://tetr.io/about/api/)
 - Game and data provided by osk, creator of TETR.IO
+
 
