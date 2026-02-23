@@ -4,6 +4,13 @@ const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { getEmoji } = require('./emojis');
 const { database } = require('../database');
 
+const _leagueStatCache = new Map(); // dbKey -> { thresholds, seen }
+
+const RANK_ORDER = [
+    'd','d+','c-','c','c+','b-','b','b+',
+    'a-','a','a+','s-','s','s+','ss','u','x','x+'
+];
+
 function formatNumber(num, decimalPlaces = 0) {
     const isNegative = num < 0;
     const absNum = Math.abs(num);
@@ -11,7 +18,8 @@ function formatNumber(num, decimalPlaces = 0) {
     const factor = 10 ** decimalPlaces;
     const rounded = Math.round(absNum * factor) / factor;
 
-    let [integerPart, decimalPart] = rounded.toString().split('.');
+    let [integerPart, decimalPart] = rounded.
+    toString().split('.');
 
     // Add commas
     integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
@@ -360,6 +368,91 @@ async function getClosestRankForReplay(userValue, statKey, lowerIsBetter = false
     return bestRank;
 }
 
+async function getClosestRank(
+  value,
+  dbStatKey,
+  { lowerIsBetter = false } = {}
+) {
+
+    if (value === null || !isFinite(Number(value))) return null;
+
+    // fetch + cache
+    if (!getClosestRank._cache) getClosestRank._cache = {};
+    if (!getClosestRank._cache[dbStatKey]) {
+        const row = await database.LeagueStat.findByPk(dbStatKey);
+
+        // row missing → cache empty
+        if (!row || !row.values || Object.keys(row.values).length === 0) {
+            console.warn(`[getClosestRank] missing LeagueStat row for ${dbStatKey}`);
+            getClosestRank._cache[dbStatKey] = { thresholds: null, seen: null };
+            return null;
+        }
+        getClosestRank._cache[dbStatKey] = {
+        thresholds: row?.values ?? {},
+        seen: row?.seenCount ?? {}
+        };
+    }
+
+    const { thresholds, seen } = getClosestRank._cache[dbStatKey];
+
+    let bestRank = null;
+    let bestDiff = Infinity;
+
+    for (const rank of RANK_ORDER) {
+        const ref = thresholds[rank];
+        if (ref === null || ref === undefined || !isFinite(Number(ref))) continue;
+
+        const diff = Math.abs(Number(value) - Number(ref));
+
+        if (diff < bestDiff) {
+        bestDiff = diff;
+        bestRank = rank;
+        continue;
+        }
+
+        // tie-break: bias toward better rank
+        if (diff === bestDiff && bestRank) {
+        const currentRef = thresholds[bestRank];
+        const better =
+            (!lowerIsBetter && ref > currentRef) ||
+            (lowerIsBetter && ref < currentRef);
+
+        if (better) bestRank = rank;
+        }
+    }
+
+    if (!bestRank) return null;
+
+    const refValue = Number(thresholds[bestRank]);
+    const delta = lowerIsBetter
+        ? refValue - Number(value)
+        : Number(value) - refValue;
+
+    return {
+        rank: bestRank,
+        refValue,
+        delta,              // positive = better
+        seen: seen?.[bestRank] ?? null
+    };
+}
+
+async function getLeagueStatThresholds(dbStatKey) {
+    if (!_leagueStatCache.has(dbStatKey)) {
+        const row = await database.LeagueStat.findByPk(dbStatKey);
+        _leagueStatCache.set(dbStatKey, {
+        thresholds: row?.values ?? {},
+        seen: row?.seenCount ?? {},
+        });
+    }
+    return _leagueStatCache.get(dbStatKey).thresholds;
+}
+
+function getNextRank(rank) {
+    const i = RANK_ORDER.indexOf(rank);
+    if (i < 0 || i + 1 >= RANK_ORDER.length) return null;
+    return RANK_ORDER[i + 1];
+}
+
 function formatUsername(name, asLink = true) {
     const formatted = escapeUnderscores(name.toUpperCase());
 
@@ -467,6 +560,9 @@ module.exports = {
     getModCombos,
     buildReplayStatComparisonString,
     getClosestRankForReplay,
+    getClosestRank,
+    getLeagueStatThresholds,
+    getNextRank,
     formatUsername,
     formatAchievement,
     buildPageButtonRows

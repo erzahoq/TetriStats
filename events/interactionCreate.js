@@ -8,8 +8,9 @@ const {
     ButtonBuilder,
     ButtonStyle
 } = require("discord.js");
-const { buildPageButtonRows, formatUsername, formatNumber, formatTime, formatISOString } = require("../helpers/formatters");
+const { buildPageButtonRows, formatUsername, formatNumber, formatTime, formatISOString, getClosestRank, getEmojiOfRank, getLeagueStatThresholds, getNextRank } = require("../helpers/formatters");
 const { getEmoji } = require("../helpers/emojis");
+const database = require("../database.js").database;
 
 module.exports = {
     name: Events.InteractionCreate,
@@ -49,7 +50,7 @@ module.exports = {
                     pageData.lastListPage = pageData.currentPage ?? 0;
                     pageData.currentPage = pageIndex;
 
-                    const detailEmbed = buildAchievementDetailEmbed(ach, pageData.textPages?.[pageIndex], pageData.username);
+                    const detailEmbed = await buildAchievementDetailEmbed(ach, pageData.textPages?.[pageIndex], pageData.username);
 
                     const deleteRow = buildDeleteRow(interactionId, pageData.ownerId);
 
@@ -121,7 +122,10 @@ module.exports = {
 };
 
 
-function buildAchievementDetailEmbed(ach, listEmbed, username) {
+async function buildAchievementDetailEmbed(ach, listEmbed, username) {
+    const lowerIsBetter = (ach.vt === 2 || ach.vt === 3); // time-like
+    const closestRank = await getClosestRank(ach.v, `achievements/${ach.n}`, { lowerIsBetter });
+    
     const achievementMapping = {
         100: 'issued',
         1: 'bronze',
@@ -149,7 +153,7 @@ function buildAchievementDetailEmbed(ach, listEmbed, username) {
     if (ach.vt === 2) displayVal = `${formatTime(ach.v)}`
     else if (ach.vt === 3) displayVal = `${formatTime(-ach.v)}`
     else if (ach.vt === 4) displayVal = `${formatNumber(ach.v)}m (Floor ${Math.floor(ach.a)})`
-    else if (ach.name === "Guardian Angel") displayVal = `${formatNumber(ach.v)}m` //fuck you OSK you bitch (jk we love you)
+    else if (ach.name === "Guardian Angel") displayVal = `${formatNumber(ach.v)}m` //removed hate speech :3
     else if (ach.vt === 5) displayVal = `Obtained ${formatISOString(new Date(-ach.v).toISOString())}`
     else if (ach.vt === 6) displayVal = formatNumber(-Math.round(ach.v))
 
@@ -178,6 +182,42 @@ function buildAchievementDetailEmbed(ach, listEmbed, username) {
         achText += `\n With ${formatUsername(allyUsername)}`;
     }
 
+    //if its not issued:
+    if (ach.rank !== 100 && closestRank) {
+        //show closest rank and data
+        achText += `\n\n**Performance**\nAround ${getEmojiOfRank(closestRank.rank)}`;
+
+        const deltaText = formatAchievementDelta(closestRank.delta, ach);
+        if (deltaText) {
+            achText += ` (${deltaText})`;
+        }
+
+        const nextRank = getNextRank(closestRank.rank);
+        if (nextRank) {
+            const thresholds = await getLeagueStatThresholds(`achievements/${ach.n}`);
+
+            const rawNext = thresholds?.[nextRank];
+            if (rawNext !== undefined && isFinite(Number(rawNext))) {
+                const displayV =
+                    (ach.vt === 3 || ach.vt === 5 || ach.vt === 6) ? -ach.v : ach.v;
+                const nextDisplay =
+                    (ach.vt === 3 || ach.vt === 5 || ach.vt === 6) ? -rawNext : rawNext;
+
+                const need = lowerIsBetter
+                    ? (displayV - nextDisplay)
+                    : (nextDisplay - displayV);
+
+                if (need > 0) {
+                    const needText = formatAchievementDelta(need, ach);
+                    if (needText) {
+                        achText += `\n${needText} to ${getEmojiOfRank(nextRank)} rank`;
+                    }
+                }
+            }
+        }
+    }
+
+
     //check for attributes and format
     if (ach.art > -1) achText += "\n" //sorry (???)
     if (ach.art === 0) {
@@ -198,7 +238,7 @@ function buildAchievementDetailEmbed(ach, listEmbed, username) {
     }
 
     if (ach.desc) {
-        achText += `\n\n-# *${ach.desc}*`;
+        achText += `\n-# *${ach.desc}*`;
     }
 
     lines.push(achText);
@@ -206,6 +246,39 @@ function buildAchievementDetailEmbed(ach, listEmbed, username) {
     e.setDescription(lines.join('\n') || 'No extra info available.');
 
     return e;
+};
+
+//stupid vt again aysm
+function formatAchievementDelta(delta, ach) {
+  if (delta === null || delta === undefined || !isFinite(Number(delta))) return null;
+
+  //vt = ISSUE or NONE, meaning delta is meaningless
+  if (ach.vt === 0 || ach.vt === 5) return null;
+
+  const d = Number(delta);
+  const sign = d > 0 ? '-' : d < 0 ? '+' : '±';
+  const abs = Math.abs(d);
+
+  switch (ach.vt) {
+    //TIME (ms, lower is better)
+    case 2:
+    //TIME_INV (stored negative, but delta already normalized)
+    case 3:
+      return `${sign}${formatNumber(abs / 1000, 2)}s`;
+
+    //FLOOR / altitude (meters)
+    case 4:
+      return `${sign}${formatNumber(abs, 1)}m`;
+
+    //NUMBER_INV (stored negative, display positive)
+    case 6:
+      return `${sign}${formatNumber(abs, 0)}`;
+
+    //NUMBER (plain numeric)
+    case 1:
+    default:
+      return `${sign}${formatNumber(abs, 1)}`;
+  }
 }
 
 //these should be in a helper file but im lazy so

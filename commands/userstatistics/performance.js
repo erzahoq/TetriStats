@@ -1,9 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, MessageFlags, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
-const { formatNumber, getEmojiOfRank, getLeagueRankColour, formatUsername, buildPageButtonRows } = require('../../helpers/formatters');
+const { formatNumber, getEmojiOfRank, getLeagueRankColour, formatUsername, buildPageButtonRows, getClosestRank, getLeagueStatThresholds, getNextRank } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
 const { database } = require('../../database');
-
-const statRankData = {};
 
 const getAltitude = (res) => Number(res?.stats?.zenith?.altitude ?? -Infinity);
 
@@ -221,32 +219,6 @@ function getEmbed(username, mode, userId, recordNotExists, userRank, userPercent
   return embed;
 }
 
-async function getClosestRank(userValue, statKey, lowerIsBetter = false) {
-  if (!statRankData[statKey]) {
-    statRankData[statKey] = (await database.LeagueStat.findByPk(statKey)).values;
-  }
-
-  let bestRank = 'd';
-  let bestDiff = Infinity;
-  for (const [rank, value] of Object.entries(statRankData[statKey])) {
-    if (!value) continue;
-    const diff = Math.abs(Number(userValue) - value);
-
-    if (diff < bestDiff) {
-      bestRank = rank;
-      bestDiff = diff;
-    } else if (diff === bestDiff) {
-      // tie-breaker: bias toward the "better" rank
-      const better =
-        (!lowerIsBetter && value > statRankData[statKey][bestRank]) ||
-        (lowerIsBetter && value < statRankData[statKey][bestRank]);
-      if (better) bestRank = rank;
-    }
-  }
-
-  return bestRank;
-}
-
 
 async function addEmbedField(
   embed,
@@ -261,8 +233,7 @@ async function addEmbedField(
   const lowerIsBetter = !!extras.lowerIsBetter;
   const decimals = Number.isInteger(extras.decimals) ? extras.decimals : 2;
 
-  // a bunch of helper functions for formatting
-  const delta = (x, ref) => (lowerIsBetter ? (ref - x) : (x - ref));
+  const deltaFn = (x, ref) => (lowerIsBetter ? (ref - x) : (x - ref));
 
   const fmtValue = (value) => {
     if (extras.isTime) {
@@ -270,38 +241,38 @@ async function addEmbedField(
       if (value >= 60000) return `${Math.floor(seconds / 60)}:${(seconds % 60).toFixed(2).padStart(5, '0')}`;
       return formatNumber(seconds, 2) + 's';
     }
-
     if (extras.isPercentage) return formatNumber(value * 100, 2) + '%';
     return formatNumber(value, decimals);
   };
 
   const fmtDelta = (deltaValue) => {
     const sign = deltaValue > 0 ? '+' : deltaValue === 0 ? '±' : '';
-
     if (extras.isTime) return `${sign}${formatNumber(deltaValue / 1000, 2)}s`;
     if (extras.isPercentage) return `${sign}${formatNumber(deltaValue * 100, 2)}%`;
-
     return `${sign}${formatNumber(deltaValue, decimals)}`;
   };
 
-  // 1. determine the "average rank" for this stat value
-  const avgRank = await getClosestRank(statValue, dbStatKey, lowerIsBetter);
-  const deltaToAvg = delta(statValue, Number(statRankData[dbStatKey][avgRank]));
+  // thresholds via helper
+  const thresholds = await getLeagueStatThresholds(dbStatKey);
 
-  // 2. determine the "user rank baseline": ranked letter OR percentile_rank letter 
-  let userRankLabel;
+  // 1) “around rank” using helper
+  const around = await getClosestRank(statValue, dbStatKey, { lowerIsBetter });
+  const avgRank = around?.rank ?? null;
+
+  const deltaToAvg = around ? deltaFn(statValue, around.refValue) : null;
+
+  // 2) user baseline ref value
+  let userRankLabel = 'Unranked';
   let userRankValue = null;
 
   if (effectiveRank && effectiveRank !== 'z') {
     userRankLabel = getEmojiOfRank(effectiveRank);
-    userRankValue = statRankData[dbStatKey][effectiveRank];
-  } else {
-    userRankLabel = 'Unranked';
+    userRankValue = thresholds?.[effectiveRank];
   }
 
   const deltaToUser =
-    userRankValue !== null
-      ? delta(statValue, userRankValue)
+    userRankValue !== null && userRankValue !== undefined && isFinite(Number(userRankValue))
+      ? deltaFn(statValue, Number(userRankValue))
       : null;
 
   const displayValue = fmtValue(statValue);
@@ -309,35 +280,27 @@ async function addEmbedField(
 
   const userRankLetter = effectiveRank || null;
 
-  // 1) show “around …” first (only if different from the user's baseline rank)
+  // 1) “around …” line
   if (avgRank && deltaToAvg !== null && avgRank !== userRankLetter) {
     lines.push(`- around ${getEmojiOfRank(avgRank)} (${fmtDelta(deltaToAvg)})`);
   }
 
-  // 2) then show “± compared to [current rank]” (skip entirely if Unranked)
+  // 2) “compared to current rank” line
   if (userRankLabel !== 'Unranked') {
-    if (deltaToUser !== null) {
-      lines.push(`- ${fmtDelta(deltaToUser)} compared to ${userRankLabel}`);
-    } else {
-      lines.push(`- compared to ${userRankLabel}`);
-    }
+    if (deltaToUser !== null) lines.push(`- ${fmtDelta(deltaToUser)} compared to ${userRankLabel}`);
+    else lines.push(`- compared to ${userRankLabel}`);
   }
 
-  // 3) show “compared to next rank …” based on the around-rank, if the rank is different
-
-  if (avgRank && avgRank !== "x+") {
-    const order = Object.keys(statRankData[dbStatKey]);
-    const avgIdx = order.findIndex((rk) => rk === avgRank);
-    const nextIdx = avgIdx >= 0 ? avgIdx + 1 : -1;
-    const nextRow =
-      nextIdx >= 0 && nextIdx < order.length ? order[nextIdx] : null;
+  // 3) ✅ “to next rank …” using getNextRank()
+  if (avgRank && avgRank !== 'x+') {
+    const nextRow = getNextRank(avgRank);
     const isRedundant = nextRow && nextRow === userRankLetter;
 
     if (nextRow && !isRedundant) {
-      const nextAvg = statRankData[dbStatKey][nextRow];
-      if (nextAvg !== null && isFinite(Number(nextAvg))) {
+      const nextAvg = thresholds?.[nextRow];
+      if (nextAvg !== null && nextAvg !== undefined && isFinite(Number(nextAvg))) {
         lines.push(
-          `- ${fmtDelta(delta(statValue, Number(nextAvg)))} compared to next rank (${getEmojiOfRank(nextRow)})`
+          `- ${fmtDelta(deltaFn(statValue, Number(nextAvg)))} compared to next rank (${getEmojiOfRank(nextRow)})`
         );
       }
     }
