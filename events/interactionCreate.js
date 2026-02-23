@@ -182,6 +182,8 @@ async function buildAchievementDetailEmbed(ach, listEmbed, username) {
         achText += `\n With ${formatUsername(allyUsername)}`;
     }
 
+    achText += `\nAchieved ${formatISOString(new Date(ach.t).toISOString(), true)}`
+
     //if its not issued:
     if (ach.rank !== 100 && closestRank) {
         //show closest rank and data
