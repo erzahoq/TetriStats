@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, InteractionContextType, MessageFlags } = require('discord.js');
-
+const { formatPlaytime } = require('../../helpers/formatters');
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('about')
@@ -29,7 +29,7 @@ module.exports = {
 - **Stats**
   - In ${totalServers} servers
   - ${totalUsers} users across servers
-  - ${Math.round(client.uptime / 1000)}s uptime
+  - ${formatPlaytime(client.uptime / 1000)} uptime
 - **Links**
   - [Github Repository](https://github.com/erzahoq/TetriStats)
   - [Tetra Channel](https://ch.tetr.io/) and [TETR.IO](https://tetr.io)
@@ -62,3 +62,4 @@ module.exports = {
 		await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 	},
 };
+
