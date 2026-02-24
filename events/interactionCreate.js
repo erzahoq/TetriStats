@@ -10,7 +10,6 @@ const {
 } = require("discord.js");
 const { buildPageButtonRows, formatUsername, formatNumber, formatPreciseTime, formatISOString, getClosestRank, getEmojiOfRank, getLeagueStatThresholds, getNextRank } = require("../helpers/formatters");
 const { getEmoji } = require("../helpers/emojis");
-const database = require("../database.js").database;
 
 module.exports = {
     name: Events.InteractionCreate,
@@ -265,6 +264,7 @@ function formatAchievementDelta(delta, ach) {
     //TIME (ms, lower is better)
     case 2:
     //TIME_INV (stored negative, but delta already normalized)
+    // eslint-disable-next-line no-fallthrough
     case 3:
       return `${sign}${formatNumber(abs / 1000, 2)}s`;
 

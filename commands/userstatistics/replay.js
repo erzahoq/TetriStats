@@ -94,7 +94,6 @@ module.exports = {
   - Made ${replayStats.finesse.faults} faults
   - Placed ${replayStats.finesse.perfectpieces} pieces perfectly`}`;
 
-        const performanceStrings = [];
         let performanceDisclaimer = "";
         // skips the "compared to rank" line for performance tab
         // TODO maybe add an API call here to get an actual rank
@@ -274,11 +273,9 @@ ${userSuffix}`),
         } else {
             return interaction.editReply({content: 'This type of replay file has not been accounted for yet, please contact the developers if you believe this is a mistake.'})
         }
-
-        const perfStatBlock = performanceStrings
-                .filter(s => typeof s === 'string' ? s.trim().length > 0 : Boolean(s))
-                .join('\n');
         
+        performanceEmbed.setDescription(performanceEmbed.data.description + performanceDisclaimer);
+
         pages.push(performanceEmbed);
 
         const key = interaction.id;

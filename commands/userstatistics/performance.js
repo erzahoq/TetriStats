@@ -1,7 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, MessageFlags, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
-const { formatNumber, getEmojiOfRank, getLeagueRankColour, formatUsername, buildPageButtonRows, getClosestRank, getLeagueStatThresholds, getNextRank, addStatComparisonField } = require('../../helpers/formatters');
+const { getEmojiOfRank, getLeagueRankColour, formatUsername, buildPageButtonRows, addStatComparisonField } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
-const { database } = require('../../database');
 
 const getAltitude = (res) => Number(res?.stats?.zenith?.altitude ?? -Infinity);
 
