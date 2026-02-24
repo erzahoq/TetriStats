@@ -238,6 +238,7 @@ async function calculateRankAverages() {
         apm: 0,
         climbSpeed: 0,
         btb: 0,
+        app: 0,
         finesse: 0,
       },
       zenithEx: {
@@ -246,6 +247,7 @@ async function calculateRankAverages() {
         apm: 0,
         climbSpeed: 0,
         btb: 0,
+        app: 0,
         finesse: 0,
       },
       league: {
@@ -344,6 +346,7 @@ async function calculateRankAverages() {
                 rankTotals.zenith.apm += recordResults.aggregatestats.apm;
                 rankTotals.zenith.climbSpeed += recordResults.stats.zenith.rank;
                 rankTotals.zenith.btb += recordResults.stats.topbtb;
+                rankTotals.zenith.app += (recordResults.stats.garbage.attack/recordResults.stats.piecesplaced) || 0;
 
                 if (recordResults.stats.finesse) {
                     dataSeenCount.zenith.finesse += 1;
@@ -360,6 +363,7 @@ async function calculateRankAverages() {
                 rankTotals.zenithEx.apm += recordResults.aggregatestats.apm;
                 rankTotals.zenithEx.climbSpeed += recordResults.stats.zenith.rank;
                 rankTotals.zenithEx.btb += recordResults.stats.topbtb;
+                rankTotals.zenithEx.app += (recordResults.stats.garbage.attack/recordResults.stats.piecesplaced) || 0;
 
                 if (recordResults.stats.finesse) {
                     dataSeenCount.zenithEx.finesse += 1;

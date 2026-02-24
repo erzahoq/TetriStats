@@ -1,8 +1,16 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { EmbedBuilder, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
 
-const { formatNumber, countryCodeToEmoji, formatTime, getModCombos, formatISOString, formatUsername, buildPageButtonRows, buildReplayStatComparisonString } = require('../../helpers/formatters');
-const { getEmoji } = require('../../helpers/emojis');
+const {
+  formatNumber,
+  countryCodeToEmoji,
+  formatTime,
+  getModCombos,
+  formatISOString,
+  formatUsername,
+  buildPageButtonRows,
+  addStatComparisonField, 
+} = require('../../helpers/formatters');const { getEmoji } = require('../../helpers/emojis');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -95,6 +103,10 @@ module.exports = {
         const userSuffix = `
 -# ${formatUsername(replay.users[0].username)} ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}`;
 
+        const performanceEmbed = new EmbedBuilder()
+.setColor('#80ffc4')
+.setDescription(`### __${replayLinkFormat} -> Performance__${performanceDisclaimer}\n${userSuffix}`);
+
 
         //=== For each gamemode, create a list of pages ===
         // Zenith gamemode :3
@@ -140,6 +152,7 @@ module.exports = {
             const apm = replayData.results.aggregatestats.apm;
             const climbSpeed = zenithStats.rank;
             const btb = replayStats.topbtb;
+            const app = replayStats.garbage.attack / replayStats.piecesplaced;
 
             //check if zenith expert
             const zenithMods = Array.isArray(replayData.options?.zenith_mods) ? replayData.options.zenith_mods : [];
@@ -147,51 +160,17 @@ module.exports = {
 
             // time for performance strings yay!
             const zenithVer = isExpertMod ? 'zenithEx' : 'zenith';
-            performanceStrings.push(await buildReplayStatComparisonString(
-                `${zenithVer}/height`,
-                'Meters',       
-                height,                      
-                effectiveRank,
-                { decimals: 1 }
-            ));
-            performanceStrings.push(await buildReplayStatComparisonString(
-                `${zenithVer}/pps`,
-                'Pieces Per Second',       
-                pps,                      
-                effectiveRank,
-                { decimals: 3 }
-            ));
-            performanceStrings.push(await buildReplayStatComparisonString(
-                `${zenithVer}/apm`,
-                'Attack Per Minute',
-                apm,
-                effectiveRank,
-                { decimals: 2 }
-            ));
-            // only show/build climb speed if NOT reverse-expert
+            await addStatComparisonField(performanceEmbed, `${zenithVer}/height`, 'Meters', height, effectiveRank, { decimals: 1 });
+            await addStatComparisonField(performanceEmbed, `${zenithVer}/pps`, 'Pieces Per Second', pps, effectiveRank, { decimals: 3 });
+            await addStatComparisonField(performanceEmbed, `${zenithVer}/apm`, 'Attack Per Minute', apm, effectiveRank, { decimals: 2 });
+
             if (!zenithMods.includes('expert_reversed')) {
-                performanceStrings.push(await buildReplayStatComparisonString(
-                    `${zenithVer}/climbSpeed`,
-                    'Average Climb Speed',
-                    climbSpeed,
-                    effectiveRank,
-                    { decimals: 3 }
-                ));
+            await addStatComparisonField(performanceEmbed, `${zenithVer}/climbSpeed`, 'Average Climb Speed', climbSpeed, effectiveRank, { decimals: 3 });
             }
-            performanceStrings.push(await buildReplayStatComparisonString(
-                `${zenithVer}/btb`,
-                'Highest Back-to-Back',
-                btb,
-                effectiveRank,
-                { decimals: 0 }
-            ));
-            performanceStrings.push(await buildReplayStatComparisonString(
-                `${zenithVer}/finesse`,
-                'Finesse',
-                finesse,
-                effectiveRank,
-                { decimals: 4, isPercentage: true }
-            ));
+
+            await addStatComparisonField(performanceEmbed, `${zenithVer}/btb`, 'Highest Back-to-Back', btb, effectiveRank, { decimals: 0 });
+            await addStatComparisonField(performanceEmbed, `${zenithVer}/app`, 'Attack Per Piece', app, effectiveRank, { decimals: 3 });
+            await addStatComparisonField(performanceEmbed, `${zenithVer}/finesse`, 'Finesse', finesse, effectiveRank, { isPercentage: true });
 
             // don't show a warning if the only mod is "expert" (including reversed)
             if (mods.length > 0 && !(mods.length === 1 && isExpertMod)) {
@@ -248,45 +227,11 @@ ${userSuffix}`),
             const kpp = replayStats.inputs / replayStats.piecesplaced;
             const kps = replayStats.inputs / (time / 1000);
 
-            performanceStrings.push(await buildReplayStatComparisonString(
-                'sprint/time',
-                'Time',
-                time,
-                effectiveRank,
-                { lowerIsBetter: true, isTime: true }
-            ));
-
-            performanceStrings.push(await buildReplayStatComparisonString(
-                'sprint/pps',
-                'Pieces Per Second',       
-                pps,                      
-                effectiveRank,
-                { decimals: 3 }
-            ));
-
-            performanceStrings.push(await buildReplayStatComparisonString(
-                'sprint/kpp',
-                'Keys Per Piece',
-                kpp,
-                effectiveRank,
-                { decimals: 3 }
-            ));
-
-            performanceStrings.push(await buildReplayStatComparisonString(
-                'sprint/kps',
-                'Keys Per Second',
-                kps,
-                effectiveRank,
-                { decimals: 3 }
-            ));
-
-            performanceStrings.push(await buildReplayStatComparisonString(
-                'sprint/finesse',
-                'Finesse',
-                finesse,
-                effectiveRank,
-                { decimals: 4, isPercentage: true }
-            ));
+            await addStatComparisonField(performanceEmbed, 'sprint/time', 'Time', time, effectiveRank, { lowerIsBetter: true, isTime: true });
+            await addStatComparisonField(performanceEmbed, 'sprint/pps', 'Pieces Per Second', pps, effectiveRank, { decimals: 3 });
+            await addStatComparisonField(performanceEmbed, 'sprint/kpp', 'Keys Per Piece', kpp, effectiveRank, { decimals: 3, lowerIsBetter: true });
+            await addStatComparisonField(performanceEmbed, 'sprint/kps', 'Keys Per Second', kps, effectiveRank, { decimals: 3 });
+            await addStatComparisonField(performanceEmbed, 'sprint/finesse', 'Finesse', finesse, effectiveRank, { isPercentage: true });
 
             pages = [
                 new EmbedBuilder().setColor('#80ff80')
@@ -307,38 +252,10 @@ ${userSuffix}`),
             const pps = replayData.results.aggregatestats.pps;
             const spp = score / replayStats.piecesplaced;
 
-            performanceStrings.push(await buildReplayStatComparisonString(
-                'blitz/score',
-                'Score',
-                score,
-                effectiveRank,
-                { decimals: 0 }
-            ));
-
-            performanceStrings.push(await buildReplayStatComparisonString(
-                'blitz/pps',
-                'Pieces Per Second',
-                pps,                      
-                effectiveRank,
-                { decimals: 3 }
-            ));
-
-            performanceStrings.push(await buildReplayStatComparisonString(
-                'blitz/spp',
-                'Score Per Piece',
-                spp,
-                effectiveRank,
-                { decimals: 2 }
-            ));
-
-
-            performanceStrings.push(await buildReplayStatComparisonString(
-                'blitz/finesse',
-                'Finesse',
-                finesse,
-                effectiveRank,
-                { decimals: 4, isPercentage: true }
-            ));
+            await addStatComparisonField(performanceEmbed, 'blitz/score', 'Score', score, effectiveRank, { decimals: 0 });
+            await addStatComparisonField(performanceEmbed, 'blitz/pps', 'Pieces Per Second', pps, effectiveRank, { decimals: 3 });
+            await addStatComparisonField(performanceEmbed, 'blitz/spp', 'Score Per Piece', spp, effectiveRank, { decimals: 2 });
+            await addStatComparisonField(performanceEmbed, 'blitz/finesse', 'Finesse', finesse, effectiveRank, { isPercentage: true });
 
             pages = [
                 new EmbedBuilder().setColor('#80ff80')
@@ -362,12 +279,7 @@ ${userSuffix}`),
                 .filter(s => typeof s === 'string' ? s.trim().length > 0 : Boolean(s))
                 .join('\n');
         
-        pages.push(
-            new EmbedBuilder()
-            .setColor('#80ffc4')
-            .setDescription(`### __${replayLinkFormat} -> Performance__${performanceDisclaimer}
-${perfStatBlock}
-${userSuffix}`));
+        pages.push(performanceEmbed);
 
         const key = interaction.id;
         const commandName = 'analyzereplay';

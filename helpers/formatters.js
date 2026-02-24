@@ -223,151 +223,6 @@ function getModCombos(mods) {
     return { emojis: emojis, mods: mods};
 }
 
-
-//this is probably bigger than i should make functions but oh well
-//next time ill split it up better
-async function buildReplayStatComparisonString(
-    dbStatKey,
-    statName,
-    statValue,
-    effectiveRank,
-    extras = { lowerIsBetter: false, isTime: false, decimals: 2, isPercentage: false }
-) {
-    if (statValue === null || !isFinite(Number(statValue))) return null;
-
-    const lowerIsBetter = !!extras.lowerIsBetter;
-    const decimals = Number.isInteger(extras.decimals) ? extras.decimals : 2;
-
-    const delta = (x, ref) => (lowerIsBetter ? (ref - x) : (x - ref));
-
-    const fmtValue = (value) => {
-        if (extras.isTime) {
-            const seconds = value / 1000;
-            if (value >= 60000)
-                return `${Math.floor(seconds / 60)}:${(seconds % 60).toFixed(2).padStart(5, '0')}`;
-            return seconds.toFixed(2) + 's';
-        }
-
-        if (extras.isPercentage) return (value * 100).toFixed(2) + '%';
-        if (decimals === 0) return formatNumber(Math.round(value));
-
-        const decimalShift = 10 ** decimals;
-        return (
-            formatNumber(Math.floor(value)) +
-            '.' +
-            (Math.floor(value * decimalShift) % decimalShift)
-                .toString()
-                .padStart(decimals, '0')
-        );
-    };
-
-    const fmtDelta = (deltaValue) => {
-        const sign = deltaValue > 0 ? '+' : deltaValue === 0 ? '±' : '';
-
-        if (extras.isTime) return `${sign}${(deltaValue / 1000).toFixed(2)}s`;
-        if (extras.isPercentage) return `${sign}${(deltaValue * 100).toFixed(2)}%`;
-        if (decimals === 0) return `${sign}${formatNumber(Math.round(deltaValue))}`;
-
-        return `${sign}${Number(deltaValue).toFixed(decimals)}`;
-    };
-
-    //“around” rank for this stat
-    const avgRank = await getClosestRankForReplay(statValue, dbStatKey, lowerIsBetter);
-    const avgRankValue = replayStatRankData[dbStatKey][avgRank];
-    const deltaToAvg =
-        avgRankValue !== null && isFinite(Number(avgRankValue))
-            ? delta(statValue, Number(avgRankValue))
-            : null;
-
-    //user’s baseline rank
-    let userRankLabel;
-    let userRankValue = null;
-
-    if (effectiveRank && effectiveRank !== 'z') {
-        userRankLabel = getEmojiOfRank(effectiveRank);
-        userRankValue = replayStatRankData[dbStatKey][effectiveRank];
-    } else {
-        userRankLabel = 'Unranked';
-    }
-
-    const deltaToUser =
-        userRankValue !== null && isFinite(Number(userRankValue))
-            ? delta(statValue, Number(userRankValue))
-            : null;
-
-    const displayValue = fmtValue(statValue);
-    const lines = [`**${displayValue} ${statName}**`];
-
-    const userRankLetter = effectiveRank || null;
-
-    // “around …” line (only if different from the user’s rank)
-    if (avgRank && deltaToAvg !== null && avgRank !== userRankLetter) {
-        lines.push(`- around ${getEmojiOfRank(avgRank)} (${fmtDelta(deltaToAvg)})`);
-    }
-
-    //“compared to [current rank]” line
-    if (userRankLabel !== 'Unranked') {
-        if (deltaToUser !== null) {
-            lines.push(`- ${fmtDelta(deltaToUser)} compared to ${userRankLabel}`);
-        } else {
-            lines.push(`- compared to ${userRankLabel}`);
-        }
-    }
-
-    //“compared to next rank …” line
-    if (avgRank && avgRank !== 'x+') {
-        const order = Object.keys(replayStatRankData[dbStatKey]);
-        const avgIdx = order.findIndex((rk) => rk === avgRank);
-        const nextIdx = avgIdx >= 0 ? avgIdx + 1 : -1;
-        const nextRow = nextIdx >= 0 && nextIdx < order.length ? order[nextIdx] : null;
-        const isRedundant = nextRow && nextRow === userRankLetter;
-
-        if (nextRow && !isRedundant) {
-            const nextAvg = replayStatRankData[dbStatKey][nextRow];
-            if (nextAvg !== null && isFinite(Number(nextAvg))) {
-                lines.push(
-                    `- ${fmtDelta(delta(statValue, Number(nextAvg)))} compared to next rank (${getEmojiOfRank(
-                        nextRow
-                    )})`
-                );
-            }
-        }
-    }
-
-    return lines.join('\n');
-}
-
-const replayStatRankData = {};
-
-async function getClosestRankForReplay(userValue, statKey, lowerIsBetter = false) {
-    if (!replayStatRankData[statKey]) {
-        const row = await database.LeagueStat.findByPk(statKey);
-        // guard in case the DB returns nothing
-        replayStatRankData[statKey] = row?.values || {};
-    }
-
-    let bestRank = 'd';
-    let bestDiff = Infinity;
-
-    for (const [rank, value] of Object.entries(replayStatRankData[statKey])) {
-        if (!value) continue;
-        const diff = Math.abs(Number(userValue) - value);
-
-        if (diff < bestDiff) {
-            bestRank = rank;
-            bestDiff = diff;
-        } else if (diff === bestDiff) {
-            // tie-breaker: bias toward the “better” rank
-            const better =
-                (!lowerIsBetter && value > replayStatRankData[statKey][bestRank]) ||
-                (lowerIsBetter && value < replayStatRankData[statKey][bestRank]);
-            if (better) bestRank = rank;
-        }
-    }
-
-    return bestRank;
-}
-
 async function getClosestRank(
   value,
   dbStatKey,
@@ -451,6 +306,95 @@ function getNextRank(rank) {
     const i = RANK_ORDER.indexOf(rank);
     if (i < 0 || i + 1 >= RANK_ORDER.length) return null;
     return RANK_ORDER[i + 1];
+}
+
+async function buildStatComparisonLines(
+  dbStatKey,
+  statName,
+  statValue,
+  effectiveRank,
+  extras = { lowerIsBetter: false, isTime: false, decimals: 2, isPercentage: false }
+) {
+  if (statValue === null || !isFinite(Number(statValue))) return null;
+
+  const lowerIsBetter = !!extras.lowerIsBetter;
+  const decimals = Number.isInteger(extras.decimals) ? extras.decimals : 2;
+
+  const deltaFn = (x, ref) => (lowerIsBetter ? (ref - x) : (x - ref));
+
+  const fmtValue = (value) => {
+    if (extras.isTime) {
+      const seconds = value / 1000;
+      if (value >= 60000) return `${Math.floor(seconds / 60)}:${(seconds % 60).toFixed(2).padStart(5, '0')}`;
+      return formatNumber(seconds, 2) + 's';
+    }
+    if (extras.isPercentage) return formatNumber(value * 100, 2) + '%';
+    return formatNumber(value, decimals);
+  };
+
+  const fmtDelta = (deltaValue) => {
+    const signWord = deltaValue > 0 ? 'more' : deltaValue === 0 ? '' : 'less';
+    if (extras.isTime) return `${formatNumber(Math.abs(deltaValue) / 1000, 2)}s ${signWord}`;
+    if (extras.isPercentage) return `${formatNumber(Math.abs(deltaValue * 100), 2)}% ${signWord}`;
+    return `${formatNumber(Math.abs(deltaValue), decimals)} ${signWord}`;
+  };
+
+  const thresholds = await getLeagueStatThresholds(dbStatKey);
+
+  const around = await getClosestRank(statValue, dbStatKey, { lowerIsBetter });
+  const avgRank = around?.rank ?? null;
+  const deltaToAvg = around ? deltaFn(statValue, around.refValue) : null;
+
+  let userRankLabel = 'Unranked';
+  let userRankValue = null;
+
+  if (effectiveRank && effectiveRank !== 'z') {
+    userRankLabel = effectiveRank;
+    userRankValue = thresholds?.[effectiveRank];
+  }
+
+  const deltaToUser =
+    userRankValue !== null && userRankValue !== undefined && isFinite(Number(userRankValue))
+      ? deltaFn(statValue, Number(userRankValue))
+      : null;
+
+  const displayValue = fmtValue(statValue);
+
+  const lines = [`${getEmojiOfRank(avgRank)} **${displayValue} ${statName}**`];
+
+  const userRankLetter = effectiveRank || null;
+
+  // 1) around line
+  if (avgRank && deltaToAvg !== null && avgRank !== userRankLetter) {
+    lines.push(`- ${fmtDelta(deltaToAvg)} compared to ${avgRank.toUpperCase()} rank`);
+  }
+
+  // 2) compared to current rank
+  if (userRankLabel !== 'Unranked') {
+    if (deltaToUser !== null) lines.push(`- ${fmtDelta(deltaToUser)} compared to ${userRankLabel.toUpperCase()} rank`);
+    else lines.push(`- compared to ${userRankLabel.toUpperCase()} rank`);
+  }
+
+  // 3) next rank line
+  if (avgRank && avgRank !== 'x+') {
+    const nextRow = getNextRank(avgRank);
+    const isRedundant = nextRow && nextRow === userRankLetter;
+
+    if (nextRow && !isRedundant) {
+      const nextAvg = thresholds?.[nextRow];
+      if (nextAvg !== null && nextAvg !== undefined && isFinite(Number(nextAvg))) {
+        lines.push(`- ${fmtDelta(deltaFn(statValue, Number(nextAvg)))} compared to ${nextRow.toUpperCase()} rank`);
+      }
+    }
+  }
+
+  return lines;
+}
+
+async function addStatComparisonField(embed, dbStatKey, statName, statValue, effectiveRank, extras) {
+  const lines = await buildStatComparisonLines(dbStatKey, statName, statValue, effectiveRank, extras);
+  if (!lines) return;
+  embed.addFields({ name: '\u200b', value: lines.join('\n'), inline: true });
 }
 
 function formatUsername(name, asLink = true) {
@@ -558,12 +502,12 @@ module.exports = {
     capitalizeFirstLetter,
     getLeagueRankColour,
     getModCombos,
-    buildReplayStatComparisonString,
-    getClosestRankForReplay,
     getClosestRank,
     getLeagueStatThresholds,
     getNextRank,
     formatUsername,
     formatAchievement,
-    buildPageButtonRows
+    buildPageButtonRows,
+    buildStatComparisonLines,
+    addStatComparisonField
 }
