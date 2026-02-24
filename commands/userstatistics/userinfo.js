@@ -10,8 +10,8 @@ const {
   formatNumber,
   escapeUnderscores,
   countryCodeToEmoji,
-  formatTime,
-  formatPlaytime,
+  formatPreciseTime,
+  formatLongTime,
   getEmojiOfRank,
   formatISOString,
   calculateLevel,
@@ -220,7 +220,7 @@ function formatGamesPlayed(gamesplayed, gameswon, gamestime) {
   if (gamesplayed > -1) {
     return `\n- Played ${gamesplayed} games
   - Won ${gamesWonConvert(gameswon, gamesplayed)} of them
-  -  ${formatPlaytime(gamestime, true)} played (${formatPlaytime(gamestime)})`;
+  -  ${formatLongTime(gamestime, true)} played (${formatLongTime(gamestime)})`;
   } 
     return '\n- Has hidden games played';
   
@@ -296,7 +296,7 @@ function format40Lines(statistics, country) {
   if (statistics['40l'].record) {
     const flStatistics = statistics['40l'];
     const results = flStatistics.record.results;
-    return `\n- ${getEmoji('40lines')} **40 Lines in ${formatTime(results.stats.finaltime)}**
+    return `\n- ${getEmoji('40lines')} **40 Lines in ${formatPreciseTime(results.stats.finaltime)}**
   - Ranked #${formatNumber(flStatistics.rank)} ${formatCountry(flStatistics.rank_local, country)}
   - [Submitted ${formatISOString(flStatistics.record.ts)}](https://tetr.io/#R:${flStatistics.record.replayid})
   - ${formatNumber(results.aggregatestats.pps, 2)} PPS | ${formatNumber(results.stats.finesse.faults)} finesse faults`;

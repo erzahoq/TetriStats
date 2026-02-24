@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, InteractionContextType, MessageFlags, ApplicationIntegrationType } = require('discord.js');
 
-const { formatNumber, formatTime, formatISOString, formatUsername, buildPageButtonRows } = require('../../helpers/formatters');
+const { formatNumber, formatPreciseTime, formatISOString, formatUsername, buildPageButtonRows } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
 const { getEmoji } = require('../../helpers/emojis');
 
@@ -155,7 +155,7 @@ function formatRecord(record) {
 
     // Determine the type of record and format accordingly
     if (record.gamemode === '40l') {
-        formatted += `**${formatTime(stats.finaltime)}**`;
+        formatted += `**${formatPreciseTime(stats.finaltime)}**`;
     } 
     else if (record.gamemode === 'blitz') {
         formatted += `**${formatNumber(stats.score)}**`;

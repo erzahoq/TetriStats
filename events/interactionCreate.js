@@ -8,7 +8,7 @@ const {
     ButtonBuilder,
     ButtonStyle
 } = require("discord.js");
-const { buildPageButtonRows, formatUsername, formatNumber, formatTime, formatISOString, getClosestRank, getEmojiOfRank, getLeagueStatThresholds, getNextRank } = require("../helpers/formatters");
+const { buildPageButtonRows, formatUsername, formatNumber, formatPreciseTime, formatISOString, getClosestRank, getEmojiOfRank, getLeagueStatThresholds, getNextRank } = require("../helpers/formatters");
 const { getEmoji } = require("../helpers/emojis");
 const database = require("../database.js").database;
 
@@ -150,8 +150,8 @@ async function buildAchievementDetailEmbed(ach, listEmbed, username) {
     //ok this is the same achtext shit
     //format thing because api silly
     let displayVal = formatNumber(Math.round(ach.v));
-    if (ach.vt === 2) displayVal = `${formatTime(ach.v)}`
-    else if (ach.vt === 3) displayVal = `${formatTime(-ach.v)}`
+    if (ach.vt === 2) displayVal = `${formatPreciseTime(ach.v)}`
+    else if (ach.vt === 3) displayVal = `${formatPreciseTime(-ach.v)}`
     else if (ach.vt === 4) displayVal = `${formatNumber(ach.v)}m (Floor ${Math.floor(ach.a)})`
     else if (ach.name === "Guardian Angel") displayVal = `${formatNumber(ach.v)}m` //removed hate speech :3
     else if (ach.vt === 5) displayVal = `Obtained ${formatISOString(new Date(-ach.v).toISOString())}`

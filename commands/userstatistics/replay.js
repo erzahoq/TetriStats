@@ -4,7 +4,7 @@ const { EmbedBuilder, InteractionContextType, ApplicationIntegrationType } = req
 const {
   formatNumber,
   countryCodeToEmoji,
-  formatTime,
+  formatPreciseTime,
   getModCombos,
   formatISOString,
   formatUsername,
@@ -236,7 +236,7 @@ ${userSuffix}`),
             pages = [
                 new EmbedBuilder().setColor('#80ff80')
             .setDescription(`### __${replayLinkFormat} -> Overview__
-- **Finished in ${formatTime(time)}**
+- **Finished in ${formatPreciseTime(time)}**
   - ${pps.toFixed(2)} PPS
   - ${kpp.toFixed(2)} Keys Per Piece
   - ${kps.toFixed(2)} Keys Per Second

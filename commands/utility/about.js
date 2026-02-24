@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, InteractionContextType, MessageFlags } = require('discord.js');
-const { formatPlaytime } = require('../../helpers/formatters');
+const { formatLongTime } = require('../../helpers/formatters');
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('about')
@@ -29,7 +29,7 @@ module.exports = {
 - **Stats**
   - In ${totalServers} servers
   - ${totalUsers} users across servers
-  - ${formatPlaytime(client.uptime / 1000)} uptime
+  - ${formatLongTime(client.uptime / 1000)} uptime
 - **Links**
   - [Github Repository](https://github.com/erzahoq/TetriStats)
   - [Tetra Channel](https://ch.tetr.io/) and [TETR.IO](https://tetr.io)

@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, InteractionContextType, MessageFlags } = require('discord.js');
-const { formatTime, getEmojiOfRank, formatISOString, capitalizeFirstLetter, formatNumber, formatUsername, buildPageButtonRows } = require('../../helpers/formatters');
+const { formatPreciseTime, getEmojiOfRank, formatISOString, capitalizeFirstLetter, formatNumber, formatUsername, buildPageButtonRows } = require('../../helpers/formatters');
 const { getEmoji } = require('../../helpers/emojis');
 
 
@@ -54,7 +54,7 @@ module.exports = {
                 if (userData.gametype === 'zenith' || userData.gametype === 'zenithex') {
                     message += ` (${formatNumber(userData.result, 1)}m)`
                 } else {
-                    message += ` (${formatTime(userData.result)})`
+                    message += ` (${formatPreciseTime(userData.result)})`
                 }
             } else if (user.type === 'supporter') {
                 message += `- ${getEmoji("supporter_star")} ${formatUsername(userData.username)} has become a Supporter!`

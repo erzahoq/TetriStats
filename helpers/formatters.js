@@ -54,7 +54,7 @@ function countryCodeToEmoji(countryCode) {
     return String.fromCodePoint(...codePoints);
 }
 
-function formatTime(inputMs) {
+function formatPreciseTime(inputMs) {
     const ms = Math.abs(inputMs);           // normalize to positive
     const totalSeconds = ms / 1000;
     const minutes = Math.floor(totalSeconds / 60);
@@ -66,7 +66,7 @@ function formatTime(inputMs) {
     return `${minutes}:${formattedSeconds}`; // e.g., 0:40.597
 }
 
-function formatPlaytime(playtime, hoursOnly = false) {
+function formatLongTime(playtime, hoursOnly = false) {
     if (playtime === 'Hidden') {
         return playtime;
     } 
@@ -418,8 +418,8 @@ function formatAchievement(ach) {
 
     //format thing because api silly
     let displayVal = formatNumber(Math.round(ach.v));
-    if (ach.vt === 2) displayVal = `${formatTime(ach.v)}`
-    else if (ach.vt === 3) displayVal = `${formatTime(-ach.v)}`
+    if (ach.vt === 2) displayVal = `${formatPreciseTime(ach.v)}`
+    else if (ach.vt === 3) displayVal = `${formatPreciseTime(-ach.v)}`
     else if (ach.vt === 4) displayVal = `${formatNumber(ach.v, 2)}m (Floor ${Math.floor(ach.a)})`
     else if (ach.name === "Guardian Angel") displayVal = `${formatNumber(ach.v, 2)}m` //fuck you OSK you bitch (jk we love you)
     else if (ach.vt === 5) displayVal = `Obtained ${formatISOString(-ach.v)}`
@@ -494,8 +494,8 @@ module.exports = {
     formatNumber,
     escapeUnderscores,
     countryCodeToEmoji,
-    formatTime,
-    formatPlaytime,
+    formatPreciseTime,
+    formatLongTime,
     getEmojiOfRank,
     formatISOString,
     calculateLevel,
