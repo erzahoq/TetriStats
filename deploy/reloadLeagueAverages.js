@@ -260,7 +260,17 @@ async function calculateRankAverages() {
     };
 
     console.log("prepping database...");
-    const allAches = userDataList[RANKS[RANKS.length-1]][0].achievements || [];
+
+    const allAches = [];
+    for (const rank of RANKS) {
+        for (const userData of userDataList[rank]) {
+            for (const achievement of userData.achievements || []) {
+                if (!allAches.includes(achievement.n)) {
+                    allAches.push(achievement.n);
+                }
+            }
+        }
+    }
 
     for (const group of Object.keys(BASE_RANK_TOTAL)) {
         dbObjects[group] = {};
@@ -278,17 +288,6 @@ async function calculateRankAverages() {
         });
     }
     printBar(1, RANKS.length+2);
-
-    const possibleAchievements = [];
-    for (const rank of RANKS) {
-        for (const userData of userDataList[rank]) {
-            for (const achievement of userData.achievements || []) {
-                if (!possibleAchievements.includes(achievement.n)) {
-                    possibleAchievements.push(achievement.n);
-                }
-            }
-        }
-    }
 
     for (const rank of RANKS) {
         console.log(`calculating averages for rank ${rank}...`);
@@ -416,7 +415,7 @@ async function calculateRankAverages() {
             }
         }
 
-        printBar(RANKS.indexOf(rank)+1, RANKS.length+2);
+        printBar(RANKS.indexOf(rank)+2, RANKS.length+2);
     }
 
     console.log("saving to database...");
@@ -442,9 +441,11 @@ function printBar(progress, total, durationEach = null) {
     if (durationEach) {
         toLog += ` (about ${formatPreciseTime((total - progress) * durationEach * 1000, 2)} left)`;
     }
-    toLog += ``;
 
-    console.log(toLog);
+    process.stdout.clearLine();
+    process.stdout.cursorTo(0);
+    process.stdout.write(toLog);
+    // console.log(toLog);
 }
 
 function sleep(ms) {
