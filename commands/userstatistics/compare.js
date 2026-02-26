@@ -89,8 +89,8 @@ module.exports = {
                 ${formatNumber(userStats1.ar)} AR
                 ${getEmojiOfRank(userSummary1.league.rank)}
                 ${calculateTR(userSummary1.league.tr)} TR
-                ${(userSummary1.league.pps || 0).toFixed(2)} PPS
-                ${(userSummary1.league.apm || 0).toFixed(2)} APM`, inline: true },
+                ${formatNumber(userSummary1.league.pps, 2)} PPS
+                ${formatNumber(userSummary1.league.apm, 2)} APM`, inline: true },
 
                 { name: `${escapeUnderscores(userStats2.username.toUpperCase())}`, value: `
                 ${countryCodeToEmoji(userStats2.country) || '?'}
@@ -101,8 +101,8 @@ module.exports = {
                 ${formatNumber(userStats2.ar)} AR
                 ${getEmojiOfRank(userSummary2.league.rank)}
                 ${calculateTR(userSummary2.league.tr)} TR
-                ${(userSummary2.league.pps || 0).toFixed(2)} PPS
-                ${(userSummary2.league.apm || 0).toFixed(2)} APM`, inline: true }
+                ${formatNumber(userSummary2.league.pps, 2)} PPS
+                ${formatNumber(userSummary2.league.apm, 2)} APM`, inline: true }
             )
             .setTimestamp();
 

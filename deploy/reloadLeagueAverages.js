@@ -1,3 +1,4 @@
+const { formatNumber, formatPreciseTime } = require('../helpers/formatters.js');
 const { database } = require('../database.js');
 const uuid = require('uuid');
 const fs = require('fs');
@@ -432,14 +433,14 @@ async function calculateRankAverages() {
 // wow! pretty logging. very necessary
 function printBar(progress, total, durationEach = null) {
     const barLen = Math.floor(progress * BAR_SIZE/total);
-    const percent = ((progress/total)*100).toFixed(2).padStart(5, '0');
+    const percent = formatNumber((progress/total)*100, 2).padStart(5, '0');
 
     let toLog = `[ #${'#'.repeat(barLen)}` + 
                 `${' '.repeat(BAR_SIZE - barLen)} ]` +
                 ` ${percent}%`;
 
     if (durationEach) {
-        toLog += ` (about ${(Math.ceil((total - progress) * 100 * durationEach) / 100).toFixed(2)}s left)`;
+        toLog += ` (about ${formatPreciseTime((total - progress) * durationEach * 1000, 2)} left)`;
     }
     toLog += ``;
 

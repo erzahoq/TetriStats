@@ -195,7 +195,7 @@ ${modString}
   - ${formatNumber(replayData.results.aggregatestats.vsscore,2)} VS Score
   - ${formatNumber(finesse * 100, 2)}% Finesse | ${replayStats.finesse.faults} Faults
 - **Climbed ${formatNumber(height, 1)}m (Floor ${zenithStats.floor})**
-  - Reached ${zenithStats.peakrank.toFixed(2)} climb speed, averaged ${zenithStats.rank.toFixed(2)}
+  - Reached ${formatNumber(zenithStats.peakrank, 2)} climb speed, averaged ${formatNumber(zenithStats.rank, 2)}
   - Reached ${replayStats.topbtb} B2B
 - **KO'd ${replayStats.kills} players**
   - Sent ${formatNumber(garbageStats.sent)} lines 
@@ -236,9 +236,9 @@ ${userSuffix}`),
                 new EmbedBuilder().setColor('#80ff80')
             .setDescription(`### __${replayLinkFormat} -> Overview__
 - **Finished in ${formatPreciseTime(time)}**
-  - ${pps.toFixed(2)} PPS
-  - ${kpp.toFixed(2)} Keys Per Piece
-  - ${kps.toFixed(2)} Keys Per Second
+  - ${formatNumber(pps, 2)} PPS
+  - ${formatNumber(kpp, 2)} Keys Per Piece
+  - ${formatNumber(kps, 2)} Keys Per Second
   - ${formatNumber(finesse * 100, 2)}% Finesse | ${replayStats.finesse.faults} Faults
 ${userSuffix}
 `),
@@ -260,8 +260,8 @@ ${userSuffix}`),
                 new EmbedBuilder().setColor('#80ff80')
             .setDescription(`### __${replayLinkFormat} -> Overview__
 - **Scored ${formatNumber(score)} points**
-  - ${pps.toFixed(2)} PPS
-  - ${spp.toFixed(2)} Points Per Piece
+  - ${formatNumber(pps, 2)} PPS
+  - ${formatNumber(spp, 2)} Points Per Piece
   - ${formatNumber(finesse * 100, 2)}% Finesse | ${replayStats.finesse.faults} Faults
 ${userSuffix}
 `),

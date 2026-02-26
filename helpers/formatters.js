@@ -54,24 +54,30 @@ function countryCodeToEmoji(countryCode) {
     return String.fromCodePoint(...codePoints);
 }
 
-function formatPreciseTime(inputMs) {
-    const ms = Math.abs(inputMs);           // normalize to positive
+function formatPreciseTime(ms, endPadding = 3) {
+    ms = Math.abs(ms);           // normalize to positive
     const totalSeconds = ms / 1000;
     const minutes = Math.floor(totalSeconds / 60);
-    const seconds = (totalSeconds % 60).toFixed(3); // keep milliseconds
+    const seconds = formatNumber(totalSeconds % 60, endPadding); // keep milliseconds
 
     const [intSeconds, fracSeconds] = seconds.split('.');
-    const formattedSeconds = intSeconds.padStart(2, '0') + '.' + (fracSeconds || '000').padEnd(3, '0');
+    const formattedSeconds = intSeconds.padStart(2, '0') + '.' + (fracSeconds || '000').padEnd(endPadding, '0');
+
+    if (minutes >= 60) {
+        const hours = Math.floor(minutes / 60);
+        const remainingMinutes = minutes % 60;
+        return `${hours}:${remainingMinutes.toString().padStart(2, '0')}:${formattedSeconds}`; // e.g., 1:02:40.597
+    }
 
     return `${minutes}:${formattedSeconds}`; // e.g., 0:40.597
 }
 
-function formatLongTime(playtime, hoursOnly = false) {
-    if (playtime === 'Hidden') {
-        return playtime;
+function formatLongTime(seconds, hoursOnly = false) {
+    if (seconds === 'Hidden') {
+        return seconds;
     } 
 
-    const hours = playtime / 60 / 60;
+    const hours = seconds / 60 / 60;
     if (hoursOnly) {
         return formatNumber(hours, 1) + ' hours';
     }
@@ -86,7 +92,7 @@ function formatLongTime(playtime, hoursOnly = false) {
     result += `${formatNumber(formattedHours, 0)} hours`;
 
     if (hours < 1) {
-        const minutes = playtime / 60;
+        const minutes = seconds / 60;
         result = `${formatNumber(minutes, 0)} minutes`;
     }
     return result;
@@ -325,7 +331,7 @@ async function buildStatComparisonLines(
   const fmtValue = (value) => {
     if (extras.isTime) {
       const seconds = value / 1000;
-      if (value >= 60000) return `${Math.floor(seconds / 60)}:${(seconds % 60).toFixed(2).padStart(5, '0')}`;
+      if (value >= 60000) return `${formatPreciseTime(value, 2)}`;
       return formatNumber(seconds, 2) + 's';
     }
     if (extras.isPercentage) return formatNumber(value * 100, 2) + '%';
