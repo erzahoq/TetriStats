@@ -12,10 +12,12 @@ for (const folder of commandFolders) {
 	// Grab all the command files from the commands directory you created earlier
 	const commandsPath = path.join(foldersPath, folder);
 	const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+	
 	// Grab the SlashCommandBuilder#toJSON() output of each command's data for deployment
 	for (const file of commandFiles) {
 		const filePath = path.join(commandsPath, file);
 		const command = require(filePath);
+
 		if ('data' in command && 'execute' in command) {
 			commands.push(command.data.toJSON());
 		} else {
@@ -37,6 +39,10 @@ const rest = new REST().setToken(token);
 			Routes.applicationGuildCommands(clientId, guildId),
 			{ body: commands },
 		);
+		await rest.put(
+			Routes.applicationCommands(clientId),
+			{ body: commands },
+		)
 
 		console.log(`Successfully reloaded ${data.length} application (/) commands.`);
 	} catch (error) {
