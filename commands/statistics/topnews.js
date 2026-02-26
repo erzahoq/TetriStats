@@ -62,16 +62,16 @@ module.exports = {
         const pages = [
             new EmbedBuilder()
                 .setColor("#ffc619")
-                .setDescription("### __Recent news (top)__\n" + pageData[0].join('\n')),
+                .setDescription("### __News -> Top__\n" + pageData[0].join('\n')),
             new EmbedBuilder()
                 .setColor("#ffc619")
-                .setDescription("### __Recent news (top)__\n" + pageData[1].join('\n')),
+                .setDescription("### __News -> Top__\n" + pageData[1].join('\n')),
             new EmbedBuilder()
                 .setColor("#ffc619")
-                .setDescription("### __Recent news (top)__\n" + pageData[2].join('\n')),
+                .setDescription("### __News -> Top__\n" + pageData[2].join('\n')),
             new EmbedBuilder()
                 .setColor("#ffc619")
-                .setDescription("### __Recent news (top)__\n" + pageData[3].join('\n')),
+                .setDescription("### __News -> Top__\n" + pageData[3].join('\n')),
         ];
 
         // Realize this is just the same as allnews.js

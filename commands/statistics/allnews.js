@@ -60,6 +60,8 @@ module.exports = {
                 message += `- ${getEmoji("supporter_star")} ${formatUsername(userData.username)} has become a Supporter!`
             } else if (user.type === 'rankup') {
                 message += `- ${getEmojiOfRank(userData.rank)} ${formatUsername(userData.username)} achieved ${capitalizeFirstLetter(userData.rank)} rank!`
+            } else if (user.type === 'badge') {
+                message += `- ${getEmoji("news_badge")} ${formatUsername(userData.username)} received the "${userData.badge}" badge!`
             } else {
                 message += user.type;
             }
@@ -72,16 +74,16 @@ module.exports = {
         const pages = [
             new EmbedBuilder()
                 .setColor("#f58484")
-                .setDescription("### __Recent news (global)__\n" + pageData[0].join('\n')),
+                .setDescription("### __News -> Global__\n" + pageData[0].join('\n')),
             new EmbedBuilder()
                 .setColor("#f37272")
-                .setDescription("### __Recent news (global)__\n" + pageData[1].join('\n')),
+                .setDescription("### __News -> Global__\n" + pageData[1].join('\n')),
             new EmbedBuilder()
                 .setColor("#ec6262")
-                .setDescription("### __Recent news (global)__\n" + pageData[2].join('\n')),
+                .setDescription("### __News -> Global__\n" + pageData[2].join('\n')),
             new EmbedBuilder()
                 .setColor("#e44c4c")
-                .setDescription("### __Recent news (global)__\n" + pageData[3].join('\n')),
+                .setDescription("### __News -> Global__\n" + pageData[3].join('\n')),
         ];
 
         const key = interaction.id;
