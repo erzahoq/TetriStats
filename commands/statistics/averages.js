@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, InteractionContextType } = require('discord.js');
 const { database } = require('./../../database.js')
 const { Op } = require('sequelize');
 const { getEmojiOfRank, formatPreciseTime, formatNumber } = require('../../helpers/formatters.js');
@@ -82,6 +82,7 @@ function formatValue(stat, value) {
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('rank-stats')
+        .setContexts(InteractionContextType.BotDM, InteractionContextType.Guild, InteractionContextType.PrivateChannel)
         .setDescription('Gets averages for each rank for a specific stat.')
         .addStringOption(option =>
             option.setName('stat')
