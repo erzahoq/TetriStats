@@ -27,7 +27,7 @@ module.exports = (sequelize) => {
     }, {
         sequelize,
         modelName: 'LeagueStat',
-        timestamps: false,
+        timestamps: true,
     })
 
     return LeagueStat;

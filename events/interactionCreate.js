@@ -78,6 +78,15 @@ module.exports = {
                     await interaction.message.delete().catch(() => {}); // in case message already deleted by user, don't care about error
                     return;
                 }
+            } else if (interaction.isAutocomplete()) {
+                const command = interaction.client.commands.get(interaction.commandName);
+
+                if (!command || typeof command.autocomplete !== 'function') {
+                    console.error(`No autocomplete handler for ${interaction.commandName} was found.`);
+                    return;
+                }
+
+                await command.autocomplete(interaction);
             }
         } catch (error) {
             // unknown interaction, unknown message

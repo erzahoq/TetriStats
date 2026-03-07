@@ -53,7 +53,7 @@ async function main() {
         chooseRandomUsers();
         saveProgress();
     } else {
-        console.log("skipping fetching league users, already have user list from resumed progress");
+        console.log("\nskipping fetching league users, already have user list from resumed progress");
     }
     
     sessionId = uuid.v4();
@@ -61,7 +61,7 @@ async function main() {
 
     await calculateRankAverages();
 
-    console.log("all done!");
+    console.log("\nall done!");
     console.log("you may delete userList.json and rankData.json now if you want");
 
     process.exit(0);
@@ -151,14 +151,14 @@ function chooseRandomUsers() {
 }
 
 async function fetchUserAverages() {
-    console.log("fetching user data...");
+    console.log("\nfetching user data...");
     const totalUsers = Object.values(rankUserList).flat().length;
     let currentUsers = 0;
 
     for (const rank of RANKS) {
         if (userDataList[rank] && userDataList[rank].length === rankUserList[rank].length) {
             currentUsers += userDataList[rank].length;
-            console.log(`rank ${rank} is already fetched from resumed progress, skipping...`);
+            console.log(`\nrank ${rank} is already fetched from resumed progress, skipping...`);
             printBar(currentUsers, totalUsers, USER_DATA_REQUEST_COOLDOWN);
             continue;
         }
@@ -211,7 +211,7 @@ async function fetchUserAverages() {
         saveProgress();
     }
 
-    console.log("all user data fetched");
+    console.log("\nall user data fetched");
 }
 
 // horrific looking function that i could *probably* softcode but it's... fine
@@ -259,7 +259,7 @@ async function calculateRankAverages() {
       achievements: {},
     };
 
-    console.log("prepping database...");
+    console.log("\nprepping database...");
 
     const allAches = [];
     for (const rank of RANKS) {
@@ -282,15 +282,15 @@ async function calculateRankAverages() {
         }
     }
     for (const ach of allAches) {
-        dbObjects.achievements[ach.n] = await database.LeagueStat.create({
-            stat: `achievements/${ach.n}`,
+        dbObjects.achievements[ach] = await database.LeagueStat.create({
+            stat: `achievements/${ach}`,
             statGroup: "achievements",
         });
     }
     printBar(1, RANKS.length+2);
 
     for (const rank of RANKS) {
-        console.log(`calculating averages for rank ${rank}...`);
+        console.log(`\ncalculating averages for rank ${rank}...`);
 
         const rankTotals = JSON.parse(JSON.stringify(BASE_RANK_TOTAL));
 
@@ -418,7 +418,7 @@ async function calculateRankAverages() {
         printBar(RANKS.indexOf(rank)+2, RANKS.length+2);
     }
 
-    console.log("saving to database...");
+    console.log("\nsaving to database...");
     for (const group of Object.keys(dbObjects)) {
         for (const stat of Object.keys(dbObjects[group])) {
             dbObjects[group][stat].changed('values', true);
