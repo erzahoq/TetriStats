@@ -157,6 +157,7 @@ module.exports = {
             "b2b": "btb",
             "back to back": "btb",
             "back to": "back-to",
+            "altitude": "height"
         }
         for (const [key, value] of Object.entries(corrections)) {
             correctedValue = correctedValue.replace(key, value);
