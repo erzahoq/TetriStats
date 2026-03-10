@@ -26,7 +26,7 @@ async function fetchCached(url) {
         cache[url] = data;
     }
 
-    return response;
+    return data;
 }
 
 function cleanCache() {
