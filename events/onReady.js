@@ -1,7 +1,10 @@
 const { Events, ActivityType, EmbedBuilder } = require("discord.js");
+
 const { initEmojis } = require("../helpers/emojis");
 const { database } = require("../database");
 const { formatNumber } = require("../helpers/formatters");
+const { startCacheCleaner, fetchCached } = require("../helpers/fetch");
+
 
 module.exports = {
     name: Events.ClientReady,
@@ -17,13 +20,15 @@ module.exports = {
         setInterval(() => checkRdAlerts(client), 1000 * 60 * 30);
 
         client.pageData = new Map();
-        setInterval(() => cleanPageData(client), 1000 * 60 * 10)
+        setInterval(() => cleanPageData(client), 1000 * 60 * 10);
+
+        startCacheCleaner();
     }
 }
 
 async function status(client) {
     try {
-        const response = await fetch('https://ch.tetr.io/api/general/stats'); // Get stats data
+        const response = await fetchCached('https://ch.tetr.io/api/general/stats'); // Get stats data
         const responseData = await response.json();
         const totalAccounts = responseData.data.usercount;
 

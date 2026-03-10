@@ -1,6 +1,9 @@
 const { SlashCommandBuilder, EmbedBuilder, MessageFlags, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
+
 const { getEmojiOfRank, getLeagueRankColour, formatUsername, buildPageButtonRows, addStatComparisonField } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
+const { fetchCached } = require('../../helpers/fetch');
+
 
 const getAltitude = (res) => Number(res?.stats?.zenith?.altitude ?? -Infinity);
 
@@ -45,8 +48,7 @@ module.exports = {
       });
     }
 
-    const response = await fetch(`https://ch.tetr.io/api/users/${user._id}/summaries`);
-    let userStats = await response.json();
+    let userStats = await fetchCached(`https://ch.tetr.io/api/users/${user._id}/summaries`);
     userStats = userStats.data;
 
     delete userStats.zen;

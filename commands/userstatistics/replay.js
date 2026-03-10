@@ -1,16 +1,9 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { EmbedBuilder, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
 
-const {
-  formatNumber,
-  countryCodeToEmoji,
-  formatPreciseTime,
-  getModCombos,
-  formatISOString,
-  formatUsername,
-  buildPageButtonRows,
-  addStatComparisonField, 
-} = require('../../helpers/formatters');const { getEmoji } = require('../../helpers/emojis');
+const { formatNumber, countryCodeToEmoji, formatPreciseTime, getModCombos, formatISOString, formatUsername, buildPageButtonRows, addStatComparisonField, } = require('../../helpers/formatters');
+const { getEmoji } = require('../../helpers/emojis');
+
 
 module.exports = {
     data: new SlashCommandBuilder()

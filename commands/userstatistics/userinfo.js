@@ -1,27 +1,10 @@
-const {
-  SlashCommandBuilder,
-  EmbedBuilder,
-  MessageFlags,
-  InteractionContextType,
-  ApplicationIntegrationType,
-} = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, MessageFlags, InteractionContextType, ApplicationIntegrationType, } = require('discord.js');
 
-const {
-  formatNumber,
-  escapeUnderscores,
-  countryCodeToEmoji,
-  formatPreciseTime,
-  formatLongTime,
-  getEmojiOfRank,
-  formatISOString,
-  calculateLevel,
-  formatUsername,
-  formatAchievement,
-  buildPageButtonRows,
-} = require('../../helpers/formatters');
-
+const { formatNumber, escapeUnderscores, countryCodeToEmoji, formatPreciseTime, formatLongTime, getEmojiOfRank, formatISOString, calculateLevel, formatUsername, formatAchievement, buildPageButtonRows, } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
 const { getEmoji } = require('../../helpers/emojis');
+const { fetchCached } = require('../../helpers/fetch');
+
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -53,11 +36,8 @@ module.exports = {
     }
 
     // fetch from API using the ID
-    const response = await fetch(`https://ch.tetr.io/api/users/${user._id}`);
-    const summaryRaw = await fetch(`https://ch.tetr.io/api/users/${user._id}/summaries`);
-
-    const stats = await response.json();
-    const summary = await summaryRaw.json();
+    const stats = await fetchCached(`https://ch.tetr.io/api/users/${user._id}`);
+    const summary = await fetchCached(`https://ch.tetr.io/api/users/${user._id}/summaries`);
 
     const statData = stats.data;
     const summaryData = summary.data;

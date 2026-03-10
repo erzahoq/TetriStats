@@ -1,6 +1,8 @@
 const { SlashCommandBuilder, EmbedBuilder, InteractionContextType, MessageFlags } = require('discord.js');
+
 const { formatPreciseTime, getEmojiOfRank, formatISOString, capitalizeFirstLetter, formatNumber, formatUsername, buildPageButtonRows } = require('../../helpers/formatters');
 const { getEmoji } = require('../../helpers/emojis');
+const { fetchCached } = require('../../helpers/fetch');
 
 
 //number of things on page (change if you wnat i dont care)
@@ -13,8 +15,7 @@ module.exports = {
         .setContexts(InteractionContextType.BotDM, InteractionContextType.Guild, InteractionContextType.PrivateChannel)
         .setDescription('Fetches all the latest Tetra News.'),
     async execute(interaction) {
-        const response = await fetch(`https://ch.tetr.io/api/news/?limit=${itemsPerPage * pageCount}`);
-        const stats = await response.json(); // Use .json() to parse the response as JSON
+        const stats = await fetchCached(`https://ch.tetr.io/api/news/?limit=${itemsPerPage * pageCount}`);
 
         if (!stats.success) {
             //tetrio servers are down :(

@@ -1,9 +1,10 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder, InteractionContextType, ApplicationIntegrationType, MessageFlags } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, InteractionContextType, ApplicationIntegrationType, MessageFlags } = require('discord.js');
 
 const { formatNumber, getLeagueRankColour, getEmojiOfRank, formatUsername, buildPageButtonRows } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
 const { getEmoji } = require('../../helpers/emojis');
+const { fetchCached } = require('../../helpers/fetch');
+
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -36,8 +37,7 @@ module.exports = {
         const apiURL = `https://ch.tetr.io/api/users/${user._id}/summaries/league`;
 
         // Fetch user league data
-        const response = await fetch(apiURL);
-        const data = await response.json();
+        const data = await fetchCached(apiURL);
 
         if (!data.success || !data.data) {
             return interaction.reply({ content: `Could not find league data for user **${user.username}**.`, flags: MessageFlags.Ephemeral }); // this should like never happen because we checked for it earlier but like just in case

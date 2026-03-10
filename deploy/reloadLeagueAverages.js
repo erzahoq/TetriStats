@@ -466,7 +466,7 @@ async function fetchWithCooldown(url, cooldown) {
 
     lastRequestTime = Date.now();
     try {
-        const response = await fetch(url, { headers: { 'X-Session-ID': sessionId, 'User-Agent': "TetriStats-Discord-Bot/0.1 by @erzahoq" } });
+        const response = await fetch(url, { headers: { 'X-Session-ID': sessionId, 'User-Agent': "TetriStats-League-Averager/0.1 by @erzahoq" } });
         return response;
     }
     catch (error) {

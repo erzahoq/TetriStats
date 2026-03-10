@@ -1,9 +1,9 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
-import('node-fetch'); // Ensure 'node-fetch' is imported properly
 
 const { formatUsername, formatAchievement, buildPageButtonRows } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
 const { getEmoji } = require('../../helpers/emojis');
+const { fetchCached } = require('../../helpers/fetch');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -36,8 +36,7 @@ module.exports = {
 
         const username = user.username;
 
-        const response = await fetch(`https://ch.tetr.io/api/users/${user._id}/summaries/achievements`);
-        let achs = await response.json();
+        let achs = await fetchCached(`https://ch.tetr.io/api/users/${user._id}/summaries/achievements`);
 
         achs = achs.data;
 

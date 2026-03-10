@@ -1,5 +1,8 @@
 const { DataTypes, Model } = require('sequelize')
 
+const { fetchCached } = require('../helpers/fetch');
+
+
 module.exports = (sequelize) => {
     class User extends Model {
         async checkAlert() {
@@ -7,7 +10,7 @@ module.exports = (sequelize) => {
 
             // if the user doesn't have a TETR.IO id linked to them yet
             if (!this.tetrioId) {
-                const discordSearch = await (await fetch(`https://ch.tetr.io/api/users/search/discord:${this.userId}`)).json();
+                const discordSearch = await fetchCached(`https://ch.tetr.io/api/users/search/discord:${this.userId}`);
                 if (!discordSearch.success) return new Error("Unable to access TETR.IO servers!"); // wuh oh
                 if (!discordSearch.data) { // ok that's not our fault
                     this.alertsEnabled = false;
@@ -19,7 +22,7 @@ module.exports = (sequelize) => {
                 this.tetrioId = discordSearch.data.user._id;
             }
 
-            const leagueInfo = await (await fetch(`https://ch.tetr.io/api/users/${this.tetrioId}/summaries/league`)).json();
+            const leagueInfo = await fetchCached(`https://ch.tetr.io/api/users/${this.tetrioId}/summaries/league`);
             //console.log(`Fetched league summary for ${this.userId}, got `,leagueInfo)
             if (!leagueInfo.success) return new Error("Unable to access TETR.IO servers!"); // i love copy/pasting code
 

@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, InteractionContextType, MessageFlags } = require('discord.js');
 
 const { formatNumber } = require('../../helpers/formatters');
+const { fetchCached } = require('../../helpers/fetch');
 
 
 module.exports = {
@@ -9,8 +10,7 @@ module.exports = {
         .setContexts(InteractionContextType.BotDM, InteractionContextType.Guild, InteractionContextType.PrivateChannel)
         .setDescription('Gets the general statistics of TETR.IO servers.'),
     async execute(interaction) {
-        const response = await fetch('https://ch.tetr.io/api/general/stats');
-        const stats = await response.json(); // Use .json() to parse the response as JSON
+        const stats = await fetchCached('https://ch.tetr.io/api/general/stats');
 
         if (!stats.success) {
             return await interaction.reply({

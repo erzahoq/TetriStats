@@ -3,6 +3,8 @@ const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, Interacti
 const { formatNumber, formatPreciseTime, formatISOString, formatUsername, buildPageButtonRows } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
 const { getEmoji } = require('../../helpers/emojis');
+const { fetchCached } = require('../../helpers/fetch');
+
 
 const maxItems = 5;
 
@@ -131,8 +133,7 @@ async function fetchAll(user) {
         responses[item] = {};
 
         // fetch the last 10 games
-        let allResponse = await fetch(`https://ch.tetr.io/api/users/${user}/records/${item}/recent?limit=${maxItems}`);
-        allResponse = await allResponse.json();
+        const allResponse = await fetchCached(`https://ch.tetr.io/api/users/${user}/records/${item}/recent?limit=${maxItems}`);
         responses[item].all = allResponse.data.entries;
 
         // ignore league because it doesn't have a top
@@ -141,8 +142,7 @@ async function fetchAll(user) {
         }
 
         // fetch the top game
-        let topResponse = await fetch(`https://ch.tetr.io/api/users/${user}/records/${item}/top?limit=1`);
-        topResponse = await topResponse.json();
+        const topResponse = await fetchCached(`https://ch.tetr.io/api/users/${user}/records/${item}/top?limit=1`);
         responses[item].top = topResponse.data.entries[0];
     }
 

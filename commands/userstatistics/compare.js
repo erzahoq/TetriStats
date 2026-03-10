@@ -2,6 +2,8 @@ const { SlashCommandBuilder, EmbedBuilder, InteractionContextType, ApplicationIn
 
 const { formatNumber, escapeUnderscores, countryCodeToEmoji, formatLongTime, getEmojiOfRank, calculateLevel, formatUsername } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser')
+const { fetchCached } = require('../../helpers/fetch');
+
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -44,21 +46,16 @@ module.exports = {
             });
         }
 
-        const response1 = await fetch(`https://ch.tetr.io/api/users/${user1._id}`);
-        const response2 = await fetch(`https://ch.tetr.io/api/users/${user2._id}`);
-
-        let userStats1 = await response1.json();
-        let userStats2 = await response2.json();
+        let userStats1 = await fetchCached(`https://ch.tetr.io/api/users/${user1._id}`);
+        let userStats2 = await fetchCached(`https://ch.tetr.io/api/users/${user2._id}`);
 
         userStats1 = userStats1.data;
         userStats2 = userStats2.data;
 
-        let userSummary1 = await fetch(`https://ch.tetr.io/api/users/${userStats1._id}/summaries`);
-        let userSummary2 = await fetch(`https://ch.tetr.io/api/users/${userStats2._id}/summaries`);
+        let userSummary1 = await fetchCached(`https://ch.tetr.io/api/users/${userStats1._id}/summaries`);
+        let userSummary2 = await fetchCached(`https://ch.tetr.io/api/users/${userStats2._id}/summaries`);
 
         //im not smart enough to make this better
-        userSummary1 = await userSummary1.json();
-        userSummary2 = await userSummary2.json();
         userSummary1 = userSummary1.data;
         userSummary2 = userSummary2.data;
         

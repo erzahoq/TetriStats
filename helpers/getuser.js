@@ -1,3 +1,6 @@
+const { fetchCached } = require('./fetch');
+
+
 // this figures out if a user entered is a Discord user ID or a TETR.IO username, and then returns the TETR.IO ID.
 
 async function getUser(user) {
@@ -17,7 +20,7 @@ async function getUser(user) {
             userID = discordMatch[1]
         }
 
-        const response = await fetch(`https://ch.tetr.io/api/users/search/discord:id:${userID}`);
+        const response = await fetchCached(`https://ch.tetr.io/api/users/search/discord:id:${userID}`);
         const stats = await response.json();
 
         if (!stats.success) {
@@ -33,7 +36,7 @@ async function getUser(user) {
             "username": stats.data.users[0].username
         }; // return tetrio small info
     } 
-    const response = await fetch(`https://ch.tetr.io/api/users/${user}`);
+    const response = await fetchCached(`https://ch.tetr.io/api/users/${user}`);
     const stats = await response.json();
 
     if (!stats.success) {

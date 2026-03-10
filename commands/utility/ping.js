@@ -1,5 +1,8 @@
 const { SlashCommandBuilder, InteractionContextType } = require('discord.js');
 
+const { fetchCached } = require('../../helpers/fetch');
+
+
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('ping')
@@ -120,8 +123,7 @@ module.exports = {
 
         // 1 in 10 chance for a stat-related ping message
         if (Math.random()*10 <= 1) {
-            const response = await fetch('https://ch.tetr.io/api/general/stats');
-            const stats = await response.json(); // Use .json() to parse the response as JSON
+            const stats = await fetchCached('https://ch.tetr.io/api/general/stats');
     
             if (!stats.success) {
                 return await interaction.reply({
