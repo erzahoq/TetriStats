@@ -1,4 +1,4 @@
-const { uuid } = require('uuid');
+const uuid = require('uuid');
 
 // according to the API, X-Session-ID is a good idea, but also not sometimes (??) https://tetr.io/about/api/
 // i think it's smth to do with caching but we're already handling it clientside so idk
