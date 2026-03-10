@@ -20,8 +20,7 @@ async function getUser(user) {
             userID = discordMatch[1]
         }
 
-        const response = await fetchCached(`https://ch.tetr.io/api/users/search/discord:id:${userID}`);
-        const stats = await response.json();
+        const stats = await fetchCached(`https://ch.tetr.io/api/users/search/discord:id:${userID}`);
 
         if (!stats.success) {
             return "server error"
@@ -36,8 +35,7 @@ async function getUser(user) {
             "username": stats.data.users[0].username
         }; // return tetrio small info
     } 
-    const response = await fetchCached(`https://ch.tetr.io/api/users/${user}`);
-    const stats = await response.json();
+    const stats = await fetchCached(`https://ch.tetr.io/api/users/${user}`);
 
     if (!stats.success) {
         if (stats.error.msg === "No such user! | Either you mistyped something, or the account no longer exists.") {

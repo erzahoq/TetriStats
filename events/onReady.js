@@ -28,8 +28,7 @@ module.exports = {
 
 async function status(client) {
     try {
-        const response = await fetchCached('https://ch.tetr.io/api/general/stats'); // Get stats data
-        const responseData = await response.json();
+        const responseData = await fetchCached('https://ch.tetr.io/api/general/stats'); // Get stats data
         const totalAccounts = responseData.data.usercount;
 
         // console.log('Successfully fetched player count!');
