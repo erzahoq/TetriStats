@@ -123,7 +123,7 @@ module.exports = {
             const effectiveRank = null;
 
             const userSuffix = `
-    -# ${formatUsername(replay.users[0].username)} ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}`;
+${formatUsername(replay.users[0].username)} ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}`;
 
             const performanceEmbed = new EmbedBuilder()
     .setColor('#80ffc4')
