@@ -62,17 +62,20 @@ module.exports = {
         };
 
         //magic voodoo sorting raah
-        const sortedAchs = sortByAchievementRank(achs);
-
-        sortedAchs.forEach(achievement => {
-            //check if the user actually has this achievement lmao
-            if (achievement.rank) {
+        achs.forEach(achievement => {
+            // only include earned/ranked achievements
+            if (achievement.rank > 0) {
                 if (!achList[achievement.category]) {
-                    achList[achievement.category] = []; // creates the list if it doesn't exist
+                    achList[achievement.category] = [];
                 }
                 achList[achievement.category].push(achievement);
             }
         });
+
+        // now sort each category globally before pagination
+        for (const cat of Object.keys(achList)) {
+            achList[cat] = sortByAchievementRank(achList[cat]);
+        }
 
         const textPages = [];
         const pageAchsByPageIndex = [];
@@ -153,16 +156,25 @@ module.exports = {
 };
 
 function sortByAchievementRank(items) {
-    // Create a mapping for sorting priority, lower values mean higher priority
     const sortOrder = {
-        1: 6,   // bronze
-        2: 5,   // silver
-        3: 4,   // gold
-        4: 3,   // platinum
+        100: 1, // issued
         5: 2,   // diamond
-        100: 1  // issued
+        4: 3,   // platinum
+        3: 4,   // gold
+        2: 5,   // silver
+        1: 6,   // bronze
+        0: 999  // unranked, should be last
     };
-    return items.sort((a, b) => sortOrder[a.rank] - sortOrder[b.rank]);
+
+    return [...items].sort((a, b) => {
+        const aOrder = sortOrder[a.rank] ?? 999;
+        const bOrder = sortOrder[b.rank] ?? 999;
+
+        if (aOrder !== bOrder) return aOrder - bOrder;
+
+        //tie-breaker so same-tier achievements stay in a consistent order
+        return a.name.localeCompare(b.name);
+    });
 }
 
 function paginateAchievements(achlist) {
