@@ -109,7 +109,18 @@ async function fetchAllLeagueUsers() {
         }
         
         for (const user of data.data.entries) {
-            rankUserList[user.league.rank].push(user.username);
+            const rank = user?.league?.rank;
+            if (!rank) {
+                console.warn(`\nSkipping user ${user?.username || '<unknown>'}: missing league rank`);
+                continue;
+            }
+
+            if (!rankUserList[rank]) {
+                console.warn(`\nSkipping user ${user.username}: unexpected league rank '${rank}'`);
+                continue;
+            }
+
+            rankUserList[rank].push(user.username);
         }
         currentPlayers += data.data.entries.length;
 
