@@ -276,8 +276,8 @@ async function calculateRankAverages() {
     for (const rank of RANKS) {
         for (const userData of userDataList[rank]) {
             for (const achievement of userData.achievements || []) {
-                if (!allAches.includes(achievement.n)) {
-                    allAches.push(achievement.n);
+                if (!allAches.includes(achievement)) {
+                    allAches.push(achievement);
                 }
             }
         }
@@ -293,9 +293,10 @@ async function calculateRankAverages() {
         }
     }
     for (const ach of allAches) {
-        dbObjects.achievements[ach] = await database.LeagueStat.create({
-            stat: `achievements/${ach}`,
+        dbObjects.achievements[ach.n] = await database.LeagueStat.create({
+            stat: `achievements/${ach.n}`,
             statGroup: "achievements",
+            achId: ach.k
         });
     }
     printBar(1, RANKS.length+2);
