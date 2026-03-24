@@ -276,7 +276,7 @@ async function calculateRankAverages() {
     for (const rank of RANKS) {
         for (const userData of userDataList[rank]) {
             for (const achievement of userData.achievements || []) {
-                if (!allAches.includes(achievement)) {
+                if (!allAches.find(a => a.n === achievement.n)) {
                     allAches.push(achievement);
                 }
             }
