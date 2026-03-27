@@ -8,7 +8,7 @@ const {
     ButtonBuilder,
     ButtonStyle
 } = require("discord.js");
-const { buildPageButtonRows, formatUsername, formatNumber, formatPreciseTime, formatISOString, getClosestRank, getEmojiOfRank, getLeagueStatThresholds, getNextRank } = require("../helpers/formatters");
+const { buildPageButtonRows, formatUsername, formatNumber, formatISOString, getClosestRank, getEmojiOfRank, getLeagueStatThresholds, getNextRank, formatAchievementVal } = require("../helpers/formatters");
 const { getEmoji } = require("../helpers/emojis");
 
 module.exports = {
@@ -156,15 +156,7 @@ async function buildAchievementDetailEmbed(ach, listEmbed, username) {
     let achText = ""
 
     //ok this is the same achtext shit
-    //format thing because api silly
-    let displayVal = formatNumber(Math.round(ach.v));
-    if (ach.vt === 2) displayVal = `${formatPreciseTime(ach.v)}`
-    else if (ach.vt === 3) displayVal = `${formatPreciseTime(-ach.v)}`
-    else if (ach.vt === 4) displayVal = `${formatNumber(ach.v)}m (Floor ${Math.floor(ach.a)})`
-    else if (ach.name === "Guardian Angel") displayVal = `${formatNumber(ach.v)}m` //removed hate speech :3
-    else if (ach.vt === 5) displayVal = `Obtained ${formatISOString(new Date(-ach.v).toISOString())}`
-    else if (ach.vt === 6) displayVal = formatNumber(-Math.round(ach.v))
-
+    const displayVal = formatAchievementVal(ach, ach.v, ach.a);
     achText += `\n` + getEmoji("ach_" + achievementMapping[ach.rank])
 
     achText += ` **${displayVal}** ${ach.object} \n` // show the main info

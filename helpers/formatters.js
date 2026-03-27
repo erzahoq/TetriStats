@@ -412,6 +412,18 @@ function formatUsername(name, asLink = true) {
     return formatted;
 }
 
+function formatAchievementVal(ach, value, val2) {
+    let displayVal = formatNumber(Math.round(value));
+    if (ach.vt === 2) displayVal = `${formatPreciseTime(value)}`
+    else if (ach.vt === 3) displayVal = `${formatPreciseTime(-value)}`
+    else if (ach.vt === 4) displayVal = `${formatNumber(value, 2)}m (Floor ${Math.floor(val2)})`
+    else if (ach.name === "Guardian Angel") displayVal = `${formatNumber(value, 2)}m` // idk why this isn't labelled as altitude but sure
+    else if (ach.vt === 5) displayVal = `Obtained ${formatISOString(-value)}`
+    else if (ach.vt === 6) displayVal = formatNumber(-Math.round(value))
+    
+    return displayVal
+}
+
 function formatAchievement(ach) {
     const achievementMapping = {
         100: 'issued',
@@ -423,14 +435,7 @@ function formatAchievement(ach) {
     };
 
     //format thing because api silly
-    let displayVal = formatNumber(Math.round(ach.v));
-    if (ach.vt === 2) displayVal = `${formatPreciseTime(ach.v)}`
-    else if (ach.vt === 3) displayVal = `${formatPreciseTime(-ach.v)}`
-    else if (ach.vt === 4) displayVal = `${formatNumber(ach.v, 2)}m (Floor ${Math.floor(ach.a)})`
-    else if (ach.name === "Guardian Angel") displayVal = `${formatNumber(ach.v, 2)}m` //fuck you OSK you bitch (jk we love you)
-    else if (ach.vt === 5) displayVal = `Obtained ${formatISOString(-ach.v)}`
-    else if (ach.vt === 6) displayVal = formatNumber(-Math.round(ach.v))
-
+    const displayVal = formatAchievementVal(ach, ach.v, ach.a)
     let achText = getEmoji('ach_' + achievementMapping[ach.rank])
 
     //check for attributes and format
@@ -515,5 +520,6 @@ module.exports = {
     formatAchievement,
     buildPageButtonRows,
     buildStatComparisonLines,
-    addStatComparisonField
+    addStatComparisonField,
+    formatAchievementVal
 }
