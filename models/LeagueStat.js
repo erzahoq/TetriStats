@@ -23,11 +23,6 @@ module.exports = (sequelize) => {
         seenCount: {
             type: DataTypes.JSON,
             defaultValue: {},
-        },
-
-        achId: {
-            type: DataTypes.INTEGER,
-            allowNull: true,
         }
     }, {
         sequelize,

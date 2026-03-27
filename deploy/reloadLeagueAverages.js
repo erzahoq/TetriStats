@@ -298,6 +298,12 @@ async function calculateRankAverages() {
             statGroup: "achievements",
             achId: ach.k
         });
+        await database.Achievement.create({
+            id: ach.k,
+            name: ach.name,
+            shortname: ach.n,
+            objective: ach.object,
+        })
     }
     printBar(1, RANKS.length+2);
 
