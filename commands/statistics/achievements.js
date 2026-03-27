@@ -2,6 +2,18 @@ const { SlashCommandBuilder, EmbedBuilder, InteractionContextType } = require('d
 const { fetchCached } = require('../../helpers/fetch.js');
 const { getEmoji } = require('../../helpers/emojis.js');
 const { formatAchievementVal, formatUsername, buildPageButtonRows } = require('../../helpers/formatters.js');
+const { database } = require('../../database.js');
+
+const searchStrings = {};
+const idToName = {};
+
+async function getAchievementSearchStrings() {
+    const aches = await database.Achievement.findAll();
+    for (const ach of aches) {
+        searchStrings[ach.id] = `${ach.name}\n${ach.shortname}\n${ach.objective}`;
+        idToName[ach.id] = ach.name;
+    }
+}
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -150,6 +162,32 @@ module.exports = {
         })
     },
     async autocomplete(interaction) { 
-        await interaction.respond([])
+        if (Object.keys(searchStrings).length === 0) await getAchievementSearchStrings();
+        
+        const focusedValue = interaction.options.getFocused();
+        let correctedValue = focusedValue;
+        const corrections = {
+            "hfd": "highest floor discovered",
+            "40l": "40 lines",
+            "qp2": "zenith",
+            "qp": "zenith",
+            "kill": "KO",
+
+            "back to back": "btb",
+            "b2b": "btb",
+            "btb": "back-to-back",
+        }
+        for (const [key, value] of Object.entries(corrections)) {
+            correctedValue = correctedValue.replace(key, value);
+        }
+
+        const filtered = Object.entries(searchStrings).filter(([, str]) => {
+            str.toLowerCase().includes(correctedValue.toLowerCase())
+        });
+        const filteredIds = Object.keys(filtered);
+        const limited = filteredIds.slice(0, 25);
+        const response = limited.map(id => ({ name: idToName[id], value: id }));
+
+        await interaction.respond(response)
     }
 }
