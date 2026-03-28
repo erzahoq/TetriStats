@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, InteractionContextType } = require('discord.js');
 const { fetchCached } = require('../../helpers/fetch.js');
 const { getEmoji } = require('../../helpers/emojis.js');
-const { formatAchievementVal, formatUsername, buildPageButtonRows } = require('../../helpers/formatters.js');
+const { formatAchievementVal, formatUsername, buildPageButtonRows, formatNumber } = require('../../helpers/formatters.js');
 const { database } = require('../../database.js');
 
 const searchStrings = {};
@@ -21,8 +21,8 @@ module.exports = {
         .setContexts(InteractionContextType.BotDM, InteractionContextType.Guild, InteractionContextType.PrivateChannel)
         .setDescription('Gets data about a specific achievement.')
         .addIntegerOption(option =>
-            option.setName('stat')
-            .setDescription('The stat to get averages for.')
+            option.setName('achievement')
+            .setDescription('The achievement to view.')
             .setRequired(true)
             .setAutocomplete(true)
         ),
@@ -37,8 +37,9 @@ module.exports = {
         
         const ach = achData.data.achievement;
 
-        let achText = `### __Achievements -> ${ach.name} -> Overview__`
-        achText += `\n**${ach.object}**\n-# *${ach.desc}*\n`
+        let achText = `### __Achievements -> [${ach.name}](https://ch.tetr.io/achievements/${achId})__`
+        if (ach.object) achText += `\n**${ach.object}**`
+        achText += `\n-# *${ach.desc}*\n`
 
         if (ach.art === 0) {
             achText += `\n${getEmoji('au')} **UNRANKED** / This achievement does not contribute to your Achievement Rating.`
@@ -57,16 +58,14 @@ module.exports = {
             achText += `\n${getEmoji('ae')} **EVENT** / This achievement ${currentText} of the ${eventName} event.${extraText}`;
         }
 
-        const achievementMapping = {
-            100: 'issued',
-            5: 'diamond',
-            4: 'platinum',
-            3: 'gold',
-            2: 'silver',
-            1: 'bronze',
-        };
+        const achievementTiers = [
+            'diamond', 'platinum', 'gold', 'silver', 'bronze'
+        ];
 
-        achText += `\n`
+        if (ach.art !== 1 || ach.hidden || ach.event) {
+            achText += `\n`
+        }
+
         const cutoffs = achData.data.cutoffs;
         if (ach.rt === 2) {
             achText += `${getEmoji('ach_issued')} ${cutoffs.total} issued`
@@ -75,6 +74,10 @@ module.exports = {
             switch (ach.rt) {
                 case 1:
                     cutoffPercents = [70, 50, 30, 10, 5]
+                    break;
+                case 3:
+                    // zenith floors
+                    cutoffPercents = [null, null, null, null, null]
                     break;
                 case 4:
                     cutoffPercents = [null, 100, 60, 20, 5]
@@ -90,12 +93,34 @@ module.exports = {
                     break;
             }
 
-            let i = 0;
-            for (const achType of Object.values(achievementMapping)) {
-                if (!cutoffPercents[i] && cutoffPercents) continue;
+            let i = 4;
+            // this is a mess sorry
+            for (const achType of achievementTiers) {
+                if (!cutoffPercents[i] && ach.rt !== 3 || cutoffs[`${achType}_count`] === 0) {
+                    i--;
+                    continue;
+                }
 
-                achText += `\n${getEmoji('ach_' + achType)} (${cutoffPercents && cutoffPercents[i] !== 100 ? `Top ${cutoffPercents[i]}%, ` : ""}) ${formatAchievementVal(ach, cutoffs[achType], [3,5,7,9,10][i] /*qp2 floors*/)}`;
-                i++;
+                let cutoffText = "";
+                if (cutoffs[achType]) {
+                    cutoffText = `**${formatAchievementVal(ach, cutoffs[achType], [3,5,7,9,10][i] /*qp2 floors*/)}**`
+                }
+                if (cutoffPercents[i] === 100 && !cutoffs[`${achType}`]) {
+                    cutoffText = `**Any**`
+                }
+
+                let minted = formatNumber(cutoffs[`${achType}_count`]);
+                if (!cutoffs[`${achType}_count`]) {
+                    minted = formatNumber(cutoffs.total);
+                }
+
+                let percentText = `(${cutoffPercents && cutoffPercents[i] !== 100 ? `Top ${cutoffPercents[i]}%, ` : ""}${minted} minted)`
+                if (ach.rt === 3) {
+                    percentText = `(${minted} minted)`
+                }
+
+                achText += `\n${getEmoji('ach_' + achType)} ${cutoffText} ${percentText}`;
+                i--;
             }
         }
 
@@ -108,7 +133,7 @@ module.exports = {
         if (!ach.nolb) {
             labels.push("Leaderboard");
 
-            let lbText = `### __Achievements -> ${ach.name} -> Leaderboard__\n\n`
+            let lbText = `### __Achievements -> [${ach.name}](https://ch.tetr.io/achievements/${achId}) -> Leaderboard__\n\n`
             const lb = achData.data.leaderboard;
             const seenUsers = [];
             for (let i = 0; i < 15; i++) {
@@ -117,7 +142,7 @@ module.exports = {
 
                 // not diamond tier; mainly for swamp water aches :P
                 if (lb[i].v < cutoffs.diamond) {
-                    for (const achType of Object.values(achievementMapping)) {
+                    for (const achType of achievementTiers) {
                         if (lb[i].v >= cutoffs[achType]) {
                             lbText += getEmoji('ach_' + achType) + " ";
                             break;
@@ -130,9 +155,9 @@ module.exports = {
                     lbText += `${formatUsername(lb[i].u.username)} with ${formatUsername(lb[i].x.ally.username)}`
                     seenUsers.push(lb[i].x.ally.username);
                 } else {
-                    lbText += `${formatUsername(ach.u.username)}`
+                    lbText += `${formatUsername(lb[i].u.username)}`
                 }
-                lbText += ` - ${formatAchievementVal(ach, lb[i].v, ach.a)}\n`
+                lbText += ` - **${formatAchievementVal(ach, lb[i].v, lb[i].a)}**\n`
             }
 
             pages.push(new EmbedBuilder()
@@ -161,6 +186,7 @@ module.exports = {
             expiresAt: Date.now() + 10 * 60 * 1000
         })
     },
+    // TODO: change autocomplete sorting to search by name first then secondary stuff
     async autocomplete(interaction) { 
         if (Object.keys(searchStrings).length === 0) await getAchievementSearchStrings();
         
@@ -180,11 +206,11 @@ module.exports = {
         for (const [key, value] of Object.entries(corrections)) {
             correctedValue = correctedValue.replace(key, value);
         }
-
+        
         const filtered = Object.entries(searchStrings).filter(([, str]) => {
-            str.toLowerCase().includes(correctedValue.toLowerCase())
+            return str.toLowerCase().includes(correctedValue.toLowerCase())
         });
-        const filteredIds = Object.keys(filtered);
+        const filteredIds = filtered.map(([id]) => id);
         const limited = filteredIds.slice(0, 25);
         const response = limited.map(id => ({ name: idToName[id], value: id }));
 

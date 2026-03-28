@@ -96,10 +96,9 @@ module.exports = {
                 return;
             }
 
+            console.error(error);
             console.error(
-                error +
-                `\nextra info:
-    caused by ${interaction.user.username} (${interaction.user.id}) in ${interaction.guild?.name} (${interaction.guild?.id})
+                `    caused by ${interaction.user.username} (${interaction.user.id}) in ${interaction.guild?.name} (${interaction.guild?.id})
     ${error.requestBody && error.requestBody.json && error.requestBody.json.data ? JSON.stringify(error.requestBody.json.data) : "no request body available"}`,
             );
 
