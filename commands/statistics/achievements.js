@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, InteractionContextType } = require('discord.js');
 const { fetchCached } = require('../../helpers/fetch.js');
 const { getEmoji } = require('../../helpers/emojis.js');
-const { formatAchievementVal, formatUsername, buildPageButtonRows, formatNumber } = require('../../helpers/formatters.js');
+const { formatAchievementVal, formatUsername, buildPageButtonRows, formatNumber, capitalizeFirstLetter } = require('../../helpers/formatters.js');
 const { database } = require('../../database.js');
 
 const searchStrings = {};
@@ -38,7 +38,7 @@ module.exports = {
         const ach = achData.data.achievement;
 
         let achText = `### __Achievements -> [${ach.name}](https://ch.tetr.io/achievements/${achId})__`
-        if (ach.object) achText += `\n**${ach.object}**`
+        if (ach.object) achText += `\n**${capitalizeFirstLetter(ach.object)}**`
         achText += `\n-# *${ach.desc}*\n`
 
         if (ach.art === 0) {
@@ -95,6 +95,7 @@ module.exports = {
 
             let i = 4;
             // this is a mess sorry
+            // woomy
             for (const achType of achievementTiers) {
                 if (!cutoffPercents[i] && ach.rt !== 3 || cutoffs[`${achType}_count`] === 0) {
                     i--;
