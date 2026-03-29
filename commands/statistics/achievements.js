@@ -118,9 +118,10 @@ module.exports = {
                 if (cutoffPercents[i] === 100 && !cutoffs[`${achType}`]) {
                     cutoffText = `**Any**`
                 }
-                if (cutoffPercents[i] === 100 && ach.min) {
-                    cutoffText = `**${formatAchievementVal(ach, ach.min, null)}**`
-                }
+                if (
+                    cutoffPercents[i] === 100 && ach.min 
+                    && ach.min !== -9007199254740991 // osk why T-T
+                ) cutoffText = `**${formatAchievementVal(ach, ach.min, null)}**`
 
                 let minted = formatNumber(cutoffs[`${achType}_count`]);
                 if (!cutoffs[`${achType}_count`]) {
@@ -207,8 +208,8 @@ module.exports = {
                 const value = formatAchievementVal(ach, leagueData.values[rank], null);
                 if (seenPercent > 0.7) {
                     leagueText += `\n${emoji} **\`${" ".repeat(maxLength - value.length)}${value}\`**`;
-                } else if (seenPercent > 0.1) {
-                    leagueText += `\n${emoji} \`${" ".repeat(maxLength - value.length)}${value}\` (*${formatNumber(seenPercent * 100, 2)}% of players*)`;
+                } else if (seenPercent > 0.05) {
+                    leagueText += `\n${emoji} \`${" ".repeat(maxLength - value.length)}${value}\` (*${formatNumber(seenPercent * 100, 2)}%*)`;
                 } else {
                     continue;
                 }
