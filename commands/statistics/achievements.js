@@ -118,6 +118,9 @@ module.exports = {
                 if (cutoffPercents[i] === 100 && !cutoffs[`${achType}`]) {
                     cutoffText = `**Any**`
                 }
+                if (cutoffPercents[i] === 100 && ach.min) {
+                    cutoffText = `**${formatAchievementVal(ach, ach.min, null)}**`
+                }
 
                 let minted = formatNumber(cutoffs[`${achType}_count`]);
                 if (!cutoffs[`${achType}_count`]) {
@@ -238,7 +241,6 @@ module.exports = {
             expiresAt: Date.now() + 10 * 60 * 1000
         })
     },
-    // TODO: change autocomplete sorting to search by name first then secondary stuff
     async autocomplete(interaction) { 
         if (Object.keys(searchStrings).length === 0) await getAchievementSearchStrings();
         
