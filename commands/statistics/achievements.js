@@ -27,7 +27,7 @@ module.exports = {
             .setAutocomplete(true)
         ),
     async execute(interaction) {
-        const achId = interaction.options.getInteger('stat');
+        const achId = interaction.options.getInteger('achievement');
         const achData = await fetchCached(`https://ch.tetr.io/api/achievements/${achId}`);
 
         if (!achData.success) {
