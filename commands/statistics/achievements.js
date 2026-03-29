@@ -13,7 +13,7 @@ let seenRankTotals = {};
 async function getAchievementSearchStrings() {
     const aches = await database.Achievement.findAll();
     for (const ach of aches) {
-        searchStrings[ach.id] = `${ach.name}\n${ach.shortname}\n${ach.objective}`;
+        searchStrings[ach.id] = [ach.name, ach.shortname, ach.objective];
         idToName[ach.id] = ach.name;
     }
 }
@@ -255,14 +255,23 @@ module.exports = {
             "back to back": "btb",
             "b2b": "btb",
             "btb": "back-to-back",
+
+            "experience": "xp",
         }
         for (const [key, value] of Object.entries(corrections)) {
             correctedValue = correctedValue.replace(key, value);
         }
         
-        const filtered = Object.entries(searchStrings).filter(([, str]) => {
-            return str.toLowerCase().includes(correctedValue.toLowerCase())
-        });
+        const filtered = [];
+        for (const [id, strings] of Object.entries(searchStrings)) {
+            for (const str of strings) {
+                if (str.toLowerCase().includes(correctedValue.toLowerCase())) {
+                    filtered.push([id, str]);
+                    break;
+                }
+            }
+        }
+
         const filteredIds = filtered.map(([id]) => id);
         const limited = filteredIds.slice(0, 25);
         const response = limited.map(id => ({ name: idToName[id], value: id }));
