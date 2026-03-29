@@ -228,6 +228,7 @@ async function fetchUserAverages() {
 // horrific looking function that i could *probably* softcode but it's... fine
 async function calculateRankAverages() {
     await database.LeagueStat.destroy({ where: {} });
+    await database.Achievement.destroy({ where: {} });
     
     const dbObjects = {};
     const BASE_RANK_TOTAL = {
@@ -410,7 +411,7 @@ async function calculateRankAverages() {
                     continue;
                 }
 
-                if (!achievement.v) achievement.v = 0;
+                if (!achievement.v) continue;
 
                 rankTotals.achievements[achievement.n] += achievement.v;
                 dataSeenCount.achievements[achievement.n] += 1;
