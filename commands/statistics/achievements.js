@@ -175,7 +175,6 @@ module.exports = {
             );
         }
 
-        // TODO: league stats go here
         const achievementShortName = await database.Achievement.findByPk(achId).then(ach => ach.shortname);
         const leagueData = await database.LeagueStat.findByPk(`achievements/${achievementShortName}`);
         if (leagueData) {
@@ -205,7 +204,7 @@ module.exports = {
                 const value = formatAchievementVal(ach, leagueData.values[rank], null);
                 if (seenPercent > 0.7) {
                     leagueText += `\n${emoji} **\`${" ".repeat(maxLength - value.length)}${value}\`**`;
-                } else if (seenPercent > 0.2) {
+                } else if (seenPercent > 0.1) {
                     leagueText += `\n${emoji} \`${" ".repeat(maxLength - value.length)}${value}\` (*${formatNumber(seenPercent * 100, 2)}% of players*)`;
                 } else {
                     continue;
@@ -256,6 +255,7 @@ module.exports = {
             "b2b": "btb",
             "btb": "back-to-back",
 
+            "exp": "xp",
             "experience": "xp",
         }
         for (const [key, value] of Object.entries(corrections)) {
@@ -263,15 +263,14 @@ module.exports = {
         }
         
         const filtered = [];
-        for (const [id, strings] of Object.entries(searchStrings)) {
-            for (const str of strings) {
-                if (str.toLowerCase().includes(correctedValue.toLowerCase())) {
-                    filtered.push([id, str]);
-                    break;
-                }
+        for (let i = 0; i < 3; i++) {
+            for (const [id, strings] of Object.entries(searchStrings)) {
+                if (
+                    strings[i].toLowerCase().includes(correctedValue.toLowerCase()) 
+                    && !filtered.some(([filteredId]) => filteredId === id)
+                ) filtered.push([id, strings]);
             }
         }
-
         const filteredIds = filtered.map(([id]) => id);
         const limited = filteredIds.slice(0, 25);
         const response = limited.map(id => ({ name: idToName[id], value: id }));
