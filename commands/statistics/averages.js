@@ -120,22 +120,18 @@ module.exports = {
         for (const rank of RANKS) {
             const emoji = getEmojiOfRank(rank);
             if (statEntry.seenCount[rank] === 0) {
-                description += `\n${emoji} \`${"-".repeat(maxLength)}\``;
                 continue;
             }
 
             const value = formatValue(stat, statEntry.values[rank]);
             const seenPercent = statEntry.seenCount[rank] / seenRankTotals[rank];
 
-            description += `\n${emoji} `;
             if (seenPercent > 0.7) {
-                description += `**\`${" ".repeat(maxLength - value.length)}${value}\`**`;
+                description += `\n${emoji} **\`${" ".repeat(maxLength - value.length)}${value}\`**`;
             } else if (seenPercent > 0.2) {
-                description += `\`${" ".repeat(maxLength - value.length)}${value}\` (*${formatNumber(seenPercent * 100, 2)}% of players*)`;
-            } else if (statEntry.seenCount[rank] > 5) {
-                description += `\`${"-".repeat(maxLength)}\` (*${value} / ${formatNumber(seenPercent * 100, 2)}% of players*)`;
+                description += `\n${emoji} \`${" ".repeat(maxLength - value.length)}${value}\` (*${formatNumber(seenPercent * 100, 2)}% of players*)`;
             } else {
-                description += `\`${"-".repeat(maxLength)}\` (*${value} / ${statEntry.seenCount[rank]} player${statEntry.seenCount[rank] === 1 ? "" : "s"}*)`;
+                continue;
             }
         }
 

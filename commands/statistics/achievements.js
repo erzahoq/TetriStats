@@ -1,11 +1,14 @@
 const { SlashCommandBuilder, EmbedBuilder, InteractionContextType } = require('discord.js');
 const { fetchCached } = require('../../helpers/fetch.js');
 const { getEmoji } = require('../../helpers/emojis.js');
-const { formatAchievementVal, formatUsername, buildPageButtonRows, formatNumber, capitalizeFirstLetter } = require('../../helpers/formatters.js');
+const { formatAchievementVal, formatUsername, buildPageButtonRows, formatNumber, capitalizeFirstLetter, getEmojiOfRank } = require('../../helpers/formatters.js');
 const { database } = require('../../database.js');
 
+const RANKS = ['d', 'd+', 'c-', 'c', 'c+', 'b-', 'b', 'b+', 'a-', 'a', 'a+', 's-', 's', 's+', 'ss', 'u', 'x', 'x+'].reverse();
+const qp2Floors = [3,5,7,9,10];
 const searchStrings = {};
 const idToName = {};
+let seenRankTotals = {};
 
 async function getAchievementSearchStrings() {
     const aches = await database.Achievement.findAll();
@@ -13,6 +16,12 @@ async function getAchievementSearchStrings() {
         searchStrings[ach.id] = `${ach.name}\n${ach.shortname}\n${ach.objective}`;
         idToName[ach.id] = ach.name;
     }
+}
+
+async function updateRankTotals() {
+    if (Object.keys(seenRankTotals).length > 0) return;
+    const stat = await database.LeagueStat.findByPk("league/apm");
+    seenRankTotals = stat.seenCount;
 }
 
 module.exports = {
@@ -104,7 +113,7 @@ module.exports = {
 
                 let cutoffText = "";
                 if (cutoffs[achType]) {
-                    cutoffText = `**${formatAchievementVal(ach, cutoffs[achType], [3,5,7,9,10][i] /*qp2 floors*/)}**`
+                    cutoffText = `**${formatAchievementVal(ach, cutoffs[achType], qp2Floors[i])}**`
                 }
                 if (cutoffPercents[i] === 100 && !cutoffs[`${achType}`]) {
                     cutoffText = `**Any**`
@@ -167,6 +176,49 @@ module.exports = {
         }
 
         // TODO: league stats go here
+        const achievementShortName = await database.Achievement.findByPk(achId).then(ach => ach.shortname);
+        const leagueData = await database.LeagueStat.findByPk(`achievements/${achievementShortName}`);
+        if (leagueData) {
+            await updateRankTotals();
+            labels.push("League Averages");
+
+            let leagueText = `### __Achievements -> [${ach.name}](https://ch.tetr.io/achievements/${achId}) -> League Averages__\n\n`
+            
+            let maxLength = 0;
+            for (const rank of RANKS) {
+                maxLength = Math.max(maxLength, formatAchievementVal(ach, leagueData.values[rank], null).length);
+            }
+
+            for (const rank of RANKS) {
+                const emoji = getEmojiOfRank(rank);
+                if (!leagueData.seenCount[rank] || !leagueData.values[rank]) {
+                    continue;
+                }
+
+                if (ach.rt === 2) {
+                    const value = `${formatNumber(leagueData.values[rank] * 100, 2)}%`
+                    leagueText += `\n${emoji} **\`${"0".repeat(6 - value.length)}${value}\`**`;
+                    continue;
+                }
+
+                const seenPercent = leagueData.seenCount[rank] / seenRankTotals[rank];
+                const value = formatAchievementVal(ach, leagueData.values[rank], null);
+                if (seenPercent > 0.7) {
+                    leagueText += `\n${emoji} **\`${" ".repeat(maxLength - value.length)}${value}\`**`;
+                } else if (seenPercent > 0.2) {
+                    leagueText += `\n${emoji} \`${" ".repeat(maxLength - value.length)}${value}\` (*${formatNumber(seenPercent * 100, 2)}% of players*)`;
+                } else {
+                    continue;
+                }
+            }
+
+            pages.push(new EmbedBuilder()
+                .setDescription(leagueText)
+                .setFooter({ text: `Sample of 700 players per rank` })
+                .setTimestamp(new Date(leagueData.updatedAt))
+                .setColor('#5394c0')
+            );
+        }
 
         if (pages.length === 1) {
             await interaction.reply({ embeds: pages });

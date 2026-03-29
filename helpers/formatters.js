@@ -416,7 +416,8 @@ function formatAchievementVal(ach, value, val2) {
     let displayVal = formatNumber(Math.round(value));
     if (ach.vt === 2) displayVal = `${formatPreciseTime(value)}`
     else if (ach.vt === 3) displayVal = `${formatPreciseTime(-value)}`
-    else if (ach.vt === 4) displayVal = `${formatNumber(value, 2)}m (Floor ${Math.floor(val2)})`
+    else if (ach.vt === 4 && typeof val2 === 'number') displayVal = `${formatNumber(value, 2)}m (Floor ${Math.floor(val2)})`
+    else if (ach.vt === 4) displayVal = `${formatNumber(value, 2)}m` // for when floors aren't available
     else if (ach.name === "Guardian Angel") displayVal = `${formatNumber(value, 2)}m` // idk why this isn't labelled as altitude but sure
     else if (ach.vt === 5) displayVal = `Obtained ${formatISOString(-value)}`
     else if (ach.vt === 6) displayVal = formatNumber(-Math.round(value))
