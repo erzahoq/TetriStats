@@ -7,7 +7,7 @@ const sequelize = new Sequelize('database', 'user', 'password', {
 	dialect: 'sqlite',
 	logging: false,
 	// SQLite only
-	storage: 'database.sqlite',
+	storage: path.join(__dirname, 'database.sqlite'),
 });
 
 const modelsPath = path.join(__dirname, 'models');
@@ -16,9 +16,9 @@ const list = {}; // list of all models
 
 for (const file of modelFiles) {
 	const filePath = path.join(modelsPath, file);
-	list[file.replace('.js','')] = require(filePath)(sequelize);
+	list[file.replace('.js', '')] = require(filePath)(sequelize, Sequelize.DataTypes);
 }
 
 const database = list;
 
-module.exports = { database }
+module.exports = { database, sequelize }
