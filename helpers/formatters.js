@@ -169,6 +169,7 @@ function getModCombos(mods) {
         { name: "Strength", mods: ['volatile'], flavour: "Match great obstacles with greater determination." },
         { name: "The Emperor", mods: ['expert'], flavour: "A display of power for those willing to bear its burden." },
         { name: "Rolling the Snowman", mods: ['snowman'], flavour: "\"No matter how many times you've rolled, we all melt in the end.\" - Snowcrates" },
+        { name: "Mutation", mods: ['pento'], flavour: "Only a fool would commit heresy this blatantly."},
 
 
         //mod combos
@@ -184,6 +185,7 @@ function getModCombos(mods) {
         //any 7 of the 8 mods
         { name: "Swamp Water Lite", allowedMods: ['nohold', 'doublehole', 'messy', 'allspin', 'gravity', 'invisible', 'expert', 'volatile'], count: 7, flavour: "Comes in 8 different flavors!" },
         { name: "Swamp Water", mods: ['nohold', 'doublehole', 'messy', 'allspin', 'gravity', 'invisible', 'expert', 'volatile'], flavour: "The worst of all worlds." },
+        { name: "why", mods: ['nohold', 'doublehole', 'messy', 'allspin', 'gravity', 'invisible', 'expert', 'volatile', 'pento'], flavour: "why" },
 
         //reversed mods
         { name: "Asceticism", mods: ["nohold_reversed"], flavour: "A detachment from even that which is moderate." },
@@ -473,7 +475,7 @@ function formatAchievement(ach) {
 
     achText += ` **${ach.name}** - **${displayVal}** ${ach.object}` // show the main info
 
-    if (ach.nolb) { // if it's issued
+    if (ach.rank === 100) { // if it's issued
         achText += ` (Issue ${ach.pos + 1}/${ach.total})` 
     } else {
         if (ach.pos < 100) { // if you're in the top 100 players

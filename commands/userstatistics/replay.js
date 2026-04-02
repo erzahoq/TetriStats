@@ -44,6 +44,7 @@ module.exports = {
         const replayDataBuffer = Buffer.from(arrayBuffer);
 
         // optional: save replay file locally before analysing
+        /*
         try {
             const tmpDir = path.join(__dirname, '..', '..', 'tmp', 'replays');
             await fs.promises.mkdir(tmpDir, { recursive: true });
@@ -56,7 +57,7 @@ module.exports = {
             console.log('Saved replay files:', rawFile, jsonFile);
         } catch (err) {
             console.warn('Could not save replay locally:', err.message);
-        }
+        }*/
 
          // Parse the file as JSON
          const replay = JSON.parse(replayDataBuffer.toString());
@@ -100,22 +101,22 @@ module.exports = {
             }
             const handling = replayData.options.handling;
             const inputCountString = 
-    `- **Placed ${formatNumber(replayStats.piecesplaced)} pieces**
-    - Held ${formatNumber(replayStats.holds)} pieces
-    - Pressed ${formatNumber(replayStats.inputs)} inputs
-    - ⇊ ${formatNumber(inputCounts.hardDrop)} | ⇃ ${formatNumber(inputCounts.softDrop)} | ⇄ ${formatNumber(inputCounts.hold)}
-    - ← ${formatNumber(inputCounts.moveLeft)} | → ${formatNumber(inputCounts.moveRight)}
-    - ↶ ${formatNumber(inputCounts.rotateCCW)} | ↷ ${formatNumber(inputCounts.rotateCW)} | ⟳ ${formatNumber(inputCounts.rotate180)}
-    - ${handling.arr}F ARR | ${handling.das}F DAS | ${handling.sdf === 41 ? "∞" : handling.sdf}x SDF
-    - **Cleared ${formatNumber(replayStats.lines)} lines**
-    - ${replayStats.clears.singles} singles (${replayStats.clears.tspinsingles ?? 0} spins) 
-    - ${replayStats.clears.doubles} doubles (${replayStats.clears.tspindoubles ?? 0} spins) 
-    - ${replayStats.clears.triples} triples (${replayStats.clears.tspintriples ?? 0} spins)
-    - ${replayStats.clears.quads} quads${finesse === -1 ? '' : `
-    - **Had ${formatNumber(finesse * 100, 2)}% finesse**
-    - Reached a ${replayStats.finesse.combo} chain
-    - Made ${replayStats.finesse.faults} faults
-    - Placed ${replayStats.finesse.perfectpieces} pieces perfectly`}`;
+`- **Placed ${formatNumber(replayStats.piecesplaced)} pieces**
+- Held ${formatNumber(replayStats.holds)} pieces
+- Pressed ${formatNumber(replayStats.inputs)} inputs
+- ⇊ ${formatNumber(inputCounts.hardDrop)} | ⇃ ${formatNumber(inputCounts.softDrop)} | ⇄ ${formatNumber(inputCounts.hold)}
+- ← ${formatNumber(inputCounts.moveLeft)} | → ${formatNumber(inputCounts.moveRight)}
+- ↶ ${formatNumber(inputCounts.rotateCCW)} | ↷ ${formatNumber(inputCounts.rotateCW)} | ⟳ ${formatNumber(inputCounts.rotate180)}
+- ${handling.arr}F ARR | ${handling.das}F DAS | ${handling.sdf === 41 ? "∞" : handling.sdf}x SDF
+- **Cleared ${formatNumber(replayStats.lines)} lines**
+- ${replayStats.clears.singles} singles (${replayStats.clears.tspinsingles ?? 0} spins) 
+- ${replayStats.clears.doubles} doubles (${replayStats.clears.tspindoubles ?? 0} spins) 
+- ${replayStats.clears.triples} triples (${replayStats.clears.tspintriples ?? 0} spins)
+- ${replayStats.clears.quads} quads${finesse === -1 ? '' : `
+- **Had ${formatNumber(finesse * 100, 2)}% finesse**
+- Reached a ${replayStats.finesse.combo} chain
+- Made ${replayStats.finesse.faults} faults
+- Placed ${replayStats.finesse.perfectpieces} pieces perfectly`}`;
 
             let performanceDisclaimer = "";
             // skips the "compared to rank" line for performance tab
@@ -212,29 +213,29 @@ ${formatUsername(replay.users[0].username)} ${countryCodeToEmoji(replay.users[0]
                     new EmbedBuilder().setColor('#80ff80')
                     .setDescription(`### __${replayLinkFormat} -> Overview__
     ${modString}
-    - **Finished in ${framesToTime(replayData.frames)}**
-    - ${formatNumber(pps,2)} PPS
-    - ${formatNumber(apm,2)} APM
-    - ${formatNumber(replayData.results.aggregatestats.vsscore,2)} VS Score
-    - ${formatNumber(finesse * 100, 2)}% Finesse | ${replayStats.finesse.faults} Faults
-    - **Climbed ${formatNumber(height, 1)}m (Floor ${zenithStats.floor})**
-    - Reached ${formatNumber(zenithStats.peakrank, 2)} climb speed, averaged ${formatNumber(zenithStats.rank, 2)}
-    - Reached ${replayStats.topbtb} B2B
-    - **KO'd ${replayStats.kills} players**
-    - Sent ${formatNumber(garbageStats.sent)} lines 
-    - Received ${formatNumber(garbageStats.received)} lines
-    ${userSuffix}`),
+- **Finished in ${framesToTime(replayData.frames)}**
+- ${formatNumber(pps,2)} PPS
+- ${formatNumber(apm,2)} APM
+- ${formatNumber(replayData.results.aggregatestats.vsscore,2)} VS Score
+- ${formatNumber(finesse * 100, 2)}% Finesse | ${replayStats.finesse.faults} Faults
+- **Climbed ${formatNumber(height, 1)}m (Floor ${zenithStats.floor})**
+- Reached ${formatNumber(zenithStats.peakrank, 2)} climb speed, averaged ${formatNumber(zenithStats.rank, 2)}
+- Reached ${replayStats.topbtb} B2B
+- **KO'd ${replayStats.kills} players**
+- Sent ${formatNumber(garbageStats.sent)} lines 
+- Received ${formatNumber(garbageStats.received)} lines
+${userSuffix}`),
 
-                    new EmbedBuilder().setColor('#ffb980').setDescription(`### __${replayLinkFormat} -> Full__
-    ${inputCountString}
-    - **Sent ${formatNumber(garbageStats.sent)} garbage lines**
-    - Recieved ${formatNumber(garbageStats.received)}
-    - Cleared ${formatNumber(garbageStats.cleared)}
-    - Generated ${formatNumber(garbageStats.attack)} total attack
-    - Sent a ${formatNumber(garbageStats.maxspike)} spike
-    - **Scored ${formatNumber(stats.score)} points**
-    - Reached a ${stats.topcombo} combo
-    - Reached a ${stats.topbtb} Back-to-Back chain
+                new EmbedBuilder().setColor('#ffb980').setDescription(`### __${replayLinkFormat} -> Full__
+${inputCountString}
+- **Sent ${formatNumber(garbageStats.sent)} garbage lines**
+- Recieved ${formatNumber(garbageStats.received)}
+- Cleared ${formatNumber(garbageStats.cleared)}
+- Generated ${formatNumber(garbageStats.attack)} total attack
+- Sent a ${formatNumber(garbageStats.maxspike)} spike
+- **Scored ${formatNumber(stats.score)} points**
+- Reached a ${stats.topcombo} combo
+- Reached a ${stats.topbtb} Back-to-Back chain
     ${userSuffix}`),
                     new EmbedBuilder().setColor('#ff80d9')
                     .setDescription(`### __${replayLinkFormat} -> Splits__
