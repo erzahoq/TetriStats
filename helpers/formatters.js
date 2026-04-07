@@ -18,8 +18,7 @@ function formatNumber(num, decimalPlaces = 0) {
     const factor = 10 ** decimalPlaces;
     const rounded = Math.round(absNum * factor) / factor;
 
-    let [integerPart, decimalPart] = rounded.
-    toString().split('.');
+    let [integerPart, decimalPart] = rounded.toString().split('.');
 
     // Add commas
     integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
