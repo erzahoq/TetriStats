@@ -418,11 +418,6 @@ function formatAchievementVal(ach, value, val2) {
         return `${formatNumber(value, 2)}m`;
     }
 
-    if (ach.name === "The Responsible One") {
-        const formatted = formatNumber(value, Number.isInteger(value) ? 0 : 2);
-        return `${formatted} ${Number(value) === 1 ? "revive" : "revives"}`;
-    }
-
     switch (ach.vt) {
         case 0:
             return "—";
