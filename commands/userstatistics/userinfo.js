@@ -309,7 +309,7 @@ function formatZenith(statistics, country, expert = false) {
   - [Submitted ${formatISOString(zStatistics.record.ts)}](https://tetr.io/#R:${zStatistics.record.replayid})
   - ${formatNumber(zStatistics.record.results.aggregatestats.pps, 2)} PPS | ${formatNumber(zStatistics.record.results.aggregatestats.apm, 2)} APM
   - Floor ${zStatistics.record.results.stats.zenith.floor} | ${zStatistics.record.results.stats.kills} KOs | Reached ${
-      zStatistics.record.results.stats.topbtb
+      (zStatistics.record.results.stats.topbtb) - 1
     } B2B`;
     if (statistics[zenithVer].best.record) {
       zenithText += `\n  - All-time best is ${formatNumber(zStatistics.best.record.results.stats.zenith.altitude, 2)}m (#${formatNumber(zStatistics.best.rank)})`;

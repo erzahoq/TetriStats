@@ -220,7 +220,7 @@ ${formatUsername(replay.users[0].username)} ${countryCodeToEmoji(replay.users[0]
 - ${formatNumber(finesse * 100, 2)}% Finesse | ${replayStats.finesse.faults} Faults
 - **Climbed ${formatNumber(height, 1)}m (Floor ${zenithStats.floor})**
 - Reached ${formatNumber(zenithStats.peakrank, 2)} climb speed, averaged ${formatNumber(zenithStats.rank, 2)}
-- Reached ${replayStats.topbtb} B2B
+- Reached ${(replayStats.topbtb) - 1} B2B
 - **KO'd ${replayStats.kills} players**
 - Sent ${formatNumber(garbageStats.sent)} lines 
 - Received ${formatNumber(garbageStats.received)} lines
