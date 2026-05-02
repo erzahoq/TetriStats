@@ -116,6 +116,7 @@ function formatISOString(isoString, accountCreation = false) {
 
 // a magic formula stolen from somewhere online
 function calculateLevel(xp) {
+    if (xp < 0) return 0;
     return ((xp / 500) ** 0.6) + (xp / (5000 + ((Math.max(0, xp - (4 * 10 ** 6))) / 5000))) + 1
 }
 
