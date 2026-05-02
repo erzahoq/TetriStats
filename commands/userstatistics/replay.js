@@ -235,7 +235,7 @@ ${inputCountString}
 - Sent a ${formatNumber(garbageStats.maxspike)} spike
 - **Scored ${formatNumber(stats.score)} points**
 - Reached a ${stats.topcombo} combo
-- Reached a ${stats.topbtb} Back-to-Back chain
+- Reached a ${(stats.topbtb) - 1} Back-to-Back chain
     ${userSuffix}`),
                     new EmbedBuilder().setColor('#ff80d9')
                     .setDescription(`### __${replayLinkFormat} -> Splits__
