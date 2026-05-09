@@ -4,7 +4,7 @@ const { formatUsername, formatAchievement, buildPageButtonRows, getClosestRank, 
 const { getUser } = require('../../helpers/getuser');
 const { getEmoji } = require('../../helpers/emojis');
 const { fetchCached } = require('../../helpers/fetch');
-const { autocomplete } = require('./../statistics/achievements.js');
+const { autocomplete, getChoice } = require('../../helpers/achAutocomplete');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -48,12 +48,13 @@ module.exports = {
 
         achs = achs.data;
 
-        const achToView = interaction.options.getString('achievement');
-        if (achToView) {
+        const achToViewString = interaction.options.getString('achievement');
+        if (achToViewString) {
+            const achToView = await getChoice(achToViewString);
             const matchingAch = achs.find(ach => `${ach.k}` === achToView);
             if (!matchingAch) {
                 return await interaction.editReply({
-                    content: `Achievement with ID \`${achToView}\` not found for user ${formatUsername(username)}! They might not have that achievement.`,
+                    content: `Achievement \`${achToViewString}\` not found for user ${formatUsername(username)}! They might not have that achievement.`,
                 });
             }
 

@@ -3,20 +3,11 @@ const { fetchCached } = require('../../helpers/fetch.js');
 const { getEmoji } = require('../../helpers/emojis.js');
 const { formatAchievementVal, formatUsername, buildPageButtonRows, formatNumber, capitalizeFirstLetter, getEmojiOfRank } = require('../../helpers/formatters.js');
 const { database } = require('../../database.js');
+const { autocomplete, getChoice } = require('../../helpers/achAutocomplete.js');
 
 const RANKS = ['d', 'd+', 'c-', 'c', 'c+', 'b-', 'b', 'b+', 'a-', 'a', 'a+', 's-', 's', 's+', 'ss', 'u', 'x', 'x+'].reverse();
 const qp2Floors = [3,5,7,9,10];
-const searchStrings = {};
-const idToName = {};
 let seenRankTotals = {};
-
-async function getAchievementSearchStrings() {
-    const aches = await database.Achievement.findAll();
-    for (const ach of aches) {
-        searchStrings[ach.id] = [ach.name, ach.shortname, ach.objective];
-        idToName[ach.id] = ach.name;
-    }
-}
 
 async function updateRankTotals() {
     if (Object.keys(seenRankTotals).length > 0) return;
@@ -29,14 +20,20 @@ module.exports = {
         .setName('achievement')
         .setContexts(InteractionContextType.BotDM, InteractionContextType.Guild, InteractionContextType.PrivateChannel)
         .setDescription('Gets data about a specific achievement.')
-        .addIntegerOption(option =>
+        .addStringOption(option =>
             option.setName('achievement')
             .setDescription('The achievement to view.')
             .setRequired(true)
             .setAutocomplete(true)
         ),
     async execute(interaction) {
-        const achId = interaction.options.getInteger('achievement');
+        const achString = interaction.options.getString('achievement');
+        const achId = await getChoice(achString);
+        if (!achId) {
+            await interaction.reply(`No achievement found for \`${achString}\`!`);
+            return;
+        }
+        
         const achData = await fetchCached(`https://ch.tetr.io/api/achievements/${achId}`);
 
         if (!achData.success) {
@@ -242,42 +239,7 @@ module.exports = {
             expiresAt: Date.now() + 10 * 60 * 1000
         })
     },
-    async autocomplete(interaction) { 
-        if (Object.keys(searchStrings).length === 0) await getAchievementSearchStrings();
-        
-        const focusedValue = interaction.options.getFocused();
-        let correctedValue = focusedValue;
-        const corrections = {
-            "hfd": "highest floor discovered",
-            "40l": "40 lines",
-            "qp2": "zenith",
-            "qp": "zenith",
-            "kill": "KO",
-
-            "back to back": "btb",
-            "b2b": "btb",
-            "btb": "back-to-back",
-
-            "exp": "xp",
-            "experience": "xp",
-        }
-        for (const [key, value] of Object.entries(corrections)) {
-            correctedValue = correctedValue.replace(key, value);
-        }
-        
-        const filtered = [];
-        for (let i = 0; i < 3; i++) {
-            for (const [id, strings] of Object.entries(searchStrings)) {
-                if (
-                    strings[i].toLowerCase().includes(correctedValue.toLowerCase()) 
-                    && !filtered.some(([filteredId]) => filteredId === id)
-                ) filtered.push([id, strings]);
-            }
-        }
-        const filteredIds = filtered.map(([id]) => id);
-        const limited = filteredIds.slice(0, 25);
-        const response = limited.map(id => ({ name: idToName[id], value: id }));
-
-        await interaction.respond(response)
+    async autocomplete(interaction) {
+        return await autocomplete(interaction);
     }
 }
