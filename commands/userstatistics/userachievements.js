@@ -292,7 +292,11 @@ async function buildAchievementDetailEmbed(ach, listEmbed, username) {
     const displayVal = formatAchievementVal(ach, ach.v, ach.a);
     achText += `\n` + getEmoji("ach_" + achievementMapping[ach.rank])
 
-    achText += ` **${displayVal}** ${ach.object} \n` // show the main info
+    if (ach.vt !== 5) {
+        achText += ` **${displayVal}**  ${ach.object} \n` // show the main info
+    } else {
+        achText += ach.object ? ` **${ach.object}** \n` : `\n`;
+    }
 
     if (ach.vt === 5) { // if it's issued
         achText += `Issue ${ach.pos}/${ach.total}` 
@@ -324,7 +328,7 @@ async function buildAchievementDetailEmbed(ach, listEmbed, username) {
 
         const deltaText = formatAchievementDelta(closestRank.delta, ach);
         if (deltaText) {
-            achText += ` (${deltaText})`;
+            achText += ` (${deltaText} away)`;
         }
 
         const nextRank = getNextRank(closestRank.rank);
@@ -391,7 +395,7 @@ function formatAchievementDelta(delta, ach) {
   if (ach.vt === 0 || ach.vt === 5) return null;
 
   const d = Number(delta);
-  const sign = d > 0 ? '+' : d < 0 ? '-' : '±';
+  const sign = d > 0 ? '-' : d < 0 ? '+' : '±';
   const abs = Math.abs(d);
 
   switch (ach.vt) {
@@ -413,6 +417,6 @@ function formatAchievementDelta(delta, ach) {
     //NUMBER (plain numeric)
     case 1:
     default:
-      return `${sign}${formatNumber(abs, 1)}`;
+      return `${sign}${formatNumber(abs, 0)}`;
   }
 }
