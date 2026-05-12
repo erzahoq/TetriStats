@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
 
-const { formatUsername, formatAchievement, buildPageButtonRows, getClosestRank, formatAchievementVal, formatNumber, formatISOString, getEmojiOfRank, getNextRank, getLeagueStatThresholds } = require('../../helpers/formatters');
+const { formatUsername, formatAchievement, buildPageButtonRows, getClosestRank, formatAchievementVal, formatNumber, formatISOString, getEmojiOfRank, getNextRank, getLeagueStatThresholds, getLeagueRankColour } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
 const { getEmoji } = require('../../helpers/emojis');
 const { fetchCached } = require('../../helpers/fetch');
@@ -278,6 +278,8 @@ async function buildAchievementDetailEmbed(ach, listEmbed, username) {
     const e = new EmbedBuilder().setColor(listEmbed?.data?.color || 'ffffff');
     if (listEmbed?.data?.color) {
         e.setColor(listEmbed.data.color);
+    } else {
+        e.setColor(getLeagueRankColour(closestRank?.rank))
     }
 
     const lines = [];
