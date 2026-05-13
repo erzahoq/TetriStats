@@ -64,6 +64,13 @@ async function main() {
     console.log("\nall done!");
     console.log("you may delete userList.json and rankData.json now if you want");
 
+    //Update lastReload in config.json
+    const configPath = path.join(__dirname, '..', 'config.json');
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+    config.lastReload = Date.now();
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 4));
+    console.log('Updated lastReload in config.json');
+
     process.exit(0);
 }
 
@@ -448,6 +455,8 @@ async function calculateRankAverages() {
         }
     }
     printBar(RANKS.length+2, RANKS.length+2);
+
+
 }
 
 // wow! pretty logging. very necessary
