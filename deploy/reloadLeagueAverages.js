@@ -2,6 +2,7 @@ const { formatNumber, formatPreciseTime } = require('../helpers/formatters.js');
 const { database } = require('../database.js');
 const uuid = require('uuid');
 const fs = require('fs');
+const path = require('path');
 
 let sessionId;
 
