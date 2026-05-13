@@ -144,7 +144,7 @@ function getLeagueRankColour(rank) {
         "ss": "#feaf1b",
         "u": "#ff2713",
         "x": "#fd73fc",
-        "x+": "#f018d0"
+        "x+": "#ffbdf5"
     }
 
     return ratingColours[rank]
