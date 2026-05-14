@@ -1,6 +1,8 @@
 @echo off
 echo Starting..
+
 :main
+node deploy/deployCommands.js
 node index.js
-echo Restarting Bot..
+echo Restarting..
 goto main
