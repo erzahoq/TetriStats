@@ -45,8 +45,10 @@ module.exports = {
         const username = user.username;
 
         let achs = await fetchCached(`https://ch.tetr.io/api/users/${user._id}/summaries/achievements`);
+        let league = await fetchCached(`https://ch.tetr.io/api/users/${user._id}/summaries/league`);
 
         achs = achs.data;
+        league = league.data;
 
         const achToViewString = interaction.options.getString('achievement');
         if (achToViewString) {
@@ -58,7 +60,7 @@ module.exports = {
                 });
             }
 
-            const embed = await buildAchievementDetailEmbed(matchingAch, null, username);
+            const embed = await buildAchievementDetailEmbed(matchingAch, null, username, league);
             return await interaction.editReply({
                 embeds: [embed],
             });
@@ -156,6 +158,7 @@ module.exports = {
             textPages,
             pageAchsByPageIndex,
             username,
+            league,
 
             //dropdown is “extra components” (please work please work please work)
             getExtraComponents: (pageIndex) => {
@@ -261,7 +264,7 @@ function buildAchSelectRow(messageKey, pageIndex, pageAchs) {
     return new ActionRowBuilder().addComponents(menu);
 }
 
-async function buildAchievementDetailEmbed(ach, listEmbed, username) {
+async function buildAchievementDetailEmbed(ach, listEmbed, username, league) {
     const lowerIsBetter = (ach.vt === 2 || ach.vt === 3); // time-like
     const closestRank = await getClosestRank(ach.v, `achievements/${ach.n}`, { lowerIsBetter });
     
@@ -319,22 +322,33 @@ async function buildAchievementDetailEmbed(ach, listEmbed, username) {
         achText += `\n With ${formatUsername(allyUsername)}`;
     }
 
+    //league rank stuff
+    let rank = null;
+    if (league?.rank && league.rank !== "z") {
+        rank = league.rank;
+    } else if (league?.percentile_rank && league.percentile_rank !== "z") {
+        rank = league.percentile_rank;
+    }
+
+
     achText += `\nAchieved ${formatISOString(new Date(ach.t).toISOString(), true)}`
 
     //if its not issued:
     if (ach.rank !== 100 && closestRank) {
         //show closest rank and data
-        achText += `\n\n**Performance**\nAround ${getEmojiOfRank(closestRank.rank)}`;
+        achText += `\n\n**Performance**\nClosest rank is ${getEmojiOfRank(closestRank.rank)}, with `;
 
         const deltaText = formatAchievementDelta(closestRank.delta, ach);
-        if (deltaText) {
-            achText += ` (${deltaText} away)`;
+        const sign = closestRank.delta > 0 ? 'less' : closestRank.delta < 0 ? 'more' : '';
+        if (deltaText && closestRank.delta !== 0) {
+            achText += ` ${deltaText} ${sign}`;
         }
 
         const nextRank = getNextRank(closestRank.rank);
-        if (nextRank) {
-            const thresholds = await getLeagueStatThresholds(`achievements/${ach.n}`);
 
+        const thresholds = await getLeagueStatThresholds(`achievements/${ach.n}`);
+
+        if (nextRank) {
             const rawNext = thresholds?.[nextRank];
             if (rawNext !== undefined && isFinite(Number(rawNext))) {
                 const displayV =
@@ -349,7 +363,28 @@ async function buildAchievementDetailEmbed(ach, listEmbed, username) {
                 if (need > 0) {
                     const needText = formatAchievementDelta(need, ach);
                     if (needText) {
-                        achText += `\n${needText} to ${getEmojiOfRank(nextRank)} rank`;
+                        achText += `\n${getEmojiOfRank(nextRank)} rank has ${needText} more`;
+                    }
+                }
+            }
+        }
+
+        if (rank) {
+            const rankNext = thresholds?.[rank];
+            if (rankNext !== undefined && isFinite(Number(rankNext))) {
+                const displayV =
+                    (ach.vt === 3 || ach.vt === 5 || ach.vt === 6) ? -ach.v : ach.v;
+                const rankNextDisplay =
+                    (ach.vt === 3 || ach.vt === 5 || ach.vt === 6) ? -rankNext : rankNext;
+
+                const need = lowerIsBetter
+                    ? (displayV - rankNextDisplay)
+                    : (rankNextDisplay - displayV);
+
+                if (need > 0) {
+                    const needText = formatAchievementDelta(need, ach);
+                    if (needText) {
+                        achText += `\n${getEmojiOfRank(rank)} rank has ${needText} more`;
                     }
                 }
             }
@@ -395,7 +430,6 @@ function formatAchievementDelta(delta, ach) {
   if (ach.vt === 0 || ach.vt === 5) return null;
 
   const d = Number(delta);
-  const sign = d > 0 ? '-' : d < 0 ? '+' : '±';
   const abs = Math.abs(d);
 
   switch (ach.vt) {
@@ -404,19 +438,19 @@ function formatAchievementDelta(delta, ach) {
     //TIME_INV (stored negative, but delta already normalized)
     // eslint-disable-next-line no-fallthrough
     case 3:
-      return `${sign}${formatNumber(abs / 1000, 2)}s`;
+      return `${formatNumber(abs / 1000, 2)}s`;
 
     //FLOOR / altitude (meters)
     case 4:
-      return `${sign}${formatNumber(abs, 1)}m`;
+      return `${formatNumber(abs, 1)}m`;
 
     //NUMBER_INV (stored negative, display positive)
     case 6:
-      return `${sign}${formatNumber(abs, 0)}`;
+      return `${formatNumber(abs, 0)}`;
 
     //NUMBER (plain numeric)
     case 1:
     default:
-      return `${sign}${formatNumber(abs, 0)}`;
+      return `${formatNumber(abs, 0)}`;
   }
 }
