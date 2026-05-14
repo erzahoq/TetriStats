@@ -374,13 +374,7 @@ async function buildStatComparisonLines(
 
   // 1) around line
   if (avgRank && deltaToAvg !== null && avgRank !== userRankLetter) {
-    lines.push(`- ${fmtDelta(deltaToAvg)} compared to ${avgRank.toUpperCase()} rank`);
-  }
-
-  // 2) compared to current rank
-  if (userRankLabel !== 'Unranked') {
-    if (deltaToUser !== null) lines.push(`- ${fmtDelta(deltaToUser)} compared to ${userRankLabel.toUpperCase()} rank`);
-    else lines.push(`- compared to ${userRankLabel.toUpperCase()} rank`);
+    lines.push(`- Closest rank is ${avgRank.toUpperCase()}, with ${fmtDelta(deltaToAvg)}`);
   }
 
   // 3) next rank line
@@ -391,9 +385,15 @@ async function buildStatComparisonLines(
     if (nextRow && !isRedundant) {
       const nextAvg = thresholds?.[nextRow];
       if (nextAvg !== null && nextAvg !== undefined && isFinite(Number(nextAvg))) {
-        lines.push(`- ${fmtDelta(deltaFn(statValue, Number(nextAvg)))} compared to ${nextRow.toUpperCase()} rank`);
+        lines.push(`- ${nextRow.toUpperCase()} rank has ${fmtDelta(deltaFn(statValue, Number(nextAvg)))}`);
       }
     }
+  }
+
+  // 2) compared to current rank
+  if (userRankLabel !== 'Unranked') {
+    if (deltaToUser !== null) lines.push(`- ${userRankLabel.toUpperCase()} rank has ${fmtDelta(deltaToUser)}`);
+    else lines.push(`- wee woo wee woo ${userRankLabel.toUpperCase()}`); // i dont think this ever triggers but if it does uhhhhh :)
   }
 
   return lines;
