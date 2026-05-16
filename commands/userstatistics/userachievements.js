@@ -279,7 +279,7 @@ async function buildAchievementDetailEmbed(ach, listEmbed, username, league) {
 
 
     const e = new EmbedBuilder().setColor(listEmbed?.data?.color || 'ffffff');
-    if (listEmbed?.data?.color) {
+    if (/*listEmbed?.data?.color*/false) {
         e.setColor(listEmbed.data.color);
     } else {
         e.setColor(getLeagueRankColour(closestRank?.rank))
@@ -336,7 +336,7 @@ async function buildAchievementDetailEmbed(ach, listEmbed, username, league) {
     //if its not issued:
     if (ach.rank !== 100 && closestRank) {
         //show closest rank and data
-        achText += `\n\n**Performance**\nClosest rank is ${getEmojiOfRank(closestRank.rank)}, with `;
+        achText += `\n\n**Performance**\nClosest rank is ${getEmojiOfRank(closestRank.rank)}, with`;
 
         const deltaText = formatAchievementDelta(closestRank.delta, ach);
         const sign = closestRank.delta > 0 ? 'less' : closestRank.delta < 0 ? 'more' : '';
