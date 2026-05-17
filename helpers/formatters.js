@@ -341,7 +341,10 @@ async function buildStatComparisonLines(
   };
 
   const fmtDelta = (deltaValue) => {
-    const signWord = deltaValue > 0 ? 'more' : deltaValue === 0 ? '' : 'less';
+    let signWord = deltaValue > 0 ? 'less' : deltaValue === 0 ? '' : 'more';
+    if (lowerIsBetter) {
+      signWord = deltaValue > 0 ? 'more' : deltaValue === 0 ? '' : 'less';
+    }
     if (extras.isTime) return `${formatNumber(Math.abs(deltaValue) / 1000, 2)}s ${signWord}`;
     if (extras.isPercentage) return `${formatNumber(Math.abs(deltaValue * 100), 2)}% ${signWord}`;
     return `${formatNumber(Math.abs(deltaValue), decimals)} ${signWord}`;

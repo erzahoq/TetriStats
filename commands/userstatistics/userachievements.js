@@ -274,7 +274,8 @@ async function buildAchievementDetailEmbed(ach, listEmbed, username, league) {
         2: 'silver',
         3: 'gold',
         4: 'platinum',
-        5: 'diamond'
+        5: 'diamond',
+        0: 'none'
     };
 
 

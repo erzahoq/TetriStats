@@ -168,7 +168,7 @@ async function handleGenericPageButton(interaction) {
 
     const session = interaction.client.pageData.get(key);
     if (!session) {
-        await interaction.reply({ content: "This menu expired (or I restarted). Run the command again.", flags: MessageFlags.Ephemeral });
+        await interaction.reply({ content: "This menu expired! Run the command again.", flags: MessageFlags.Ephemeral });
         return true;
     }
 
