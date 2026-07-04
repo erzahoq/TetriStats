@@ -357,9 +357,19 @@ function formatOldUsernames(usernameArray) {
 
   let usernames = `- Previous usernames:`;
 
+  
+  /*
   usernameArray.forEach((name) => {
     usernames = usernames + `\n  - ${name.username}`;
   });
+  */
+
+  //cap # of usernames at 5 (idk what number to pick so this is arbitrary but 5 seems good)
+  //also i wrote this code on github so i can't actually test if it works :stare:
+
+  for (i = 0; i < 5; i++) {
+    usernames = usernames + `\n - ${usernameArray[i].username}`;
+  }
 
   return usernames;
 }
