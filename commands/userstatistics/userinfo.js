@@ -114,6 +114,7 @@ module.exports = {
             return parts.length ? "\n  - " + parts.join(", ") : "";
         })();
 
+        // TODO : move these to helper file and make them more generic, so they can be used in other commands too
         // ========= anon/bot detection =========
         // these accounts are kinda weird, anon has basically nothing, bot hides records but has some basic info
         if (statData.role === "anon") {
@@ -151,6 +152,24 @@ ${formatGamesPlayed(statData.gamesplayed, statData.gameswon, statData.gametime) 
             return await interaction.reply({ embeds: [embed] });
         }
         // ========= end anon/bot detection =========
+
+        if (statData.role === "banned") {
+            const embed = new EmbedBuilder()
+                .setColor("#ff0000")
+                .setThumbnail(
+                    `https://tetr.io/res/avatar-banned.png`,
+                )
+                .setFooter({ text: `User ID: ${statData._id}` })
+                .setDescription(`
+### __${formatUsername(user.username)} -> Quick Look__
+## BANNED
+${escapeUnderscores(user.username).toUpperCase()} is banned, which means they have no statistics, and cannot save replays. Only first seen date is known.
+
+- About:
+    - Account created ${formatISOString(statData.ts)}
+`);
+            return await interaction.reply({ embeds: [embed] });
+        }
 
         const country = countryCodeToEmoji(statData.country);
 
