@@ -318,45 +318,83 @@ function formatConnections(connections) {
 
 //small and cute league function (will purr at you if it gets the chance)
 function formatLeaguePreview(statistics, country) {
-    const leagueStats = statistics.league;
+    const leagueStats = statistics?.league;
+
+    if (!leagueStats) {
+        return "";
+    }
 
     const gamesPlayed = leagueStats.gamesplayed;
     const gamesWon = leagueStats.gameswon;
     const ratingDeviation = leagueStats.rd;
-    let rating = leagueStats.tr;
+    const rawRating = leagueStats.tr;
     const rank = leagueStats.rank;
     const estRank = leagueStats.percentile_rank;
 
-    if (rating < 0) {
-        rating = `${leagueStats.gamesplayed}/10 rating games`;
+    const hasGamesPlayed = Number.isFinite(gamesPlayed);
+    const hasGamesWon = Number.isFinite(gamesWon);
+    const hasRating = Number.isFinite(rawRating);
+    const hasRank = typeof rank === "string" && rank.length > 0;
+
+    // Hide the entire section when the user has no usable league data
+    if (!hasGamesPlayed && !hasRating && !hasRank) {
+        return "";
+    }
+
+    let rating;
+
+    if (hasRating && rawRating < 0) {
+        rating = `${hasGamesPlayed ? gamesPlayed : 0}/10 rating games`;
+    } else if (hasRating) {
+        rating = `${formatNumber(rawRating, 2)} TR`;
     } else {
-        rating = `${formatNumber(rating, 2)} TR`;
+        rating = "Unrated";
     }
 
     let standing = "";
 
     if (
-        rank !== leagueStats.bestrank &&
-        gamesPlayed !== 0 &&
-        leagueStats.bestRank
+        hasGamesPlayed &&
+        gamesPlayed > 0 &&
+        hasRank &&
+        leagueStats.bestrank &&
+        rank !== leagueStats.bestrank
     ) {
         standing += `\n  - Has reached ${getEmojiOfRank(leagueStats.bestrank)}`;
     }
 
-    if (ratingDeviation > 100) {
+    if (
+        Number.isFinite(ratingDeviation) &&
+        ratingDeviation > 100 &&
+        estRank
+    ) {
         standing += `\n  - Probably around ${getEmojiOfRank(estRank)}`;
     }
-    if (leagueStats.standing > 0) {
-        standing += `\n  - Ranked #${leagueStats.standing} ${formatCountry(leagueStats.standing_local, country)}`;
+
+    if (Number.isFinite(leagueStats.standing) && leagueStats.standing > 0) {
+        standing += `\n  - Ranked #${formatNumber(leagueStats.standing)} ${formatCountry(
+            leagueStats.standing_local,
+            country,
+        )}`;
     }
 
-    if (gamesPlayed !== 0) {
-        standing += `\n  - Won ${gamesWon}/${gamesPlayed} games (${formatNumber((gamesWon / gamesPlayed) * 100, 2)}%)\n  - ${
-            leagueStats.vs || "N/A"
-        } VS score`;
+    if (
+        hasGamesPlayed &&
+        hasGamesWon &&
+        gamesPlayed > 0
+    ) {
+        const winRate = (gamesWon / gamesPlayed) * 100;
+
+        standing += `\n  - Won ${gamesWon}/${gamesPlayed} games (${formatNumber(winRate, 2)}%)`;
     }
 
-    return `\n- ${getEmoji("league")} **${rating}**, ${getEmojiOfRank(rank)} ${standing}`;
+    if (Number.isFinite(leagueStats.vs)) {
+        standing += `\n  - ${formatNumber(leagueStats.vs, 2)} VS score`;
+    }
+
+    const rankText = hasRank ? `, ${getEmojiOfRank(rank)}` : "";
+
+    return `\n- ${getEmoji("league")} **${rating}**${rankText}${standing}`;
 }
 
 function format40Lines(statistics, country) {
@@ -436,24 +474,29 @@ function formatCountry(localRank, country) {
     return "";
 }
 
-function formatOldUsernames(usernameArray) {
-    if (usernameArray.length === 0) return "";
+function formatOldUsernames(usernameArray = []) {
+    if (!Array.isArray(usernameArray) || usernameArray.length === 0) {
+        return "";
+    }
+
+    const validUsernames = usernameArray
+        .filter((entry) => entry && typeof entry === "object")
+        .map((entry) => entry.username)
+        .filter(
+            (username) =>
+                typeof username === "string" && username.trim().length > 0,
+        );
+
+    if (validUsernames.length === 0) {
+        return "";
+    }
 
     let usernames = `- Previous usernames:`;
+    const limit = Math.min(validUsernames.length, 5);
 
-  
-  /*
-  usernameArray.forEach((name) => {
-    usernames = usernames + `\n  - ${name.username}`;
-  });
-  */
-
-  //cap # of usernames at 5 (idk what number to pick so this is arbitrary but 5 seems good)
-  //also i wrote this code on github so i can't actually test if it works :stare:
-
-  for (i = 0; i < 5; i++) {
-    usernames = usernames + `\n - ${usernameArray[i].username}`;
-  }
+    for (let i = 0; i < limit; i++) {
+        usernames = usernames + `\n - ${validUsernames[i]}`;
+    }
 
     return usernames;
 }
