@@ -6,11 +6,11 @@ const { fetchCached } = require('../../helpers/fetch');
 
 
 module.exports = {
-	data: new SlashCommandBuilder()
-		.setName('compare')
+    data: new SlashCommandBuilder()
+        .setName('compare')
         .setContexts(InteractionContextType.BotDM, InteractionContextType.Guild, InteractionContextType.PrivateChannel)
         .setIntegrationTypes(ApplicationIntegrationType.UserInstall)
-		.setDescription('Compare two users\' statistics on TETR.IO.')
+        .setDescription('Compare two users\' statistics on TETR.IO.')
         .addStringOption((option) =>
             option
                 .setName('user1')
@@ -23,7 +23,7 @@ module.exports = {
                 .setDescription('the username/ID to search for')
                 .setRequired(true),
         ),
-	async execute(interaction) {
+    async execute(interaction) {
         await interaction.deferReply() // but here's the thinker
 
         const user1 = await getUser(interaction.options.getString('user1').toLowerCase())
@@ -31,18 +31,18 @@ module.exports = {
 
         if (user1 === "no such user") {
             return await interaction.reply({
-                    content: 'User 1 not found on TETR.IO! Either the account no longer exists, or this person has not linked their Discord with TETR.IO.',
-                    flags: MessageFlags.Ephemeral
+                content: 'User 1 not found on TETR.IO! Either the account no longer exists, or this person has not linked their Discord with TETR.IO.',
+                flags: MessageFlags.Ephemeral
             });
         } else if (user2 === "no such user") {
             return await interaction.reply({
-                    content: 'User 2 not found on TETR.IO! Either the account no longer exists, or this person has not linked their Discord with TETR.IO.',
-                    flags: MessageFlags.Ephemeral
+                content: 'User 2 not found on TETR.IO! Either the account no longer exists, or this person has not linked their Discord with TETR.IO.',
+                flags: MessageFlags.Ephemeral
             });
         } else if (user1 === "server error" || user2 === "server error") {
             return await interaction.reply({
-                    content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
-                    flags: MessageFlags.Ephemeral
+                content: 'I had an issue accessing the TETR.IO servers! Please try again later.',
+                flags: MessageFlags.Ephemeral
             });
         }
 
@@ -104,16 +104,16 @@ module.exports = {
             .setTimestamp();
 
 
-interaction.editReply({ embeds: [comparisonEmbed] });
+        interaction.editReply({ embeds: [comparisonEmbed] });
 
-	},
+    },
 };
  
 function calculateTR(tr) {
     if (tr === -1) {
         return "N/A";
     } 
-        return formatNumber(Math.round(tr));
+    return formatNumber(Math.round(tr));
     
 }
 

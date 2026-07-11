@@ -86,9 +86,9 @@ module.exports = {
         .setDescription('Gets averages for each rank for a specific stat.')
         .addStringOption(option =>
             option.setName('stat')
-            .setDescription('The stat to get averages for.')
-            .setRequired(true)
-            .setAutocomplete(true)
+                .setDescription('The stat to get averages for.')
+                .setRequired(true)
+                .setAutocomplete(true)
         ),
     async execute(interaction) {
         if (Object.keys(statOptions).length === 0) await getStatOptions();

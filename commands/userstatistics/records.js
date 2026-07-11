@@ -78,7 +78,7 @@ module.exports = {
             let desc = `${title}\n`;
             if (fetched.top) {
                 desc += `- ${getEmoji('news_lblocal')} Personal best
-  ${formatRecord(fetched.top)}\n\n`
+    ${formatRecord(fetched.top)}\n\n`
             }
             fetched.all.forEach((rec) => {
                 desc += `${formatRecord(rec)}\n`;
@@ -201,19 +201,19 @@ function formatRecord(record) {
     // Add general performance stats (APM, PPS, VS Score)
     if (['zenith', 'zenithex', 'league'].includes(record.gamemode)) {
         formatted += `
-  - **APM:** ${formatNumber(stats.apm, 2)}
-  - **PPS:** ${formatNumber(stats.pps, 2)}
-  - **VS Score:** ${formatNumber(stats.vsscore, 2)}`;
+    - **APM:** ${formatNumber(stats.apm, 2)}
+    - **PPS:** ${formatNumber(stats.pps, 2)}
+    - **VS Score:** ${formatNumber(stats.vsscore, 2)}`;
     } 
     else {
         formatted += `
-  - **PPS:** ${formatNumber(record.results.aggregatestats.pps, 2)}
-  - **Finesse:** ${formatNumber(stats.finesse.perfectpieces / stats.piecesplaced * 100, 2)}% (${formatNumber(stats.finesse.faults)} faults)`;
+    - **PPS:** ${formatNumber(record.results.aggregatestats.pps, 2)}
+    - **Finesse:** ${formatNumber(stats.finesse.perfectpieces / stats.piecesplaced * 100, 2)}% (${formatNumber(stats.finesse.faults)} faults)`;
     }
 
     // Add timestamp and replay link
     formatted += `
-  - [${formatISOString(record.ts)}](https://tetr.io/#R:${record.replayid})`;
+    - [${formatISOString(record.ts)}](https://tetr.io/#R:${record.replayid})`;
 
     return formatted;
 }

@@ -4,9 +4,6 @@ const { EmbedBuilder, InteractionContextType, ApplicationIntegrationType } = req
 const { formatNumber, countryCodeToEmoji, formatPreciseTime, getModCombos, formatISOString, formatUsername, buildPageButtonRows, addStatComparisonField, } = require('../../helpers/formatters');
 const { getEmoji } = require('../../helpers/emojis');
 
-const fs = require('fs');
-const path = require('path');
-
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -59,8 +56,8 @@ module.exports = {
             console.warn('Could not save replay locally:', err.message);
         }*/
 
-         // Parse the file as JSON
-         const replay = JSON.parse(replayDataBuffer.toString());
+        // Parse the file as JSON
+        const replay = JSON.parse(replayDataBuffer.toString());
         if (!replay || !replay.id || !replay.users) { // some easy checks to see if common replay file structure is there
             return interaction.editReply({ content: 'The uploaded file does not appear to be a valid TETR.IO replay.' });
             // note this doesn't technically prevent uploading malformed files
@@ -127,8 +124,8 @@ module.exports = {
 ${formatUsername(replay.users[0].username)} ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}`;
 
             const performanceEmbed = new EmbedBuilder()
-    .setColor('#80ffc4')
-    .setDescription(`### __${replayLinkFormat} -> Performance__${performanceDisclaimer}\n${userSuffix}`);
+                .setColor('#80ffc4')
+                .setDescription(`### __${replayLinkFormat} -> Performance__${performanceDisclaimer}\n${userSuffix}`);
 
 
             //=== For each gamemode, create a list of pages ===
@@ -188,7 +185,7 @@ ${formatUsername(replay.users[0].username)} ${countryCodeToEmoji(replay.users[0]
                 await addStatComparisonField(performanceEmbed, `${zenithVer}/apm`, 'Attack Per Minute', apm, effectiveRank, { decimals: 2 });
 
                 if (!zenithMods.includes('expert_reversed')) {
-                await addStatComparisonField(performanceEmbed, `${zenithVer}/climbSpeed`, 'Average Climb Speed', climbSpeed, effectiveRank, { decimals: 3 });
+                    await addStatComparisonField(performanceEmbed, `${zenithVer}/climbSpeed`, 'Average Climb Speed', climbSpeed, effectiveRank, { decimals: 3 });
                 }
 
                 await addStatComparisonField(performanceEmbed, `${zenithVer}/btb`, 'Highest Back-to-Back', btb, effectiveRank, { decimals: 0 });
@@ -211,7 +208,7 @@ ${formatUsername(replay.users[0].username)} ${countryCodeToEmoji(replay.users[0]
 
                 pages = [
                     new EmbedBuilder().setColor('#80ff80')
-                    .setDescription(`### __${replayLinkFormat} -> Overview__
+                        .setDescription(`### __${replayLinkFormat} -> Overview__
     ${modString}
 - **Finished in ${framesToTime(replayData.frames)}**
 - ${formatNumber(pps,2)} PPS
@@ -226,7 +223,7 @@ ${formatUsername(replay.users[0].username)} ${countryCodeToEmoji(replay.users[0]
 - Received ${formatNumber(garbageStats.received)} lines
 ${userSuffix}`),
 
-                new EmbedBuilder().setColor('#ffb980').setDescription(`### __${replayLinkFormat} -> Full__
+                    new EmbedBuilder().setColor('#ffb980').setDescription(`### __${replayLinkFormat} -> Full__
 ${inputCountString}
 - **Sent ${formatNumber(garbageStats.sent)} garbage lines**
 - Recieved ${formatNumber(garbageStats.received)}
@@ -238,7 +235,7 @@ ${inputCountString}
 - Reached a ${(stats.topbtb) - 1} Back-to-Back chain
     ${userSuffix}`),
                     new EmbedBuilder().setColor('#ff80d9')
-                    .setDescription(`### __${replayLinkFormat} -> Splits__
+                        .setDescription(`### __${replayLinkFormat} -> Splits__
     ${splitFormat(zenithStats.splits)}
     ${userSuffix}`),
                 ]
@@ -258,7 +255,7 @@ ${inputCountString}
 
                 pages = [
                     new EmbedBuilder().setColor('#80ff80')
-                .setDescription(`### __${replayLinkFormat} -> Overview__
+                        .setDescription(`### __${replayLinkFormat} -> Overview__
 - **Finished in ${formatPreciseTime(time)}**
 - ${formatNumber(pps, 2)} PPS
 - ${formatNumber(kpp, 2)} Keys Per Piece
@@ -282,7 +279,7 @@ ${userSuffix}
 
                 pages = [
                     new EmbedBuilder().setColor('#80ff80')
-                .setDescription(`### __${replayLinkFormat} -> Overview__
+                        .setDescription(`### __${replayLinkFormat} -> Overview__
 - **Scored ${formatNumber(score)} points**
 - ${formatNumber(pps, 2)} PPS
 - ${formatNumber(spp, 2)} Points Per Piece

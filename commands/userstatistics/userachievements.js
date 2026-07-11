@@ -167,17 +167,17 @@ module.exports = {
         });
 
         const pageButtons = buildPageButtonRows({
-        commandName,
-        key,
-        labels,
-        activeIndex: 0,
+            commandName,
+            key,
+            labels,
+            activeIndex: 0,
         });
 
         const selectRow = buildAchSelectRow(key, 0, pageAchsByPageIndex?.[0] ?? []);
 
         await interaction.editReply({
-        embeds: [textPages[0]],
-        components: [...pageButtons, selectRow],
+            embeds: [textPages[0]],
+            components: [...pageButtons, selectRow],
         });
     },
     async autocomplete(interaction) {
@@ -280,11 +280,8 @@ async function buildAchievementDetailEmbed(ach, listEmbed, username, league) {
 
 
     const e = new EmbedBuilder().setColor(listEmbed?.data?.color || 'ffffff');
-    if (/*listEmbed?.data?.color*/false) {
-        e.setColor(listEmbed.data.color);
-    } else {
-        e.setColor(getLeagueRankColour(closestRank?.rank))
-    }
+    e.setColor(getLeagueRankColour(closestRank?.rank))
+
 
     const lines = [];
 
@@ -425,33 +422,33 @@ async function buildAchievementDetailEmbed(ach, listEmbed, username, league) {
 
 //stupid vt again aysm
 function formatAchievementDelta(delta, ach) {
-  if (delta === null || delta === undefined || !isFinite(Number(delta))) return null;
+    if (delta === null || delta === undefined || !isFinite(Number(delta))) return null;
 
-  //vt = ISSUE or NONE, meaning delta is meaningless
-  if (ach.vt === 0 || ach.vt === 5) return null;
+    //vt = ISSUE or NONE, meaning delta is meaningless
+    if (ach.vt === 0 || ach.vt === 5) return null;
 
-  const d = Number(delta);
-  const abs = Math.abs(d);
+    const d = Number(delta);
+    const abs = Math.abs(d);
 
-  switch (ach.vt) {
+    switch (ach.vt) {
     //TIME (ms, lower is better)
-    case 2:
-    //TIME_INV (stored negative, but delta already normalized)
-    // eslint-disable-next-line no-fallthrough
-    case 3:
-      return `${formatNumber(abs / 1000, 2)}s`;
+        case 2:
+            //TIME_INV (stored negative, but delta already normalized)
+            // eslint-disable-next-line no-fallthrough
+        case 3:
+            return `${formatNumber(abs / 1000, 2)}s`;
 
-    //FLOOR / altitude (meters)
-    case 4:
-      return `${formatNumber(abs, 1)}m`;
+            //FLOOR / altitude (meters)
+        case 4:
+            return `${formatNumber(abs, 1)}m`;
 
-    //NUMBER_INV (stored negative, display positive)
-    case 6:
-      return `${formatNumber(abs, 0)}`;
+            //NUMBER_INV (stored negative, display positive)
+        case 6:
+            return `${formatNumber(abs, 0)}`;
 
-    //NUMBER (plain numeric)
-    case 1:
-    default:
-      return `${formatNumber(abs, 0)}`;
-  }
+            //NUMBER (plain numeric)
+        case 1:
+        default:
+            return `${formatNumber(abs, 0)}`;
+    }
 }

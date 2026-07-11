@@ -41,7 +41,7 @@ async function getUser(user) {
         if (stats.error.msg === "No such user! | Either you mistyped something, or the account no longer exists.") {
             return "no such user"
         } 
-            return "server error"
+        return "server error"
         
     }
 

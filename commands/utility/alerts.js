@@ -2,15 +2,15 @@ const { SlashCommandBuilder, InteractionContextType } = require('discord.js');
 const { database } = require('./../../database.js')
 
 module.exports = {
-	data: new SlashCommandBuilder()
-		.setName('alerts')
+    data: new SlashCommandBuilder()
+        .setName('alerts')
         .setContexts(InteractionContextType.BotDM, InteractionContextType.Guild, InteractionContextType.PrivateChannel)
-		.setDescription('Enables or disables alerts from TetriStats.')
+        .setDescription('Enables or disables alerts from TetriStats.')
         .addBooleanOption(option =>
             option.setName("enabled")
-            .setDescription("Enable alerts?")
+                .setDescription("Enable alerts?")
         ),
-	async execute(interaction) {
+    async execute(interaction) {
         const [user, ] = await database.User.findOrCreate({ where: { userId: interaction.user.id } })
 
         const enabled = interaction.options.getBoolean("enabled") ?? !user.alertsEnabled;
@@ -34,5 +34,5 @@ module.exports = {
 
         await user.save()
         await interaction.reply(`${enabled ? "Enabled" : "Disabled"} rating deviation increase alerts!`)
-	},
+    },
 };

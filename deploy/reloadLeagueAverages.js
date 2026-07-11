@@ -81,25 +81,25 @@ function saveProgress() {
 }
 
 async function fetchAllLeagueUsers() {
-        const response = await fetchWithCooldown('https://ch.tetr.io/api/labs/league_ranks');
-        const data = await response.json();
+    const response = await fetchWithCooldown('https://ch.tetr.io/api/labs/league_ranks');
+    const data = await response.json();
         
-        if (!data.success) {
-            throw new Error("failed to get total players: " + (data.error?.msg || 'unknown error'));
-        }
+    if (!data.success) {
+        throw new Error("failed to get total players: " + (data.error?.msg || 'unknown error'));
+    }
         
-        const totalPlayers = data.data.data.d.pos; // data.data.data very cool
+    const totalPlayers = data.data.data.d.pos; // data.data.data very cool
         
-        // sorting is a bit silly, requiring 3 floats instead of 1 (osk api moment i guess)
-        let pageTR = "25000:0:0";
-        let currentPlayers = 0;
-        let totalErrors = 0;
+    // sorting is a bit silly, requiring 3 floats instead of 1 (osk api moment i guess)
+    let pageTR = "25000:0:0";
+    let currentPlayers = 0;
+    let totalErrors = 0;
 
-        console.log(`fetching all ${totalPlayers} league players...`);
+    console.log(`fetching all ${totalPlayers} league players...`);
         
-        for (const rank of RANKS) {
-            rankUserList[rank] = [];
-        }
+    for (const rank of RANKS) {
+        rankUserList[rank] = [];
+    }
 
     while (true) {
         const response = await fetchWithCooldown(`https://ch.tetr.io/api/users/by/league?after=${pageTR}&limit=100`, LEAGUE_USERS_REQUEST_COOLDOWN);
@@ -242,43 +242,43 @@ async function calculateRankAverages() {
     
     const dbObjects = {};
     const BASE_RANK_TOTAL = {
-      sprint: {
-        time: 0,
-        pps: 0,
-        kpp: 0,
-        kps: 0,
-        finesse: 0,
-      },
-      blitz: {
-        score: 0,
-        pps: 0,
-        spp: 0,
-        finesse: 0,
-      },
-      zenith: {
-        height: 0,
-        pps: 0,
-        apm: 0,
-        climbSpeed: 0,
-        btb: 0,
-        app: 0,
-        finesse: 0,
-      },
-      zenithEx: {
-        height: 0,
-        pps: 0,
-        apm: 0,
-        climbSpeed: 0,
-        btb: 0,
-        app: 0,
-        finesse: 0,
-      },
-      league: {
-        pps: 0,
-        vs: 0,
-        apm: 0,
-      },
-      achievements: {},
+        sprint: {
+            time: 0,
+            pps: 0,
+            kpp: 0,
+            kps: 0,
+            finesse: 0,
+        },
+        blitz: {
+            score: 0,
+            pps: 0,
+            spp: 0,
+            finesse: 0,
+        },
+        zenith: {
+            height: 0,
+            pps: 0,
+            apm: 0,
+            climbSpeed: 0,
+            btb: 0,
+            app: 0,
+            finesse: 0,
+        },
+        zenithEx: {
+            height: 0,
+            pps: 0,
+            apm: 0,
+            climbSpeed: 0,
+            btb: 0,
+            app: 0,
+            finesse: 0,
+        },
+        league: {
+            pps: 0,
+            vs: 0,
+            apm: 0,
+        },
+        achievements: {},
     };
 
     console.log("\nprepping database...");

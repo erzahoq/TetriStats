@@ -22,9 +22,9 @@ module.exports = {
         .setDescription('Gets data about a specific achievement.')
         .addStringOption(option =>
             option.setName('achievement')
-            .setDescription('The achievement to view.')
-            .setRequired(true)
-            .setAutocomplete(true)
+                .setDescription('The achievement to view.')
+                .setRequired(true)
+                .setAutocomplete(true)
         ),
     async execute(interaction) {
         const achString = interaction.options.getString('achievement');

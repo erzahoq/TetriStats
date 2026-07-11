@@ -4,11 +4,11 @@ const { fetchCached } = require('../../helpers/fetch');
 
 
 module.exports = {
-	data: new SlashCommandBuilder()
-		.setName('ping')
+    data: new SlashCommandBuilder()
+        .setName('ping')
         .setContexts(InteractionContextType.BotDM, InteractionContextType.Guild, InteractionContextType.PrivateChannel)  
-		.setDescription('Replies with the latency of the bot.'),
-	async execute(interaction) {
+        .setDescription('Replies with the latency of the bot.'),
+    async execute(interaction) {
         let ping = interaction.client.ws.ping;
 
         if (ping === -1) {
@@ -169,6 +169,6 @@ module.exports = {
         }
         
 
-		await interaction.reply(`${pingMsg}\nBot API Latency: ${ping}`);
-	},
+        await interaction.reply(`${pingMsg}\nBot API Latency: ${ping}`);
+    },
 };
