@@ -1,6 +1,18 @@
 // silly little file to help with cleanliness
 // if you have any questions uhhhhhh idk ask santa claus or something
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const {
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle,
+    ContainerBuilder,
+    EmbedBuilder,
+    MessageFlags,
+    SectionBuilder,
+    StringSelectMenuBuilder,
+    StringSelectMenuOptionBuilder,
+    TextDisplayBuilder,
+    ThumbnailBuilder,
+} = require('discord.js');
 const { getEmoji } = require('./emojis');
 const { database } = require('../database');
 
@@ -95,6 +107,27 @@ function formatLongTime(seconds, hoursOnly = false) {
         result = `${formatNumber(minutes, 0)} minutes`;
     }
     return result;
+}
+
+function formatGamesPlayed(gamesplayed, gameswon, gamestime) {
+    if (gamesplayed > -1) {
+        return `\n- Played ${gamesplayed} games
+    - Won ${gamesWonConvert(gameswon, gamesplayed)} of them
+    -  ${formatLongTime(gamestime, true)} played (${formatLongTime(gamestime)})`;
+    }
+    return "\n- Has hidden games played";
+}
+
+function gamesWonConvert(gamesWon, gamesPlayed) {
+    if (
+        gamesWon === "Hidden" ||
+        gamesPlayed === "Hidden" ||
+        gamesPlayed === 0
+    ) {
+        return gamesWon;
+    }
+
+    return `${gamesWon} (${formatNumber((100 * gamesWon) / gamesPlayed, 2)}%)`;
 }
 
 function getEmojiOfRank(rank) {
@@ -520,6 +553,136 @@ function buildPageButtonRows({ commandName, key, labels, activeIndex = 0 }) {
     return rows;
 }
 
+function buildPageSelectRow({ commandName, key, labels, activeIndex = 0 }) {
+    const selectMenu = new StringSelectMenuBuilder()
+        .setCustomId(`${commandName}:page-${key}`)
+        .setPlaceholder("Select a page")
+        .addOptions(
+            labels.map((label, i) =>
+                new StringSelectMenuOptionBuilder()
+                    .setLabel(label)
+                    .setValue(String(i))
+                    .setDefault(i === activeIndex),
+            ),
+        );
+
+    return new ActionRowBuilder().addComponents(selectMenu);
+}
+
+function buildComponentsV2Page({ commandName, key, labels, activeIndex = 0, content, components = [] }) {
+    const container = new ContainerBuilder().setAccentColor(0x80bdff);
+
+    const pageContent = typeof content === "string" ? content : content?.content;
+    if (pageContent) {
+        container.addTextDisplayComponents(
+            new TextDisplayBuilder().setContent(pageContent),
+        );
+    }
+
+    const extraComponents = Array.isArray(components) && components.length > 0
+        ? components
+        : (content?.components ?? []);
+    for (const component of extraComponents) {
+        if (!component) continue;
+
+        const builderName = component?.constructor?.name;
+        switch (builderName) {
+            case "ActionRowBuilder":
+                container.addActionRowComponents(component);
+                break;
+            case "SectionBuilder":
+                container.addSectionComponents(component);
+                break;
+            case "SeparatorBuilder":
+                container.addSeparatorComponents(component);
+                break;
+            case "TextDisplayBuilder":
+                container.addTextDisplayComponents(component);
+                break;
+            default:
+                break;
+        }
+    }
+
+    container.addActionRowComponents(
+        buildPageSelectRow({ commandName, key, labels, activeIndex }),
+    );
+
+    return container;
+}
+
+function specialUserContainers(statData, user) {
+    const role = statData?.role;
+    const username = user?.username;
+
+    if (role === "anon") {
+        const section = new SectionBuilder()
+            .addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(`
+### __${formatUsername(username)}__
+## ANONYMOUS
+${escapeUnderscores(username).toUpperCase()} is anonymous, which means they have no statistics, and cannot save replays. Only first seen date is known.
+
+- About:
+    - First seen ${formatISOString(statData.ts)}
+`),
+            )
+            .setThumbnailAccessory(
+                new ThumbnailBuilder().setURL("https://tetr.io/res/avatar.png"),
+            );
+
+        const container = new ContainerBuilder()
+            .setAccentColor(0x80bdff)
+            .addSectionComponents(section);
+
+        return {
+            flags: MessageFlags.IsComponentsV2,
+            components: [container],
+        };
+    }
+
+    if (role === "bot") {
+        const embed = new EmbedBuilder()
+            .setColor("#80bdff")
+            .setThumbnail(
+                `https://tetr.io/user-content/avatars/${statData._id}.jpg`,
+            )
+            .setFooter({ text: `User ID: ${statData._id}` })
+            .setDescription(`
+### __${formatUsername(username)} -> Quick Look__
+## BOT
+${escapeUnderscores(username).toUpperCase()} is a known bot, owned by ${String(statData.botmaster || "unknown").toLowerCase()}. Their records are not available, but some general information can be shown.
+
+- About:
+    - Account created ${formatISOString(statData.ts)}
+    - Level ${formatNumber(Math.floor(calculateLevel(statData.xp)))} (${formatNumber(Math.floor(statData.xp))} XP)
+    - Has ${formatNumber(statData.friend_count)} friends
+${formatGamesPlayed(statData.gamesplayed, statData.gameswon, statData.gametime) || ""}
+`);
+
+        return { embeds: [embed] };
+    }
+
+    if (role === "banned") {
+        const embed = new EmbedBuilder()
+            .setColor("#ff0000")
+            .setThumbnail("https://tetr.io/res/avatar-banned.png")
+            .setFooter({ text: `User ID: ${statData._id}` })
+            .setDescription(`
+### __${formatUsername(username)} -> Quick Look__
+## BANNED
+${escapeUnderscores(username).toUpperCase()} is banned, which means they have no statistics, and cannot save replays. Only first seen date is known.
+
+- About:
+    - Account created ${formatISOString(statData.ts)}
+`);
+
+        return { embeds: [embed] };
+    }
+
+    return null;
+}
+
 module.exports = {
     formatNumber,
     escapeUnderscores,
@@ -538,7 +701,10 @@ module.exports = {
     formatUsername,
     formatAchievement,
     buildPageButtonRows,
+    buildPageSelectRow,
+    buildComponentsV2Page,
     buildStatComparisonLines,
     addStatComparisonField,
-    formatAchievementVal
+    formatAchievementVal,
+    specialUserContainers
 }

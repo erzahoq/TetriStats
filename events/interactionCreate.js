@@ -27,7 +27,6 @@ module.exports = {
             } else if (interaction.isStringSelectMenu()) {
                 const menuId = interaction.customId;
 
-                // Achievements dropdown
                 if (menuId.startsWith("achselect_")) {
                     const interactionId = menuId.split("achselect_")[1];
                     const pageData = interaction.client.pageData.get(interactionId);
@@ -36,7 +35,6 @@ module.exports = {
                     const chosen = interaction.values?.[0];
                     if (!chosen || chosen === "achd_none") return;
 
-
                     const [, pageStr, itemStr] = chosen.split("_");
                     const pageIndex = Number(pageStr);
                     const itemIndex = Number(itemStr);
@@ -44,7 +42,6 @@ module.exports = {
                     const ach = pageData.pageAchsByPageIndex?.[pageIndex]?.[itemIndex];
                     if (!ach) return;
 
-                    // make sure not to forgor
                     pageData.view = "detail";
                     pageData.lastListPage = pageData.currentPage ?? 0;
                     pageData.currentPage = pageIndex;
@@ -57,6 +54,12 @@ module.exports = {
                         embeds: [detailEmbed],
                         components: [deleteRow],
                     });
+                    return;
+                }
+
+                if (parsePageSelectCustomId(menuId)) {
+                    const handled = await handleGenericPageSelect(interaction);
+                    if (handled) return;
                 }
             } else if (interaction.isButton()) {
                 //generic paging system (yay)
@@ -160,12 +163,42 @@ function parsePageCustomId(customId) {
     return { commandName, key, pageIndex };
 }
 
-async function handleGenericPageButton(interaction) {
+function parsePageSelectCustomId(customId) {
+    const [commandName, rest] = customId.split(':');
+    if (!commandName || !rest) return null;
+
+    const parts = rest.split('-');
+    if (parts[0] !== 'page') return null;
+    if (parts.length < 2) return null;
+
+    const key = parts.slice(1).join('-');
+
+    return { commandName, key };
+}
+
+function handleGenericPageButton(interaction) {
     const parsed = parsePageCustomId(interaction.customId);
     if (!parsed) return false;
 
     const { commandName, key, pageIndex } = parsed;
+    return handleGenericPageChange(interaction, { commandName, key, pageIndex });
+}
 
+function handleGenericPageSelect(interaction) {
+    const parsed = parsePageSelectCustomId(interaction.customId);
+    if (!parsed) return false;
+
+    const pageIndex = Number(interaction.values?.[0]);
+    if (!Number.isInteger(pageIndex)) return false;
+
+    return handleGenericPageChange(interaction, {
+        commandName: parsed.commandName,
+        key: parsed.key,
+        pageIndex,
+    });
+}
+
+async function handleGenericPageChange(interaction, { commandName, key, pageIndex }) {
     const session = interaction.client.pageData.get(key);
     if (!session) {
         await interaction.reply({ content: "This menu expired! Run the command again.", flags: MessageFlags.Ephemeral });
@@ -173,12 +206,10 @@ async function handleGenericPageButton(interaction) {
     }
 
     if (session.commandName !== commandName) {
-        await interaction.reply({ content: "This button doesn't match this message.", flags: MessageFlags.Ephemeral });
-        // this shouldnt ever happen if i did everything correctly but just in case :woomy:
+        await interaction.reply({ content: "This menu doesn't match this message.", flags: MessageFlags.Ephemeral });
         return true;
     }
 
-    // check owner (surely this works this time)
     if (interaction.user.id !== session.ownerId) {
         await interaction.reply({ content: "You can't interact with this.", flags: MessageFlags.Ephemeral });
         return true;
@@ -189,21 +220,33 @@ async function handleGenericPageButton(interaction) {
     session.currentPage = pageIndex;
     session.expiresAt = Date.now() + (session.ttlMs ?? 10 * 60 * 1000);
 
-    const rows = buildPageButtonRows({
-        commandName: session.commandName,
-        key,
-        labels: session.labels,
-        activeIndex: pageIndex
-    });
+    const rows = session.useComponentsV2
+        ? []
+        : buildPageButtonRows({
+            commandName: session.commandName,
+            key,
+            labels: session.labels,
+            activeIndex: pageIndex,
+        });
 
-    //let some commands append extra components (e.g. the achievements menu)
     const extra = typeof session.getExtraComponents === 'function'
         ? await session.getExtraComponents(pageIndex)
         : [];
 
+    if (session.useComponentsV2) {
+        const pageContainer = session.pages?.[pageIndex];
+        if (!pageContainer) return true;
+
+        await interaction.update({
+            flags: MessageFlags.IsComponentsV2,
+            components: [pageContainer],
+        });
+        return true;
+    }
+
     await interaction.update({
         embeds: [session.pages[pageIndex]],
-        components: [...rows, ...extra]
+        components: [...rows, ...extra],
     });
 
     return true;

@@ -1,14 +1,17 @@
 const {
     SlashCommandBuilder,
-    EmbedBuilder,
     MessageFlags,
     InteractionContextType,
     ApplicationIntegrationType,
+    ContainerBuilder,
+    SeparatorBuilder,
+    SectionBuilder,
+    TextDisplayBuilder,
+    ThumbnailBuilder,
 } = require("discord.js");
 
 const {
     formatNumber,
-    escapeUnderscores,
     countryCodeToEmoji,
     formatPreciseTime,
     formatLongTime,
@@ -17,7 +20,8 @@ const {
     calculateLevel,
     formatUsername,
     formatAchievement,
-    buildPageButtonRows,
+    buildPageSelectRow,
+    specialUserContainers,
 } = require("../../helpers/formatters");
 const { getUser } = require("../../helpers/getuser");
 const { getEmoji } = require("../../helpers/emojis");
@@ -117,149 +121,110 @@ module.exports = {
         // TODO : move these to helper file and make them more generic, so they can be used in other commands too
         // ========= anon/bot detection =========
         // these accounts are kinda weird, anon has basically nothing, bot hides records but has some basic info
-        if (statData.role === "anon") {
-            const embed = new EmbedBuilder()
-                .setColor("#80bdff")
-                .setThumbnail("https://tetr.io/res/avatar.png").setDescription(`
-### __${formatUsername(user.username)}__
-## ANONYMOUS
-${escapeUnderscores(user.username).toUpperCase()} is anonymous, which means they have no statistics, and cannot save replays. Only first seen date is known.
-
-- About:
-    - First seen ${formatISOString(statData.ts)}
-`);
-            return await interaction.reply({ embeds: [embed] });
-        }
-
-        if (statData.role === "bot") {
-            const embed = new EmbedBuilder()
-                .setColor("#80bdff")
-                .setThumbnail(
-                    `https://tetr.io/user-content/avatars/${statData._id}.jpg`,
-                )
-                .setFooter({ text: `User ID: ${statData._id}` })
-                .setDescription(`
-### __${formatUsername(user.username)} -> Quick Look__
-## BOT
-${escapeUnderscores(user.username).toUpperCase()} is a known bot, owned by ${String(statData.botmaster || "unknown").toLowerCase()}. Their records are not available, but some general information can be shown.
-
-- About:
-    - Account created ${formatISOString(statData.ts)}
-    - Level ${formatNumber(Math.floor(calculateLevel(statData.xp)))} (${formatNumber(Math.floor(statData.xp))} XP)
-    - Has ${formatNumber(statData.friend_count)} friends
-${formatGamesPlayed(statData.gamesplayed, statData.gameswon, statData.gametime) || ""}
-`);
-            return await interaction.reply({ embeds: [embed] });
+        const specialUserReply = specialUserContainers(statData, user);
+        if (specialUserReply) {
+            return await interaction.reply(specialUserReply);
         }
         // ========= end anon/bot detection =========
 
-        if (statData.role === "banned") {
-            const embed = new EmbedBuilder()
-                .setColor("#ff0000")
-                .setThumbnail(
-                    `https://tetr.io/res/avatar-banned.png`,
-                )
-                .setFooter({ text: `User ID: ${statData._id}` })
-                .setDescription(`
-### __${formatUsername(user.username)} -> Quick Look__
-## BANNED
-${escapeUnderscores(user.username).toUpperCase()} is banned, which means they have no statistics, and cannot save replays. Only first seen date is known.
-
-- About:
-    - Account created ${formatISOString(statData.ts)}
-`);
-            return await interaction.reply({ embeds: [embed] });
-        }
-
         const country = countryCodeToEmoji(statData.country);
-
-        // big wall embeds, functions are split up inside them though so click those
-        // i love function spam
-        const pages = [
-            new EmbedBuilder()
-                .setColor("#80bdff")
-                .setThumbnail(
-                    `https://tetr.io/user-content/avatars/${statData._id}.jpg`,
-                )
-                .setFooter({
-                    text: `User ID: ${statData._id} | Role: ${statData.role}`,
-                })
-                .setDescription(
-                    `
-### __${formatUsername(user.username)} -> Quick Look__
-
-- About:
-    - Account created ${formatISOString(statData.ts)}
-    - Level ${formatNumber(Math.floor(calculateLevel(statData.xp)))} (${formatNumber(Math.floor(statData.xp))} XP)
-    - ${country}
-    - Has ${formatNumber(statData.friend_count)} friends
-${statData.supporter ? `  - Has supporter${starConvert(statData.supporter_tier)}${statData.bio ? `\n> -  ${statData.bio}` : ""}` : ""}${formatConnections(statData.connections)}
-${formatOldUsernames(statData.oldusernames)}
-    `,
-                )
-                .setTimestamp(),
-
-            new EmbedBuilder()
-                .setColor("#ff9d7d")
-                .setThumbnail(
-                    `https://tetr.io/user-content/avatars/${statData._id}.jpg`,
-                )
-                .setFooter({
-                    text: `User ID: ${statData._id} | Role: ${statData.role}`,
-                })
-                .setDescription(
-                    `
-### __${formatUsername(user.username)} -> Quick Look -> General__
-
-- Has ${unlockedCount} achievements${medalLine}${statData.ar > 0 ? `\n  - Totalling ${statData.ar} Achievement Rating` : ""}${formatBadges(badges)} ${formatDisplayedAchs(statData.achievements, ach)}
-${formatGamesPlayed(statData.gamesplayed, statData.gameswon, statData.gametime) || ""}
-    `,
-                )
-                .setTimestamp(),
-
-            new EmbedBuilder()
-                .setColor("#ff7dc0")
-                .setThumbnail(
-                    `https://tetr.io/user-content/avatars/${statData._id}.jpg`,
-                )
-                .setFooter({
-                    text: `User ID: ${statData._id} | Role: ${statData.role}`,
-                })
-                .setDescription(
-                    `
-### __${formatUsername(user.username)} -> Quick Look -> Gameplay__
-${formatLeaguePreview(summaryData, country)} ${formatZenith(summaryData, country)} ${formatZenith(summaryData, country, true)} ${format40Lines(summaryData, country)} ${formatBlitz(summaryData, country)} ${formatZen(summaryData)}
-`,
-                )
-                .setTimestamp(),
-        ];
 
         const key = interaction.id;
         const commandName = "user";
         const labels = ["Profile", "General", "Gameplay"];
 
+        const profilePage = new ContainerBuilder()
+            .setAccentColor(0x86c9fc)
+            .addSectionComponents(
+                new SectionBuilder()
+                    .addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent(`### __${formatUsername(user.username)} -> Quick Look__
+
+- About:
+- Account created ${formatISOString(statData.ts)}
+- Level ${formatNumber(Math.floor(calculateLevel(statData.xp)))} (${formatNumber(Math.floor(statData.xp))} XP)
+- ${country}
+- Has ${formatNumber(statData.friend_count)} friends
+${statData.supporter ? `  - Has supporter${starConvert(statData.supporter_tier)}${statData.bio ? `\n> -  ${statData.bio}` : ""}` : ""}`),
+                    )
+                    .setThumbnailAccessory(
+                        new ThumbnailBuilder().setURL(`https://tetr.io/user-content/avatars/${user._id}.jpg`),
+                    ),
+            )
+            .addSeparatorComponents(new SeparatorBuilder())
+            .addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(`${formatConnections(statData.connections)}
+${formatOldUsernames(statData.oldusernames)}`),
+            )
+            .addActionRowComponents(
+                buildPageSelectRow({
+                    commandName,
+                    key,
+                    labels,
+                    activeIndex: 0,
+                }),
+            );
+            
+
+        const generalPage = new ContainerBuilder()
+            .setAccentColor(0x80bdff)
+            .addSectionComponents(
+                new SectionBuilder()
+                    .addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent(`### __${formatUsername(user.username)} -> Quick Look -> General__\n
+- Has ${unlockedCount} achievements${medalLine}${statData.ar > 0 ? `\n  - Totalling ${statData.ar} Achievement Rating` : ""}${formatBadges(badges)} ${formatDisplayedAchs(statData.achievements, ach)}
+${formatGamesPlayed(statData.gamesplayed, statData.gameswon, statData.gametime) || ""}
+    `))
+                    .setThumbnailAccessory(
+                        new ThumbnailBuilder().setURL(`https://tetr.io/user-content/avatars/${user._id}.jpg`),
+                    ),
+            )
+            .addActionRowComponents(
+                buildPageSelectRow({
+                    commandName,
+                    key,
+                    labels,
+                    activeIndex: 1,
+                }),
+            );
+
+        const gameplayPage = new ContainerBuilder()
+            .setAccentColor(0x80bdff)
+            .addSectionComponents(
+                new SectionBuilder()
+                    .addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent(`### __${formatUsername(user.username)} -> Quick Look -> Gameplay__
+${formatLeaguePreview(summaryData, country)} ${formatZenith(summaryData, country)} ${formatZenith(summaryData, country, true)} ${format40Lines(summaryData, country)} ${formatBlitz(summaryData, country)} ${formatZen(summaryData)}`),
+                    )
+                    .setThumbnailAccessory(
+                        new ThumbnailBuilder().setURL(`https://tetr.io/user-content/avatars/${user._id}.jpg`),
+                    ),
+            )
+            .addActionRowComponents(
+                buildPageSelectRow({
+                    commandName,
+                    key,
+                    labels,
+                    activeIndex: 2,
+                }),
+            );
+
+        const pageContainers = [profilePage, generalPage, gameplayPage];
+
         interaction.client.pageData.set(key, {
             commandName,
             ownerId: interaction.user.id,
-            pages,
+            pages: pageContainers,
             labels,
             currentPage: 0,
             ttlMs: 10 * 60 * 1000,
             expiresAt: Date.now() + 10 * 60 * 1000,
+            useComponentsV2: true,
         });
 
-        // build standard buttons (customIds like `user:page-<key>-<i>`)
-        const rows = buildPageButtonRows({
-            commandName,
-            key,
-            labels,
-            activeIndex: 0,
-        });
-
-        // send initial page
         await interaction.reply({
-            embeds: [pages[0]],
-            components: rows,
+            flags: MessageFlags.IsComponentsV2,
+            components: [pageContainers[0]],
         });
     },
 };
