@@ -4,12 +4,9 @@ const {
     Events,
     EmbedBuilder,
     MessageFlags,
-    ActionRowBuilder,
-    ButtonBuilder,
-    ButtonStyle
 } = require("discord.js");
 const { buildPageButtonRows } = require("../helpers/formatters");
-const { buildAchievementDetailEmbed } = require("../commands/userstatistics/userachievements");
+const { buildAchievementDetailContainer } = require("../commands/userstatistics/userachievements");
 
 module.exports = {
     name: Events.InteractionCreate,
@@ -46,13 +43,15 @@ module.exports = {
                     pageData.lastListPage = pageData.currentPage ?? 0;
                     pageData.currentPage = pageIndex;
 
-                    const detailEmbed = await buildAchievementDetailEmbed(ach, pageData.textPages?.[pageIndex], pageData.username);
-
-                    const deleteRow = buildDeleteRow(interactionId, pageData.ownerId);
+                    const detailContainer = await buildAchievementDetailContainer(
+                        ach,
+                        pageData.username,
+                        pageData.league,
+                    );
 
                     await interaction.reply({
-                        embeds: [detailEmbed],
-                        components: [deleteRow],
+                        flags: MessageFlags.IsComponentsV2,
+                        components: [detailContainer],
                     });
                     return;
                 }
@@ -131,16 +130,6 @@ module.exports = {
     },
 };
 
-//these should be in a helper file but im lazy so
-
-function buildDeleteRow(interactionId, ownerId) {
-    return new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-            .setCustomId(`achdelete_${interactionId}_${ownerId}`)
-            .setLabel("Delete")
-            .setStyle(ButtonStyle.Secondary)
-    );
-}
 
 // ==== new (!) page system ====
 

@@ -159,28 +159,28 @@ function capitalizeFirstLetter(string) {
 
 function getLeagueRankColour(rank) {
     const ratingColours = {
-        "z": "#7d7d7d",
-        "d": "#846b83",
-        "d+": "#8a5d8b",
-        "c-": "#755188",
-        "c": "#733e8f", 
-        "c+": "#562a89",
-        "b-": "#5550c5",
-        "b": "#4f65cb",
-        "b+": "#4e99c0",
-        "a-": "#45ca7f",
-        "a": "#6bcb55",
-        "a+": "#4fca18",
-        "s-": "#c8b82d",
-        "s": "#e8b215",
-        "s+": "#ffec0e",
-        "ss": "#feaf1b",
-        "u": "#ff2713",
-        "x": "#fd73fc",
-        "x+": "#ffbdf5"
-    }
+        "z": 0x7d7d7d,
+        "d": 0x846b83,
+        "d+": 0x8a5d8b,
+        "c-": 0x755188,
+        "c": 0x733e8f,
+        "c+": 0x562a89,
+        "b-": 0x5550c5,
+        "b": 0x4f65cb,
+        "b+": 0x4e99c0,
+        "a-": 0x45ca7f,
+        "a": 0x6bcb55,
+        "a+": 0x4fca18,
+        "s-": 0xc8b82d,
+        "s": 0xe8b215,
+        "s+": 0xffec0e,
+        "ss": 0xfeaf1b,
+        "u": 0xff2713,
+        "x": 0xfd73fc,
+        "x+": 0xffbdf5
+    };
 
-    return ratingColours[rank]
+    return ratingColours[rank];
 }
 
 function getModCombos(mods) {

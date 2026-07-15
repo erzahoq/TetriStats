@@ -1,6 +1,19 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
+const {
+    SlashCommandBuilder,
+    MessageFlags,
+    ContainerBuilder,
+    SectionBuilder,
+    TextDisplayBuilder,
+    ThumbnailBuilder,
+    ActionRowBuilder,
+    StringSelectMenuBuilder,
+    StringSelectMenuOptionBuilder,
+    InteractionContextType,
+    ApplicationIntegrationType,
+    SeparatorBuilder,
+} = require("discord.js");
 
-const { formatUsername, formatAchievement, buildPageButtonRows, getClosestRank, formatAchievementVal, formatNumber, formatISOString, getEmojiOfRank, getNextRank, getLeagueStatThresholds, getLeagueRankColour } = require('../../helpers/formatters');
+const { formatUsername, formatAchievement, buildPageSelectRow, getClosestRank, formatAchievementVal, formatNumber, formatISOString, getEmojiOfRank, getNextRank, getLeagueStatThresholds, getLeagueRankColour } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
 const { getEmoji } = require('../../helpers/emojis');
 const { fetchCached } = require('../../helpers/fetch');
@@ -60,7 +73,7 @@ module.exports = {
                 });
             }
 
-            const embed = await buildAchievementDetailEmbed(matchingAch, null, username, league);
+            const embed = await buildAchievementDetailContainer(matchingAch, username, league);
             return await interaction.editReply({
                 embeds: [embed],
             });
@@ -79,12 +92,12 @@ module.exports = {
         const achList = {};
 
         const colourMapping = {
-            "general": "#6dc971",
-            "league": "#c51111",
-            "solo": "#ff7024",
-            "zenith": "#ffc800",
-            "legacy": "#ac64ca",
-            "event": "#f892a3"
+            "general": 0x6dc971,
+            "league": 0xc51111,
+            "solo": 0xff7024,
+            "zenith": 0xffc800,
+            "legacy": 0xac64ca,
+            "event": 0xf892a3
         };
 
         //magic voodoo sorting raah
@@ -113,11 +126,24 @@ module.exports = {
                 const { pageTexts, pageAchs } = paginateAchievements(achList[cat]);
 
                 for (let ind = 0; ind < pageTexts.length; ind++) {
-                    textPages.push(new EmbedBuilder()
-                        .setColor(colourMapping[cat])
-                        .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
-                        .setDescription(`### __${formatUsername(username)} -> Achievements -> ${catMap[cat]}__\n` + pageTexts[ind])
-                    )
+                    textPages.push(
+                        new ContainerBuilder()
+                            .setAccentColor(colourMapping[cat])
+                            .addSectionComponents(
+                                new SectionBuilder()
+                                    .addTextDisplayComponents(
+                                        new TextDisplayBuilder().setContent(
+                                            `### __${formatUsername(username)} -> Achievements -> ${catMap[cat]}__\n` +
+                                                pageTexts[ind],
+                                        ),
+                                    )
+                                    .setThumbnailAccessory(
+                                        new ThumbnailBuilder().setURL(
+                                            `https://tetr.io/user-content/avatars/${user._id}.jpg`,
+                                        ),
+                                    ),
+                            ),
+                    );
 
                     pageAchsByPageIndex.push(pageAchs[ind] ?? []);
 
@@ -129,11 +155,24 @@ module.exports = {
                 }
             } else {
                 if (cat === "event") return; // no text or button if no event achievements
-                textPages.push(new EmbedBuilder()
-                    .setColor(colourMapping[cat])
-                    .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
-                    .setDescription(`### __${formatUsername(username)} -> Achievements -> ${catMap[cat]}__\n` + `${getEmoji("ach_none")} No ${cat} achievements unlocked yet... :(`)
-                )
+                textPages.push(
+                    new ContainerBuilder()
+                        .setAccentColor(colourMapping[cat])
+                        .addSectionComponents(
+                            new SectionBuilder()
+                                .addTextDisplayComponents(
+                                    new TextDisplayBuilder().setContent(
+                                        `### __${formatUsername(username)} -> Achievements -> ${catMap[cat]}__\n` +
+                                            `${getEmoji("ach_none")} No ${catMap[cat]} achievements unlocked yet... :(`,
+                                    ),
+                                )
+                                .setThumbnailAccessory(
+                                    new ThumbnailBuilder().setURL(
+                                        `https://tetr.io/user-content/avatars/${user._id}.jpg`,
+                                    ),
+                                ),
+                        ),
+                );
                 pageAchsByPageIndex.push([]);
 
                 labels.push(`${catMap[cat]}`);
@@ -143,47 +182,51 @@ module.exports = {
         const key = interaction.id;
         const commandName = 'userachievements';
 
+        textPages.forEach((container, pageIndex) => {
+            container
+                .addActionRowComponents(
+                    buildAchSelectRow(
+                        key,
+                        pageIndex,
+                        pageAchsByPageIndex[pageIndex] ?? [],
+                    ),
+                )
+                .addSeparatorComponents(new SeparatorBuilder())
+                .addActionRowComponents(
+                    buildPageSelectRow({
+                        commandName,
+                        key,
+                        labels,
+                        activeIndex: pageIndex,
+                    }),
+                );
+
+        });
+
         interaction.client.pageData.set(key, {
             commandName,
             ownerId: interaction.user.id,
-
-            //pager expects these
             pages: textPages,
             labels,
             currentPage: 0,
             ttlMs: 10 * 60 * 1000,
             expiresAt: Date.now() + 10 * 60 * 1000,
+            useComponentsV2: true,
 
-            //keep these for the dropdown handler
-            textPages,
             pageAchsByPageIndex,
             username,
             league,
-
-            //dropdown is “extra components” (please work please work please work)
-            getExtraComponents: (pageIndex) => {
-                return [buildAchSelectRow(key, pageIndex, pageAchsByPageIndex?.[pageIndex] ?? [])];
-            },
         });
-
-        const pageButtons = buildPageButtonRows({
-            commandName,
-            key,
-            labels,
-            activeIndex: 0,
-        });
-
-        const selectRow = buildAchSelectRow(key, 0, pageAchsByPageIndex?.[0] ?? []);
 
         await interaction.editReply({
-            embeds: [textPages[0]],
-            components: [...pageButtons, selectRow],
+            flags: MessageFlags.IsComponentsV2,
+            components: [textPages[0]],
         });
     },
     async autocomplete(interaction) {
         return await autocomplete(interaction);
     },
-    buildAchievementDetailEmbed
+    buildAchievementDetailContainer
 };
 
 function sortByAchievementRank(items) {
@@ -264,7 +307,7 @@ function buildAchSelectRow(messageKey, pageIndex, pageAchs) {
     return new ActionRowBuilder().addComponents(menu);
 }
 
-async function buildAchievementDetailEmbed(ach, listEmbed, username, league) {
+async function buildAchievementDetailContainer(ach, username, league) {
     const lowerIsBetter = (ach.vt === 2 || ach.vt === 3); // time-like
     const closestRank = await getClosestRank(ach.v, `achievements/${ach.n}`, { lowerIsBetter });
     
@@ -278,14 +321,13 @@ async function buildAchievementDetailEmbed(ach, listEmbed, username, league) {
         0: 'none'
     };
 
+    const accentColor =
+    getLeagueRankColour(closestRank?.rank) ?? 0xffffff;
 
-    const e = new EmbedBuilder().setColor(listEmbed?.data?.color || 'ffffff');
-    e.setColor(getLeagueRankColour(closestRank?.rank))
 
-
-    const lines = [];
-
-    if (ach.category) lines.push(`### __${formatUsername(username)} -> Achievements -> ${ach.name}__`);
+    const title = ach.category
+        ? `### __${formatUsername(username)} -> Achievements -> ${ach.name}__`
+        : "";
 
     let achText = ""
 
@@ -294,7 +336,7 @@ async function buildAchievementDetailEmbed(ach, listEmbed, username, league) {
     achText += `\n` + getEmoji("ach_" + achievementMapping[ach.rank])
 
     if (ach.vt !== 5) {
-        achText += ` **${displayVal}**  ${ach.object} \n` // show the main info
+        achText += ` **${displayVal}**${ach.object ? ` ${ach.object}` : ""}\n`; //shows the main info
     } else {
         achText += ach.object ? ` **${ach.object}** \n` : `\n`;
     }
@@ -413,11 +455,14 @@ async function buildAchievementDetailEmbed(ach, listEmbed, username, league) {
         achText += `\n-# *${ach.desc}*`;
     }
 
-    lines.push(achText);
+    const content = `${title}\n${achText}`.trim() || "No extra info available.";
 
-    e.setDescription(lines.join('\n') || 'No extra info available.');
+    return new ContainerBuilder().setAccentColor(accentColor).addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(content)
+    );
 
-    return e;
+
+
 };
 
 //stupid vt again aysm
