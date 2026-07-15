@@ -1,8 +1,22 @@
-const { SlashCommandBuilder, EmbedBuilder, InteractionContextType } = require('discord.js');
-const { fetchCached } = require('../../helpers/fetch.js');
+//idk this one was kinda weird to migrate to cv2 
+//the pages are built weird i think
+const {
+    SlashCommandBuilder,
+    MessageFlags,
+    InteractionContextType,
+    ContainerBuilder,
+    TextDisplayBuilder,
+    SeparatorBuilder,
+} = require("discord.js");const { fetchCached } = require('../../helpers/fetch.js');
 const { getEmoji } = require('../../helpers/emojis.js');
-const { formatAchievementVal, formatUsername, buildPageButtonRows, formatNumber, capitalizeFirstLetter, getEmojiOfRank } = require('../../helpers/formatters.js');
-const { database } = require('../../database.js');
+const {
+    formatAchievementVal,
+    formatUsername,
+    buildPageSelectRow,
+    formatNumber,
+    capitalizeFirstLetter,
+    getEmojiOfRank,
+} = require("../../helpers/formatters.js");const { database } = require('../../database.js');
 const { autocomplete, getChoice } = require('../../helpers/achAutocomplete.js');
 
 const RANKS = ['d', 'd+', 'c-', 'c', 'c+', 'b-', 'b', 'b+', 'a-', 'a', 'a+', 's-', 's', 's+', 'ss', 'u', 'x', 'x+'].reverse();
@@ -135,19 +149,19 @@ module.exports = {
             }
         }
 
-        const labels = ["Overview"]
-        const pages = [
-            new EmbedBuilder()
-                .setDescription(achText),
-        ]
+        const pageDefinitions = [
+            {
+                label: "Overview",
+                content: achText,
+            },
+        ];
 
         if (!ach.nolb) {
-            labels.push("Leaderboard");
 
             let lbText = `### __Achievements -> [${ach.name}](https://ch.tetr.io/achievements/${achId}) -> Leaderboard__\n\n`
             const lb = achData.data.leaderboard;
             const seenUsers = [];
-            for (let i = 0; i < 15; i++) {
+            for (let i = 0; i < Math.min(15, lb.length); i++) { //just in case lb has less than 15 entries
                 if (ach.pair && seenUsers.includes(lb[i].u.username)) continue;
                 lbText += `- `
 
@@ -171,16 +185,16 @@ module.exports = {
                 lbText += ` - **${formatAchievementVal(ach, lb[i].v, lb[i].a)}**\n`
             }
 
-            pages.push(new EmbedBuilder()
-                .setDescription(lbText)
-            );
+            pageDefinitions.push({
+                label: "Leaderboard",
+                content: lbText,
+            });
         }
 
         const achievementShortName = await database.Achievement.findByPk(achId).then(ach => ach.shortname);
         const leagueData = await database.LeagueStat.findByPk(`achievements/${achievementShortName}`);
         if (leagueData) {
             await updateRankTotals();
-            labels.push("League Averages");
 
             let leagueText = `### __Achievements -> [${ach.name}](https://ch.tetr.io/achievements/${achId}) -> League Averages__\n\n`
             
@@ -211,33 +225,62 @@ module.exports = {
                     continue;
                 }
             }
+            leagueText += `
 
-            pages.push(new EmbedBuilder()
-                .setDescription(leagueText)
-                .setFooter({ text: `Sample of 700 players per rank` })
-                .setTimestamp(new Date(leagueData.updatedAt))
-                .setColor('#5394c0')
-            );
+-# Sample of 700 players per rank
+-# Data updated <t:${Math.floor(new Date(leagueData.updatedAt).getTime() / 1000)}:R>`;
+
+            pageDefinitions.push({
+                label: "League Averages",
+                content: leagueText,
+            });
         }
 
-        if (pages.length === 1) {
-            await interaction.reply({ embeds: pages });
-            return;
+        const key = interaction.id;
+        const commandName = "achievement";
+        const labels = pageDefinitions.map((page) => page.label);
+
+        const pages = pageDefinitions.map((page, index) => {
+            const container = new ContainerBuilder()
+                .setAccentColor(0x5394c0)
+                .addTextDisplayComponents(
+                    new TextDisplayBuilder()
+                        .setContent(page.content),
+                );
+
+            if (pageDefinitions.length > 1) {
+                container
+                    .addSeparatorComponents(new SeparatorBuilder())
+                    .addActionRowComponents(
+                        buildPageSelectRow({
+                            commandName,
+                            key,
+                            labels,
+                            activeIndex: index,
+                        }),
+                    );
+            }
+
+            return container;
+        });
+
+        if (pages.length > 1) {
+            interaction.client.pageData.set(key, {
+                commandName,
+                ownerId: interaction.user.id,
+                pages,
+                labels,
+                currentPage: 0,
+                ttlMs: 10 * 60 * 1000,
+                expiresAt: Date.now() + 10 * 60 * 1000,
+                useComponentsV2: true,
+            });
         }
 
-        const rows = buildPageButtonRows({ commandName: "achievement", key: interaction.id, labels })
-
-        await interaction.reply({ embeds: [pages[0]], components: rows })
-
-        interaction.client.pageData.set(interaction.id, { 
-            commandName: "achievement",
-            ownerId: interaction.user.id,
-            pages,
-            labels,
-            currentPage: 0,
-            ttlMs: 10 * 60 * 1000,
-            expiresAt: Date.now() + 10 * 60 * 1000
-        })
+        await interaction.reply({
+            flags: MessageFlags.IsComponentsV2,
+            components: [pages[0]],
+        });
     },
     async autocomplete(interaction) {
         return await autocomplete(interaction);
