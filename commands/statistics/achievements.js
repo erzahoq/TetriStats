@@ -6,7 +6,6 @@ const {
     InteractionContextType,
     ContainerBuilder,
     TextDisplayBuilder,
-    SeparatorBuilder,
 } = require("discord.js");const { fetchCached } = require('../../helpers/fetch.js');
 const { getEmoji } = require('../../helpers/emojis.js');
 const {
@@ -242,7 +241,7 @@ module.exports = {
 
         const pages = pageDefinitions.map((page, index) => {
             const container = new ContainerBuilder()
-                .setAccentColor(0x5394c0)
+                .setAccentColor(0xa1ffd9)
                 .addTextDisplayComponents(
                     new TextDisplayBuilder()
                         .setContent(page.content),
@@ -250,7 +249,6 @@ module.exports = {
 
             if (pageDefinitions.length > 1) {
                 container
-                    .addSeparatorComponents(new SeparatorBuilder())
                     .addActionRowComponents(
                         buildPageSelectRow({
                             commandName,
