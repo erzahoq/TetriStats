@@ -73,9 +73,15 @@ module.exports = {
                 });
             }
 
-            const embed = await buildAchievementDetailContainer(matchingAch, username, league);
+            const container = await buildAchievementDetailContainer(
+                matchingAch,
+                username,
+                league,
+            );
+
             return await interaction.editReply({
-                embeds: [embed],
+                flags: MessageFlags.IsComponentsV2,
+                components: [container],
             });
         }
 
