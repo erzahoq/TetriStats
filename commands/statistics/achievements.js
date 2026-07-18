@@ -227,7 +227,7 @@ module.exports = {
             leagueText += `
 
 -# Sample of 700 players per rank
--# Data updated <t:${Math.floor(new Date(leagueData.updatedAt).getTime() / 1000)}:R>`;
+-# Data updated <t:${Math.floor(new Date(leagueData.updatedAt).getTime() / 1000)}:R>`; //maybe add this to the other commands? idk
 
             pageDefinitions.push({
                 label: "League Averages",

@@ -1,4 +1,10 @@
-const { SlashCommandBuilder, EmbedBuilder, InteractionContextType, MessageFlags } = require('discord.js');
+const {
+    SlashCommandBuilder,
+    MessageFlags,
+    ContainerBuilder,
+    TextDisplayBuilder,
+    InteractionContextType,
+} = require("discord.js");
 
 const { formatNumber } = require('../../helpers/formatters');
 const { fetchCached } = require('../../helpers/fetch');
@@ -27,10 +33,12 @@ module.exports = {
         const gamesPlayedOverTime = (data.gamesplayed / ((now - apiCreationTimestamp) / 1000))
 
         // massive wall of embed but luckily everything is just a number
-        const serverEmbed = new EmbedBuilder()
-            .setColor("#81ff7d")
-            .setDescription(
-                `### __TETR.IO -> Server Statistics__
+        const container = new ContainerBuilder()
+            .setAccentColor(0x81ff7d)
+            .addTextDisplayComponents(
+                new TextDisplayBuilder()
+                    .setContent(
+                        `### __TETR.IO -> Server Statistics__
 
 - Total of **${formatNumber(data.usercount)} Players**
     - ${formatNumber(data.usercount - data.anoncount)} are registered (*${formatNumber(100 * (data.usercount - data.anoncount) / data.usercount, 2)}%*)
@@ -48,9 +56,12 @@ module.exports = {
     - ${formatNumber(data.piecesplaced / data.gametime, 2)} pieces per second on average
     - ${formatNumber(data.inputs)} Inputs (${formatNumber(data.inputs / data.piecesplaced, 3)} per piece)
     - ${formatNumber(data.inputs / data.gametime, 3)} inputs per second on average
-`)
+`))
     
-        await interaction.reply({ embeds: [serverEmbed] });
+        await interaction.reply({
+            flags: MessageFlags.IsComponentsV2,
+            components: [container],
+        });
 
     },
 };

@@ -1,4 +1,10 @@
-const { SlashCommandBuilder, EmbedBuilder, InteractionContextType } = require('discord.js');
+const {
+    SlashCommandBuilder,
+    MessageFlags,
+    ContainerBuilder,
+    TextDisplayBuilder,
+    InteractionContextType,
+} = require("discord.js");
 const { database } = require('./../../database.js')
 const { Op } = require('sequelize');
 const { getEmojiOfRank, formatPreciseTime, formatNumber } = require('../../helpers/formatters.js');
@@ -105,12 +111,8 @@ module.exports = {
         }
         await updateRankTotals();
 
-        const embed = new EmbedBuilder()
-            .setFooter({ text: `Sample of 700 players per rank` })
-            .setTimestamp(new Date(statEntry.updatedAt))
-            .setColor('#5394c0')
         const statShorthand = statShorthandMap[stat.split("/")[1]] || stat.split("/")[1].toUpperCase();
-        
+
         let description = `### __League Averages -> ${modeMap[stat.split("/")[0]]} -> ${statShorthand}__`;
         let maxLength = 0;
 
@@ -135,9 +137,19 @@ module.exports = {
             }
         }
 
-        embed.setDescription(description);
+        description += `\n\n-# Sample of 700 players per rank\n-# Data updated <t:${Math.floor(new Date(statEntry.updatedAt).getTime() / 1000)}:R>`;
 
-        await interaction.reply({ embeds: [embed] });
+        const container = new ContainerBuilder()
+            .addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(description)
+            )
+            .setAccentColor(0x5394c0)
+
+        await interaction.reply({
+            flags: MessageFlags.IsComponentsV2,
+            components: [container],
+        });
+
     },
     async autocomplete(interaction) {
         if (Object.keys(statOptions).length === 0) {
