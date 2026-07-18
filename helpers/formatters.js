@@ -8,11 +8,12 @@ const {
     EmbedBuilder,
     MessageFlags,
     SectionBuilder,
+    SeparatorBuilder,
     StringSelectMenuBuilder,
     StringSelectMenuOptionBuilder,
     TextDisplayBuilder,
     ThumbnailBuilder,
-} = require('discord.js');
+} = require("discord.js");
 const { getEmoji } = require('./emojis');
 const { database } = require('../database');
 
@@ -435,10 +436,57 @@ async function buildStatComparisonLines(
     return lines;
 }
 
-async function addStatComparisonField(embed, dbStatKey, statName, statValue, effectiveRank, extras) {
-    const lines = await buildStatComparisonLines(dbStatKey, statName, statValue, effectiveRank, extras);
+async function addStatComparisonField(
+    target,
+    dbStatKey,
+    statName,
+    statValue,
+    effectiveRank,
+    extras,
+) {
+    const lines = await buildStatComparisonLines(
+        dbStatKey,
+        statName,
+        statValue,
+        effectiveRank,
+        extras,
+    );
+
     if (!lines) return;
-    embed.addFields({ name: '\u200b', value: lines.join('\n'), inline: true });
+
+    const content = lines.join("\n");
+
+    //components V2 container
+    if (
+        typeof target.addTextDisplayComponents ===
+        "function"
+    ) {
+        target
+            .addTextDisplayComponents(
+                new TextDisplayBuilder()
+                    .setContent(content),
+            )
+            .addSeparatorComponents(
+                new SeparatorBuilder(),
+            );
+
+        return;
+    }
+
+    //keep old embed commands working
+    if (typeof target.addFields === "function") {
+        target.addFields({
+            name: "\u200b",
+            value: content,
+            inline: true,
+        });
+
+        return;
+    }
+
+    throw new TypeError(
+        "addStatComparisonField expected an EmbedBuilder or ContainerBuilder",
+    );
 }
 
 function formatUsername(name, asLink = true) {

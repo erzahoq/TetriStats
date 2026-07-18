@@ -1,8 +1,23 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const { EmbedBuilder, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
+const {
+    SlashCommandBuilder,
+    MessageFlags,
+    ContainerBuilder,
+    TextDisplayBuilder,
+    InteractionContextType,
+    ApplicationIntegrationType,
+    SeparatorBuilder,
+} = require("discord.js");
 
-const { formatNumber, countryCodeToEmoji, formatPreciseTime, getModCombos, formatISOString, formatUsername, buildPageButtonRows, addStatComparisonField, } = require('../../helpers/formatters');
-const { getEmoji } = require('../../helpers/emojis');
+const {
+    formatNumber,
+    countryCodeToEmoji,
+    formatPreciseTime,
+    getModCombos,
+    formatISOString,
+    formatUsername,
+    buildPageSelectRow,
+    addStatComparisonField,
+} = require("../../helpers/formatters");const { getEmoji } = require('../../helpers/emojis');
 
 
 module.exports = {
@@ -70,7 +85,8 @@ module.exports = {
         //i mean fair because there's different rounds but still :(
         if (isLeague) {
             console.log('league file detected')
-            ///WRITE CODE HERE
+            //WRITE CODE HERE
+            //catstare
         } else {
             const replayStats = replayData.results.stats;
 
@@ -123,9 +139,12 @@ module.exports = {
             const userSuffix = `
 ${formatUsername(replay.users[0].username)} ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}`;
 
-            const performanceEmbed = new EmbedBuilder()
-                .setColor('#80ffc4')
-                .setDescription(`### __${replayLinkFormat} -> Performance__${performanceDisclaimer}\n${userSuffix}`);
+            const performanceEmbed = new ContainerBuilder()
+                .setAccentColor(0x80ffc4)
+                .addTextDisplayComponents(
+                    new TextDisplayBuilder()
+                        .setContent(`### __${replayLinkFormat} -> Performance__${performanceDisclaimer}\n${userSuffix}`)
+                )
 
 
             //=== For each gamemode, create a list of pages ===
@@ -195,7 +214,7 @@ ${formatUsername(replay.users[0].username)} ${countryCodeToEmoji(replay.users[0]
                 // don't show a warning if the only mod is "expert" (including reversed)
                 if (mods.length > 0 && !(mods.length === 1 && isExpertMod)) {
                     if (isExpertMod) {
-                        performanceDisclaimer = `\n-# ${getEmoji("windup_4")} These stats are based off of Expert Quick Play runs without mods! Be wary when comparing.`;
+                        performanceDisclaimer = `\n-# ${getEmoji("windup_4")} These stats are based off of Expert Quick Play runs without other mods! Be wary when comparing.`;
                     } else {
                         performanceDisclaimer = `\n-# ${getEmoji("windup_4")} These stats are based off of Quick Play runs without mods! Be wary when comparing.`;
                     }
@@ -207,9 +226,12 @@ ${formatUsername(replay.users[0].username)} ${countryCodeToEmoji(replay.users[0]
 
 
                 pages = [
-                    new EmbedBuilder().setColor('#80ff80')
-                        .setDescription(`### __${replayLinkFormat} -> Overview__
-    ${modString}
+                    new ContainerBuilder()
+                        .setAccentColor(0x80ff80)
+                        .addTextDisplayComponents(
+                            new TextDisplayBuilder()
+                                .setContent(`### __${replayLinkFormat} -> Overview__
+${modString}
 - **Finished in ${framesToTime(replayData.frames)}**
 - ${formatNumber(pps,2)} PPS
 - ${formatNumber(apm,2)} APM
@@ -221,9 +243,14 @@ ${formatUsername(replay.users[0].username)} ${countryCodeToEmoji(replay.users[0]
 - **KO'd ${replayStats.kills} players**
 - Sent ${formatNumber(garbageStats.sent)} lines 
 - Received ${formatNumber(garbageStats.received)} lines
-${userSuffix}`),
+${userSuffix}`)
+                        ),
 
-                    new EmbedBuilder().setColor('#ffb980').setDescription(`### __${replayLinkFormat} -> Full__
+                    new ContainerBuilder()
+                        .setAccentColor(0xffb980)
+                        .addTextDisplayComponents(
+                            new TextDisplayBuilder()
+                                .setContent(`### __${replayLinkFormat} -> Full__
 ${inputCountString}
 - **Sent ${formatNumber(garbageStats.sent)} garbage lines**
 - Recieved ${formatNumber(garbageStats.received)}
@@ -233,11 +260,16 @@ ${inputCountString}
 - **Scored ${formatNumber(stats.score)} points**
 - Reached a ${stats.topcombo} combo
 - Reached a ${(stats.topbtb) - 1} Back-to-Back chain
-    ${userSuffix}`),
-                    new EmbedBuilder().setColor('#ff80d9')
-                        .setDescription(`### __${replayLinkFormat} -> Splits__
-    ${splitFormat(zenithStats.splits)}
-    ${userSuffix}`),
+${userSuffix}`)
+                        ),
+                    new ContainerBuilder()
+                        .setAccentColor(0xff80d9)
+                        .addTextDisplayComponents(
+                            new TextDisplayBuilder()
+                                .setContent(`### __${replayLinkFormat} -> Splits__
+${splitFormat(zenithStats.splits)}
+    ${userSuffix}`)
+                        ),
                 ]
             } else if (replay.gamemode === '40l') {
 
@@ -254,18 +286,27 @@ ${inputCountString}
                 await addStatComparisonField(performanceEmbed, 'sprint/finesse', 'Finesse', finesse, effectiveRank, { isPercentage: true });
 
                 pages = [
-                    new EmbedBuilder().setColor('#80ff80')
-                        .setDescription(`### __${replayLinkFormat} -> Overview__
+                    new ContainerBuilder()
+                        .setAccentColor(0x80ff80)
+                        .addTextDisplayComponents(
+                            new TextDisplayBuilder()
+                                .setContent(`### __${replayLinkFormat} -> Overview__
 - **Finished in ${formatPreciseTime(time)}**
 - ${formatNumber(pps, 2)} PPS
 - ${formatNumber(kpp, 2)} Keys Per Piece
 - ${formatNumber(kps, 2)} Keys Per Second
 - ${formatNumber(finesse * 100, 2)}% Finesse | ${replayStats.finesse.faults} Faults
 ${userSuffix}
-    `),
-                    new EmbedBuilder().setColor('#ffb980').setDescription(`### __${replayLinkFormat} -> Full__
+    `)
+                        ),
+                    new ContainerBuilder()
+                        .setAccentColor(0xffb980)
+                        .addTextDisplayComponents(
+                            new TextDisplayBuilder()
+                                .setContent(`### __${replayLinkFormat} -> Full__
     ${inputCountString}
-    ${userSuffix}`),
+    ${userSuffix}`)
+                        ),
                 ]
             } else if (replay.gamemode === 'blitz') {
                 const score = replayStats.score;
@@ -275,37 +316,68 @@ ${userSuffix}
                 await addStatComparisonField(performanceEmbed, 'blitz/score', 'Score', score, effectiveRank, { decimals: 0 });
                 await addStatComparisonField(performanceEmbed, 'blitz/pps', 'Pieces Per Second', pps, effectiveRank, { decimals: 3 });
                 await addStatComparisonField(performanceEmbed, 'blitz/spp', 'Score Per Piece', spp, effectiveRank, { decimals: 2 });
-                await addStatComparisonField(performanceEmbed, 'blitz/finesse', 'Finesse', effectiveRank, { isPercentage: true });
+                await addStatComparisonField(performanceEmbed,"blitz/finesse", "Finesse", finesse, effectiveRank, { isPercentage: true });
 
                 pages = [
-                    new EmbedBuilder().setColor('#80ff80')
-                        .setDescription(`### __${replayLinkFormat} -> Overview__
+                    new ContainerBuilder()
+                        .setAccentColor(0x80ff80)
+                        .addTextDisplayComponents(
+                            new TextDisplayBuilder()
+                                .setContent(`### __${replayLinkFormat} -> Overview__
 - **Scored ${formatNumber(score)} points**
 - ${formatNumber(pps, 2)} PPS
 - ${formatNumber(spp, 2)} Points Per Piece
 - ${formatNumber(finesse * 100, 2)}% Finesse | ${replayStats.finesse.faults} Faults
 ${userSuffix}
-    `),
+    `)
+                        ),
 
-                    new EmbedBuilder().setColor('#ffb980').setDescription(`### __${replayLinkFormat} -> Full__
+                    new ContainerBuilder()
+                        .setAccentColor(0xffb980)
+                        .addTextDisplayComponents(
+                            new TextDisplayBuilder()
+                                .setContent(`### __${replayLinkFormat} -> Full__
     ${inputCountString}
-    ${userSuffix}`),
+    ${userSuffix}`)
+                        ),
                 ]              
             
             } else {
                 return interaction.editReply({content: 'This type of replay file has not been accounted for yet, please contact the developers if you believe this is a mistake.'})
             }
             
-            performanceEmbed.setDescription(performanceEmbed.data.description + performanceDisclaimer);
+            if (performanceDisclaimer) {
+                performanceEmbed.addTextDisplayComponents(
+                    new TextDisplayBuilder()
+                        .setContent(performanceDisclaimer),
+                );
+            }
 
             pages.push(performanceEmbed);
 
             const key = interaction.id;
-            const commandName = 'analyzereplay';
+            const commandName = "analyzereplay";
 
-            const labels = (pages.length === 4)
-                ? ['Overview', 'Full', 'Splits', 'Performance']
-                : ['Overview', 'Full', 'Performance'];
+            const labels =
+                pages.length === 4
+                    ? ["Overview", "Full", "Splits", "Performance"]
+                    : ["Overview", "Full", "Performance"];
+
+            // Add the page dropdown to every container.
+            pages.forEach((container, pageIndex) => {
+                container
+                    .addSeparatorComponents(
+                        new SeparatorBuilder(),
+                    )
+                    .addActionRowComponents(
+                        buildPageSelectRow({
+                            commandName,
+                            key,
+                            labels,
+                            activeIndex: pageIndex,
+                        }),
+                    );
+            });
 
             interaction.client.pageData.set(key, {
                 commandName,
@@ -315,12 +387,13 @@ ${userSuffix}
                 currentPage: 0,
                 ttlMs: 10 * 60 * 1000,
                 expiresAt: Date.now() + 10 * 60 * 1000,
+                useComponentsV2: true,
             });
 
-
-            const rows = buildPageButtonRows({ commandName, key, labels, activeIndex: 0 });
-
-            await interaction.editReply({ embeds: [pages[0]], components: rows });
+            await interaction.editReply({
+                flags: MessageFlags.IsComponentsV2,
+                components: [pages[0]],
+            });
         }
     }
 };
