@@ -415,7 +415,7 @@ async function buildAchievementDetailContainer(ach, username, league) {
             }
         }
 
-        if (rank) {
+        if (rank && rank !== nextRank) {
             const rankNext = thresholds?.[rank];
             if (rankNext !== undefined && isFinite(Number(rankNext))) {
                 const displayV =

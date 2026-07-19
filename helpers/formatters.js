@@ -498,6 +498,14 @@ function formatUsername(name, asLink = true) {
     return formatted;
 }
 
+function getAvatarUrl(userData) {
+    if (userData?.avatar_revision !== undefined) {
+        return `https://tetr.io/user-content/avatars/${userData._id}.jpg?rv=${userData.avatar_revision}`;
+    }
+
+    return "https://tetr.io/res/avatar.png";
+}
+
 function formatAchievementVal(ach, value, val2) {
     if (ach.name === "Guardian Angel") {
         return `${formatNumber(value, 2)}m`;
@@ -754,5 +762,6 @@ module.exports = {
     buildStatComparisonLines,
     addStatComparisonField,
     formatAchievementVal,
-    specialUserContainers
+    specialUserContainers,
+    getAvatarUrl
 }
