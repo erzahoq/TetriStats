@@ -428,7 +428,7 @@ async function buildStatComparisonLines(
     }
 
     // 2) compared to current rank
-    if (userRankLabel !== 'Unranked') {
+    if (userRankLabel !== 'Unranked' && userRankLabel !== avgRank) {
         if (deltaToUser !== null) lines.push(`- ${userRankLabel.toUpperCase()} rank has ${fmtDelta(deltaToUser)}`);
         else lines.push(`- wee woo wee woo ${userRankLabel.toUpperCase()}`); // i dont think this ever triggers but if it does uhhhhh :)
     }
