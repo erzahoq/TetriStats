@@ -348,7 +348,7 @@ async function buildAchievementDetailContainer(ach, username, league) {
     }
 
     if (ach.vt === 5) { // if it's issued
-        achText += `Issue ${ach.pos}/${ach.total}` 
+        achText += `Issue ${ach.pos + 1}/${ach.total}` 
     } else {
         if (ach.pos < 100) { // if you're in the top 100 players
             achText += `**#${ach.pos + 1}** in the world`
