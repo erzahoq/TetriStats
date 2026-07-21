@@ -1,6 +1,16 @@
-const { SlashCommandBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle, InteractionContextType, MessageFlags, ApplicationIntegrationType } = require('discord.js');
+const {
+    SlashCommandBuilder,
+    ContainerBuilder,
+    SectionBuilder,
+    TextDisplayBuilder,
+    ThumbnailBuilder,
+    InteractionContextType,
+    MessageFlags,
+    ApplicationIntegrationType,
+    SeparatorBuilder
+} = require('discord.js');
 
-const { formatNumber, formatPreciseTime, formatISOString, formatUsername, buildPageButtonRows } = require('../../helpers/formatters');
+const { formatNumber, formatPreciseTime, formatISOString, formatUsername, buildPageSelectRow } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
 const { getEmoji } = require('../../helpers/emojis');
 const { fetchCached } = require('../../helpers/fetch');
@@ -50,55 +60,86 @@ module.exports = {
         }
 
         const colourMapping = {
-            '40l': '#ffd94f',
-            'blitz': '#ff5410',
-            'zenith': '#ff7024',
-            'zenithex': '#ffc800',
-            'league': '#c51111'
+            '40l': 0xffd94f,
+            'blitz': 0xff5410,
+            'zenith': 0xff7024,
+            'zenithex': 0xffc800,
+            'league': 0xc51111
         };
 
         const pages = {};
-        const buttons = [];
 
         // loop through each category and what was fetched (see fetchAll)
         Object.entries(records).forEach(([category, fetched]) => {
 
             // create embed and button
-            const embed = new EmbedBuilder()
-                .setColor(colourMapping[category])
-                .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
-            const button = new ButtonBuilder()
-                .setCustomId(`recordspage_${category}_${buttons.length}`)
-                .setDisabled(buttons.length === 0)
-                .setLabel(gametypeMapping[category])
-                .setStyle(ButtonStyle.Primary)
+            const container = new ContainerBuilder()
+                .setAccentColor(colourMapping[category])
 
             // do the description
             const title = `### __${formatUsername(user.username)} -> Records -> ${gametypeMapping[category]}__`
-            let desc = `${title}\n`;
-            if (fetched.top) {
-                desc += `- ${getEmoji('news_lblocal')} Personal best
-    ${formatRecord(fetched.top)}\n\n`
-            }
-            fetched.all.forEach((rec) => {
-                desc += `${formatRecord(rec)}\n`;
-            })
+            let header = `${title}\n`;
 
-            if (desc.trim() === title) {
-                desc += `${getEmoji('ach_none')} No ${gametypeMapping[category]} records yet...`
+            if (fetched.top) {
+                header += `- ${getEmoji('news_lblocal')} Personal best
+                ${formatRecord(fetched.top)}`;
+            } else if (fetched.all.length === 0) {
+                header += `${getEmoji('ach_none')} No ${gametypeMapping[category]} records yet...`;
             }
 
             // set description and push to list
-            embed.setDescription(desc);
-            pages[category] = embed;
-            buttons.push(button)
+            container.addSectionComponents(
+                new SectionBuilder()
+                    .addTextDisplayComponents(
+                        new TextDisplayBuilder()
+                            .setContent(header)
+                    )
+                    .setThumbnailAccessory(
+                        new ThumbnailBuilder()
+                            .setURL(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
+                    )
+            );
+
+            if (!(fetched.all.length === 0 && !fetched.top)) {
+                fetched.all.forEach((rec, index) => {
+                    if (index === 0 && fetched.top) {
+                        container.addSeparatorComponents(
+                            new SeparatorBuilder()
+                        );
+                    }
+
+                    container.addTextDisplayComponents(
+                        new TextDisplayBuilder()
+                            .setContent(formatRecord(rec))
+                    );
+
+                    if (index !== fetched.all.length - 1) {
+                        container.addSeparatorComponents(
+                            new SeparatorBuilder()
+                        );
+                    }
+                });
+            }
+
+            pages[category] = container;
         })
 
         const key = interaction.id;
         const commandName = 'records';
 
-        const labels = buttons.map(b => b.data.label); // same order as buttons were built
+        const labels = Object.keys(pages).map(category => gametypeMapping[category]);
         const pageList = Object.values(pages);         // embeds in the same order as buttons/pages
+
+        for (let i = 0; i < pageList.length; i++) {
+            pageList[i].addActionRowComponents(
+                buildPageSelectRow({
+                    commandName,
+                    key,
+                    labels,
+                    activeIndex: i
+                })
+            );
+        }
 
         interaction.client.pageData.set(key, {
             commandName,
@@ -106,17 +147,17 @@ module.exports = {
             pages: pageList,
             labels,
             currentPage: 0,
+            useComponentsV2: true,
             ttlMs: 10 * 60 * 1000,
             expiresAt: Date.now() + 10 * 60 * 1000,
         });
 
         // rebuild buttons using the shared format: records:page-<key>-<i>
-        const rows = buildPageButtonRows({ commandName, key, labels });
 
         // edit reply to use new rows
         await interaction.editReply({
-            embeds: [pageList[0]],
-            components: rows,
+            flags: MessageFlags.IsComponentsV2,
+            components: [pageList[0]],
         });
 
 
@@ -217,4 +258,3 @@ function formatRecord(record) {
 
     return formatted;
 }
-

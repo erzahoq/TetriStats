@@ -1,6 +1,15 @@
-const { SlashCommandBuilder, EmbedBuilder, InteractionContextType, ApplicationIntegrationType, MessageFlags } = require('discord.js');
+const {
+    SlashCommandBuilder,
+    ContainerBuilder,
+    SectionBuilder,
+    TextDisplayBuilder,
+    ThumbnailBuilder,
+    InteractionContextType,
+    ApplicationIntegrationType,
+    MessageFlags
+} = require('discord.js');
 
-const { formatNumber, getLeagueRankColour, getEmojiOfRank, formatUsername, buildPageButtonRows } = require('../../helpers/formatters');
+const { formatNumber, getLeagueRankColour, getEmojiOfRank, formatUsername, buildPageSelectRow } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
 const { getEmoji } = require('../../helpers/emojis');
 const { fetchCached } = require('../../helpers/fetch');
@@ -46,27 +55,41 @@ module.exports = {
         const leagueData = data.data;
         const past = leagueData.past;
 
-        const currentEmbed = createLeagueEmbed(leagueData, user);
-        const pages = [currentEmbed];
+        const currentContainer = createLeagueContainer(leagueData, user);
+        const pages = [currentContainer];
 
         const seasonNumbers = Object.keys(past).map(Number).sort((a, b) => a - b);
         if (past && Object.keys(past).length !== 0) {
             for (const season of seasonNumbers) {
                 const seasonData = past[season];
-                const thisSeasonEmbed = createLeagueEmbed(seasonData, user, season);
+                const thisSeasonContainer = createLeagueContainer(seasonData, user, season);
 
-                pages.push(thisSeasonEmbed);
+                pages.push(thisSeasonContainer);
             }
         }
 
         if (pages.length === 1) {
-            await interaction.reply({ embeds: pages });
+            await interaction.reply({
+                components: pages,
+                flags: MessageFlags.IsComponentsV2
+            });
             return;
         }
 
         //paging data
         const key = interaction.id; //this becomes the <key> in league:page-<key>-<index>
         const labels = ['Current', ...seasonNumbers.map(s => `Season ${s}`)];
+
+        for (let i = 0; i < pages.length; i++) {
+            pages[i].addActionRowComponents(
+                buildPageSelectRow({
+                    commandName: 'league',
+                    key,
+                    labels,
+                    activeIndex: i
+                })
+            );
+        }
 
         interaction.client.pageData.set(key, {
             commandName: 'league',
@@ -75,20 +98,19 @@ module.exports = {
             labels,
             currentPage: 0,
             ttlMs: 10 * 60 * 1000,
-            expiresAt: Date.now() + 10 * 60 * 1000
+            expiresAt: Date.now() + 10 * 60 * 1000,
+            useComponentsV2: true
         });
 
         // yes
-        const rows = buildPageButtonRows({ commandName: "league", key, labels })
-
         await interaction.reply({
-            embeds: [pages[0]],
-            components: rows
+            components: [pages[0]],
+            flags: MessageFlags.IsComponentsV2
         });
     }
 };
 
-function createLeagueEmbed(leagueData, user, past = 0) {
+function createLeagueContainer(leagueData, user, past = 0) {
     const { apm, pps, vs, tr, glicko, rd, rank, standing, standing_local: localStanding, decaying, bestrank, percentile, gxe } = leagueData;
     let { prev_rank: prevRank, next_rank: nextRank } = leagueData;
     const gamesPlayed = leagueData.gamesplayed || 0;
@@ -176,12 +198,15 @@ function createLeagueEmbed(leagueData, user, past = 0) {
 
     if (rankBar && !past) description += `\n${rankBar}`;
 
-    const embed = new EmbedBuilder()
-        .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
-        .setDescription(description)
-        .setColor(getLeagueRankColour(rank) || '#ff8c57');
+    const container = new ContainerBuilder()
+        .setAccentColor(getLeagueRankColour(rank) || 0xff8c57)
+        .addSectionComponents(
+            new SectionBuilder()
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(description))
+                .setThumbnailAccessory(new ThumbnailBuilder().setURL(`https://tetr.io/user-content/avatars/${user._id}.jpg`))
+        );
     
-    return embed;
+    return container;
 }
 
 function generateProgressBar(barType, progress, length = 14) {

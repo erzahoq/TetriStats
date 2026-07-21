@@ -1,6 +1,15 @@
-const { SlashCommandBuilder, EmbedBuilder, MessageFlags, InteractionContextType, ApplicationIntegrationType } = require('discord.js');
+const {
+    SlashCommandBuilder,
+    ContainerBuilder,
+    SectionBuilder,
+    TextDisplayBuilder,
+    ThumbnailBuilder,
+    MessageFlags,
+    InteractionContextType,
+    ApplicationIntegrationType
+} = require('discord.js');
 
-const { getEmojiOfRank, getLeagueRankColour, formatUsername, buildPageButtonRows, addStatComparisonField } = require('../../helpers/formatters');
+const { getEmojiOfRank, getLeagueRankColour, formatUsername, buildPageSelectRow, addStatComparisonField } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
 const { fetchCached } = require('../../helpers/fetch');
 
@@ -63,69 +72,69 @@ module.exports = {
 
         const userLeagueRank = leagueData?.rank ?? null;
 
-        const leagueEmbed = getEmbed(user.username, 'Tetra League', user._id, !leagueData || leagueData.played === 0, userLeagueRank, leagueData?.percentile_rank);
-        const linesEmbed = getEmbed(user.username, '40 Lines', user._id, !linesData || linesData.played === 0, userLeagueRank, leagueData?.percentile_rank);
-        const blitzEmbed = getEmbed(user.username, 'Blitz', user._id, !blitzData || blitzData.played === 0, userLeagueRank, leagueData?.percentile_rank);
-        const quickplayEmbed = getEmbed(user.username, 'Quick Play', user._id, !zenithData, userLeagueRank, leagueData?.percentile_rank);
-        const quickplayExEmbed = getEmbed(user.username, 'Expert Quick Play', user._id, !zenithExData, userLeagueRank, leagueData?.percentile_rank);
+        const leagueContainer = getContainer(user.username, 'Tetra League', user._id, !leagueData || leagueData.played === 0, userLeagueRank, leagueData?.percentile_rank);
+        const linesContainer = getContainer(user.username, '40 Lines', user._id, !linesData || linesData.played === 0, userLeagueRank, leagueData?.percentile_rank);
+        const blitzContainer = getContainer(user.username, 'Blitz', user._id, !blitzData || blitzData.played === 0, userLeagueRank, leagueData?.percentile_rank);
+        const quickplayContainer = getContainer(user.username, 'Quick Play', user._id, !zenithData, userLeagueRank, leagueData?.percentile_rank);
+        const quickplayExContainer = getContainer(user.username, 'Expert Quick Play', user._id, !zenithExData, userLeagueRank, leagueData?.percentile_rank);
 
         // Prefer percentile_rank if the user is unranked ('z') or rank is missing
         const effectiveRank = (leagueData?.rank && leagueData.rank !== 'z')
             ? leagueData.rank
             : (leagueData?.percentile_rank || null);
 
-    
+
         // add all the embed fields
 
         if (leagueData) {
-            await addStatComparisonField(leagueEmbed, 'league/pps', 'Pieces Per Second', leagueData.pps, effectiveRank, { decimals: 3 });
-            await addStatComparisonField(leagueEmbed, 'league/apm', 'Attack Per Minute', leagueData.apm, effectiveRank);
-            await addStatComparisonField(leagueEmbed, 'league/vs', 'VS score', leagueData.vs, effectiveRank);
+            await addStatComparisonField(leagueContainer, 'league/pps', 'Pieces Per Second', leagueData.pps, effectiveRank, { decimals: 3 });
+            await addStatComparisonField(leagueContainer, 'league/apm', 'Attack Per Minute', leagueData.apm, effectiveRank);
+            await addStatComparisonField(leagueContainer, 'league/vs', 'VS score', leagueData.vs, effectiveRank);
         }
 
         if (linesData) {
-            await addStatComparisonField(linesEmbed, 'sprint/time', '', linesData.stats.finaltime, effectiveRank, { lowerIsBetter: true, isTime: true });
-            await addStatComparisonField(linesEmbed, 'sprint/pps', 'Pieces Per Second', linesData.aggregatestats.pps, effectiveRank, { decimals: 3 });
+            await addStatComparisonField(linesContainer, 'sprint/time', '', linesData.stats.finaltime, effectiveRank, { lowerIsBetter: true, isTime: true });
+            await addStatComparisonField(linesContainer, 'sprint/pps', 'Pieces Per Second', linesData.aggregatestats.pps, effectiveRank, { decimals: 3 });
             if (Number(linesData.stats.piecesplaced) > 0) {
-                await addStatComparisonField(linesEmbed, 'sprint/kpp', 'Keys Per Piece', linesData.stats.inputs / linesData.stats.piecesplaced, effectiveRank, { decimals: 3, lowerIsBetter: true });
+                await addStatComparisonField(linesContainer, 'sprint/kpp', 'Keys Per Piece', linesData.stats.inputs / linesData.stats.piecesplaced, effectiveRank, { decimals: 3, lowerIsBetter: true });
             }
             if (Number(linesData.stats.finaltime) > 0) {
-                await addStatComparisonField(linesEmbed, 'sprint/kps', 'Keys Per Second', linesData.stats.inputs / (linesData.stats.finaltime / 1000), effectiveRank, { decimals: 3 });
+                await addStatComparisonField(linesContainer, 'sprint/kps', 'Keys Per Second', linesData.stats.inputs / (linesData.stats.finaltime / 1000), effectiveRank, { decimals: 3 });
             }
             if (linesData.stats.finesse !== undefined && Number(linesData.stats.piecesplaced) > 0) {
-                await addStatComparisonField(linesEmbed, 'sprint/finesse', 'Finesse', (linesData.stats.finesse.perfectpieces / linesData.stats.piecesplaced), effectiveRank, { isPercentage: true });
+                await addStatComparisonField(linesContainer, 'sprint/finesse', 'Finesse', (linesData.stats.finesse.perfectpieces / linesData.stats.piecesplaced), effectiveRank, { isPercentage: true });
             }
         }
 
         if (blitzData) {
-            await addStatComparisonField(blitzEmbed, 'blitz/score', 'Score', blitzData.stats.score, effectiveRank, { decimals: 0 });
-            await addStatComparisonField(blitzEmbed, 'blitz/pps', 'Pieces Per Second', blitzData.aggregatestats.pps, effectiveRank, { decimals: 3 });
+            await addStatComparisonField(blitzContainer, 'blitz/score', 'Score', blitzData.stats.score, effectiveRank, { decimals: 0 });
+            await addStatComparisonField(blitzContainer, 'blitz/pps', 'Pieces Per Second', blitzData.aggregatestats.pps, effectiveRank, { decimals: 3 });
             if (Number(blitzData.stats.piecesplaced) > 0) {
-                await addStatComparisonField(blitzEmbed, 'blitz/spp', 'Score Per Piece', blitzData.stats.score / blitzData.stats.piecesplaced, effectiveRank);
+                await addStatComparisonField(blitzContainer, 'blitz/spp', 'Score Per Piece', blitzData.stats.score / blitzData.stats.piecesplaced, effectiveRank);
             }
             if (blitzData.stats.finesse !== undefined && Number(blitzData.stats.piecesplaced) > 0) {
-                await addStatComparisonField(blitzEmbed, 'blitz/finesse', 'Finesse', (blitzData.stats.finesse.perfectpieces / blitzData.stats.piecesplaced), effectiveRank, { isPercentage: true });
+                await addStatComparisonField(blitzContainer, 'blitz/finesse', 'Finesse', (blitzData.stats.finesse.perfectpieces / blitzData.stats.piecesplaced), effectiveRank, { isPercentage: true });
             }
         }
 
         if (zenithData) {
-            await addStatComparisonField(quickplayEmbed, 'zenith/height', 'Meters', zenithData.stats.zenith.altitude, effectiveRank);
-            await addStatComparisonField(quickplayEmbed, 'zenith/pps', 'Pieces Per Second', zenithData.aggregatestats.pps, effectiveRank, { decimals: 3 });
-            await addStatComparisonField(quickplayEmbed, 'zenith/apm', 'Attack Per Minute', zenithData.aggregatestats.apm, effectiveRank);
-            await addStatComparisonField(quickplayEmbed, 'zenith/climbSpeed', 'Average Climb Speed', zenithData.stats.zenith.rank, effectiveRank, { decimals: 3 });
-            await addStatComparisonField(quickplayEmbed, 'zenith/btb', 'Highest Back-to-Back', zenithData.stats.topbtb, effectiveRank, { decimals: 0 });
-            await addStatComparisonField(quickplayEmbed, 'zenith/app', 'Attack Per Piece', (zenithData.stats.garbage.attack/zenithData.stats.piecesplaced), effectiveRank, { decimals: 3 });
-            await addStatComparisonField(quickplayEmbed, 'zenith/finesse', 'Finesse', (zenithData.stats.finesse.perfectpieces / zenithData.stats.piecesplaced), effectiveRank, { isPercentage: true });
+            await addStatComparisonField(quickplayContainer, 'zenith/height', 'Meters', zenithData.stats.zenith.altitude, effectiveRank);
+            await addStatComparisonField(quickplayContainer, 'zenith/pps', 'Pieces Per Second', zenithData.aggregatestats.pps, effectiveRank, { decimals: 3 });
+            await addStatComparisonField(quickplayContainer, 'zenith/apm', 'Attack Per Minute', zenithData.aggregatestats.apm, effectiveRank);
+            await addStatComparisonField(quickplayContainer, 'zenith/climbSpeed', 'Average Climb Speed', zenithData.stats.zenith.rank, effectiveRank, { decimals: 3 });
+            await addStatComparisonField(quickplayContainer, 'zenith/btb', 'Highest Back-to-Back', zenithData.stats.topbtb, effectiveRank, { decimals: 0 });
+            await addStatComparisonField(quickplayContainer, 'zenith/app', 'Attack Per Piece', (zenithData.stats.garbage.attack/zenithData.stats.piecesplaced), effectiveRank, { decimals: 3 });
+            await addStatComparisonField(quickplayContainer, 'zenith/finesse', 'Finesse', (zenithData.stats.finesse.perfectpieces / zenithData.stats.piecesplaced), effectiveRank, { isPercentage: true });
         }
 
         if (zenithExData) {
-            await addStatComparisonField(quickplayExEmbed, 'zenithEx/height', 'Meters', zenithExData.stats.zenith.altitude, effectiveRank);
-            await addStatComparisonField(quickplayExEmbed, 'zenithEx/pps', 'Pieces Per Second', zenithExData.aggregatestats.pps, effectiveRank, { decimals: 3 });
-            await addStatComparisonField(quickplayExEmbed, 'zenithEx/apm', 'Attack Per Minute', zenithExData.aggregatestats.apm, effectiveRank);
-            await addStatComparisonField(quickplayExEmbed, 'zenithEx/climbSpeed', 'Average Climb Speed', zenithExData.stats.zenith.rank, effectiveRank, { decimals: 3 });
-            await addStatComparisonField(quickplayExEmbed, 'zenithEx/btb', 'Highest Back-to-Back', zenithExData.stats.topbtb, effectiveRank, { decimals: 0 });
-            await addStatComparisonField(quickplayExEmbed, 'zenithEx/app', 'Attack Per Piece', (zenithExData.stats.garbage.attack/zenithExData.stats.piecesplaced), effectiveRank, { decimals: 3 });
-            await addStatComparisonField(quickplayExEmbed, 'zenithEx/finesse', 'Finesse', (zenithExData.stats.finesse.perfectpieces / zenithExData.stats.piecesplaced), effectiveRank, { isPercentage: true });
+            await addStatComparisonField(quickplayExContainer, 'zenithEx/height', 'Meters', zenithExData.stats.zenith.altitude, effectiveRank);
+            await addStatComparisonField(quickplayExContainer, 'zenithEx/pps', 'Pieces Per Second', zenithExData.aggregatestats.pps, effectiveRank, { decimals: 3 });
+            await addStatComparisonField(quickplayExContainer, 'zenithEx/apm', 'Attack Per Minute', zenithExData.aggregatestats.apm, effectiveRank);
+            await addStatComparisonField(quickplayExContainer, 'zenithEx/climbSpeed', 'Average Climb Speed', zenithExData.stats.zenith.rank, effectiveRank, { decimals: 3 });
+            await addStatComparisonField(quickplayExContainer, 'zenithEx/btb', 'Highest Back-to-Back', zenithExData.stats.topbtb, effectiveRank, { decimals: 0 });
+            await addStatComparisonField(quickplayExContainer, 'zenithEx/app', 'Attack Per Piece', (zenithExData.stats.garbage.attack/zenithExData.stats.piecesplaced), effectiveRank, { decimals: 3 });
+            await addStatComparisonField(quickplayExContainer, 'zenithEx/finesse', 'Finesse', (zenithExData.stats.finesse.perfectpieces / zenithExData.stats.piecesplaced), effectiveRank, { isPercentage: true });
         }
 
         const playedLeague = !!(leagueData && (
@@ -143,36 +152,58 @@ module.exports = {
         const playedZenithEx = !!(zenithExData && (Number(zenithExData?.stats?.zenith?.altitude) > 0));
 
         const modes = [
-            { label: 'Tetra League', embed: leagueEmbed, played: playedLeague },
-            { label: '40 Lines', embed: linesEmbed, played: played40L },
-            { label: 'Blitz', embed: blitzEmbed, played: playedBlitz },
-            { label: 'Quick Play', embed: quickplayEmbed, played: playedZenith },
-            { label: 'Expert Quick Play', embed: quickplayExEmbed, played: playedZenithEx },
+            { label: 'Tetra League', container: leagueContainer, played: playedLeague },
+            { label: '40 Lines', container: linesContainer, played: played40L },
+            { label: 'Blitz', container: blitzContainer, played: playedBlitz },
+            { label: 'Quick Play', container: quickplayContainer, played: playedZenith },
+            { label: 'Expert Quick Play', container: quickplayExContainer, played: playedZenithEx },
         ];
 
         const availableModes = modes.filter(m => m.played);
 
         // if they've played literally nothing, show a clean "new player" embed with no buttons
         if (availableModes.length === 0) {
-            const newUserEmbed = new EmbedBuilder()
-                .setDescription(
-                    `### __${formatUsername(user.username)} -> Performance__\n` +
-                    `No recorded games yet.`
-                )
-                .setThumbnail(`https://tetr.io/user-content/avatars/${user._id}.png`)
-                .setURL(`https://tetr.io/u/${user.username}`);
+            const newUserContainer = new ContainerBuilder()
+                .addSectionComponents(
+                    new SectionBuilder()
+                        .addTextDisplayComponents(
+                            new TextDisplayBuilder()
+                                .setContent(
+                                    `### __${formatUsername(user.username)} -> Performance__\n` +
+                                    `No recorded games yet.`
+                                )
+                        )
+                        .setThumbnailAccessory(
+                            new ThumbnailBuilder()
+                                .setURL(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
+                        )
+                );
 
-            return await interaction.reply({ embeds: [newUserEmbed] });
+            return await interaction.reply({
+                flags: MessageFlags.IsComponentsV2,
+                components: [newUserContainer]
+            });
         }
 
         // otherwise, build labels and embeds from the available modes
         const buttonLabels = availableModes.map(m => m.label);
-        const embeds = availableModes.map(m => m.embed);
+        const containers = availableModes.map(m => m.container);
 
-        const pages = embeds;
+        const pages = containers;
         const labels = buttonLabels;
 
         const key = interaction.id;
+
+        for (let i = 0; i < pages.length; i++) {
+            pages[i].addActionRowComponents(
+                buildPageSelectRow({
+                    commandName: 'performance',
+                    key,
+                    labels,
+                    activeIndex: i
+                })
+            );
+        }
 
         // store session
         interaction.client.pageData.set(key, {
@@ -181,21 +212,20 @@ module.exports = {
             pages,
             labels,
             currentPage: 0,
+            useComponentsV2: true,
             ttlMs: 10 * 60 * 1000,
             expiresAt: Date.now() + 10 * 60 * 1000,
         });
 
-        const rows = buildPageButtonRows({ commandName: "performance", key, labels });
-
         await interaction.reply({
-            embeds: [pages[0]],
-            components: rows,
+            flags: MessageFlags.IsComponentsV2,
+            components: [pages[0]],
         });
 
     },
 };
 
-function getEmbed(username, mode, userId, recordNotExists, userRank, userPercentile) {
+function getContainer(username, mode, userId, recordNotExists, userRank, userPercentile) {
     let statusLine;
     if (recordNotExists) {
         statusLine = `Hasn't played any ${mode} games yet!`;
@@ -207,18 +237,25 @@ function getEmbed(username, mode, userId, recordNotExists, userRank, userPercent
         statusLine = `-# Unranked`;
     }
 
-    const embed = new EmbedBuilder()
-        .setColor(
+    const container = new ContainerBuilder()
+        .setAccentColor(
             userRank === 'z' && userPercentile
                 ? getLeagueRankColour(userPercentile)
                 : getLeagueRankColour(userRank)
         )
-        .setDescription(
-            `### __${formatUsername(username)} -> Performance -> ${mode}__\n${statusLine}`
-        )
-        .setThumbnail(`https://tetr.io/user-content/avatars/${userId}.png`)
-        .setURL(`https://tetr.io/u/${username}`);
+        .addSectionComponents(
+            new SectionBuilder()
+                .addTextDisplayComponents(
+                    new TextDisplayBuilder()
+                        .setContent(
+                            `### __${formatUsername(username)} -> Performance -> ${mode}__\n${statusLine}`
+                        )
+                )
+                .setThumbnailAccessory(
+                    new ThumbnailBuilder()
+                        .setURL(`https://tetr.io/user-content/avatars/${userId}.jpg`)
+                )
+        );
 
-    return embed;
+    return container;
 }
-

@@ -1,4 +1,17 @@
-const { SlashCommandBuilder, EmbedBuilder, InteractionContextType, ApplicationIntegrationType, MessageFlags } = require('discord.js');
+/*const {
+    SlashCommandBuilder,
+    MessageFlags,
+    ContainerBuilder,
+    SectionBuilder,
+    TextDisplayBuilder,
+    ThumbnailBuilder,
+    ActionRowBuilder,
+    StringSelectMenuBuilder,
+    StringSelectMenuOptionBuilder,
+    InteractionContextType,
+    ApplicationIntegrationType,
+    SeparatorBuilder,
+} = require("discord.js");
 
 const { formatNumber, escapeUnderscores, countryCodeToEmoji, formatLongTime, getEmojiOfRank, calculateLevel, formatUsername } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser')
@@ -60,9 +73,8 @@ module.exports = {
         userSummary2 = userSummary2.data;
         
         // Create the embed
-        // thanks chatgpt 4.5 very cool
         const comparisonEmbed = new EmbedBuilder()
-            .setColor('#5865F2') // Discord blurple is visually pleasing
+            .setColor('#5865F2') 
             .setDescription(`### __Compare -> ${formatUsername(userStats1.username)} vs ${formatUsername(userStats2.username)}__`)
             .addFields(
                 { name: 'Statistic', value: `
@@ -117,3 +129,4 @@ function calculateTR(tr) {
     
 }
 
+*/
