@@ -195,6 +195,11 @@ module.exports = {
         if (leagueData) {
             await updateRankTotals();
 
+            const achievementCutoffNotes = {
+                51: `${getEmoji('windup_2')} These averages don't include runs under 50.0m`,
+                41: `${getEmoji('windup_2')} These averages don't include runs under 3 revives`,
+            };
+
             let leagueText = `### __Achievements -> [${ach.name}](https://ch.tetr.io/achievements/${achId}) -> League Averages__\n\n`
             
             let maxLength = 0;
@@ -224,9 +229,12 @@ module.exports = {
                     continue;
                 }
             }
-            leagueText += `
-
--# Sample of 700 players per rank
+            if (achievementCutoffNotes[achId]) {
+                leagueText += `\n\n-# ${achievementCutoffNotes[achId]}\n`;
+            } else {
+                leagueText += `\n\n`;
+            }
+            leagueText += `-# Sample of 700 players per rank
 -# Data updated <t:${Math.floor(new Date(leagueData.updatedAt).getTime() / 1000)}:R>`; //maybe add this to the other commands? idk
 
             pageDefinitions.push({
