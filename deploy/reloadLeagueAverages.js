@@ -132,17 +132,24 @@ async function fetchAllLeagueUsers() {
         }
         currentPlayers += data.data.entries.length;
 
-        if (data.data.entries.length > 0) {
-            const lastUser = data.data.entries[data.data.entries.length - 1];
-            if (lastUser.p) pageTR = `${lastUser.p.pri}:${lastUser.p.sec}:${lastUser.p.ter}`; // very cool pagination system
+        if (data.data.entries.length === 0) {
+            console.warn('\nno more league users returned, stopping pagination.');
+            break;
         }
-        
+
+        const lastUser = data.data.entries[data.data.entries.length - 1];
+        if (!lastUser?.p) {
+            console.warn('\nstopping to avoid an infinite loop.');
+            break;
+        }
+        pageTR = `${lastUser.p.pri}:${lastUser.p.sec}:${lastUser.p.ter}`; // very cool pagination system
+
         printBar(currentPlayers, totalPlayers, LEAGUE_USERS_REQUEST_COOLDOWN/100);
-        
+
         if (currentPlayers >= totalPlayers) {
             break;
         }
-        
+
         totalErrors = 0;
     }
 
