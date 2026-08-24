@@ -198,6 +198,7 @@ module.exports = {
             const achievementCutoffNotes = {
                 51: `${getEmoji('windup_2')} These averages don't include runs under 50.0m`,
                 41: `${getEmoji('windup_2')} These averages don't include runs under 3 revives`,
+                48: `${getEmoji('windup_2')} These averages don't include runs over 300 inputs`,
             };
 
             let leagueText = `### __Achievements -> [${ach.name}](https://ch.tetr.io/achievements/${achId}) -> League Averages__\n\n`

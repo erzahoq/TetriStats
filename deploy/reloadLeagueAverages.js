@@ -432,7 +432,9 @@ async function calculateRankAverages() {
                 
                 //hardcoded checks for different achievments that are "too low" to be counted in averages
                 if (achievement.k === 51 && achievement.v < 50) continue; // talentless <50 meters
-                if (achievement.k === 41 && achievement.v < 3) continue; // responsible one 1-2 revives
+                if (achievement.k === 41 && achievement.v <= 2) continue; // responsible one 1-2 revives
+                if (achievement.k === 48 && achievement.v < -300) continue; // detail oriented over 300 pieces placed
+
 
                 rankTotals.achievements[achievement.n] += achievement.v;
                 dataSeenCount.achievements[achievement.n] += 1;
