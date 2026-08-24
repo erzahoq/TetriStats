@@ -385,7 +385,11 @@ async function buildAchievementDetailContainer(ach, username, league) {
         achText += `\n\n**Performance**\nClosest rank is ${getEmojiOfRank(closestRank.rank)}, with`;
 
         const deltaText = formatAchievementDelta(closestRank.delta, ach);
-        const sign = closestRank.delta > 0 ? 'less' : closestRank.delta < 0 ? 'more' : '';
+        let sign = closestRank.delta > 0 ? 'less' : closestRank.delta < 0 ? 'more' : '';
+        //applicable to i think one achievmeent?? lmao (detail oriented)
+        if (ach.vt === 6) {
+            sign = closestRank.delta > 0 ? 'more' : closestRank.delta < 0 ? 'less' : '';
+        }
         if (deltaText && closestRank.delta !== 0) {
             achText += ` ${deltaText} ${sign}`;
         }
