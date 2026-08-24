@@ -84,9 +84,136 @@ module.exports = {
         //i hate league why did you have to do a different format :aysm:
         //i mean fair because there's different rounds but still :(
         if (isLeague) {
-            console.log('league file detected')
-            //WRITE CODE HERE
-            //catstare
+            const leaderboard = replayData.leaderboard;
+            const rounds = replayData.rounds;
+
+            if (!Array.isArray(leaderboard) || !Array.isArray(rounds) || leaderboard.length !== 2 || rounds.length === 0) {
+                return interaction.editReply({
+                    content: "This League replay has an unsupported structure."
+                });
+            }
+
+            const formattedDate = formatISOString(replay.ts);
+
+            //overview stuff
+
+            const [player1, player2] = leaderboard;
+
+            const player1User = replay.users.find(user => user.id === player1.id);
+            const player2User = replay.users.find(user => user.id === player2.id);
+
+            let scoreString = `**🏆 ${player1.username.toUpperCase()} ${player1.wins}**-${player2.wins} ${player2.username.toUpperCase()}`
+
+            if (player1.wins < player2.wins) {
+                scoreString = `${player1.username.toUpperCase()} ${player1.wins}-**${player2.wins} ${player2.username.toUpperCase()}** 🏆`
+            }
+
+            const userSuffix =
+            `${formatUsername(player1.username)} ${countryCodeToEmoji(player1User?.country)} vs ${formatUsername(player2.username)} ${countryCodeToEmoji(player2User?.country)} | ${formattedDate}`;
+
+            const leagueOverviewContainer = new ContainerBuilder()
+                .setAccentColor(0x80ffc4)
+                .addTextDisplayComponents(
+                    new TextDisplayBuilder()
+                        .setContent(`### __[Replay ${replay.id} (League)](https://tetr.io/#R:${replay.id}) -> Overview__
+${scoreString}
+
+**${player1.username.toUpperCase()}**
+- ${formatNumber(player1.stats.pps, 2)} PPS | ${formatNumber(player1.stats.apm, 2)} APM | ${formatNumber(player1.stats.vsscore, 2)} VS Score
+- Sent ${formatNumber(player1.stats.garbagesent)} | Received ${formatNumber(player1.stats.garbagereceived)}
+
+**${player2.username.toUpperCase()}**
+- ${formatNumber(player2.stats.pps, 2)} PPS | ${formatNumber(player2.stats.apm, 2)} APM | ${formatNumber(player2.stats.vsscore, 2)} VS Score
+- Sent ${formatNumber(player2.stats.garbagesent)} | Received ${formatNumber(player2.stats.garbagereceived)}
+
+${userSuffix}`)
+                );
+
+            //rounds
+            const roundLines = rounds.map((round, index) => {
+                const roundPlayer1 = round.find(player => player.id === player1.id);
+                const roundPlayer2 = round.find(player => player.id === player2.id);
+
+                if (!roundPlayer1 || !roundPlayer2) {
+                    return `**Round ${index + 1}**\n- Round data unavailable`;
+                }
+
+                const roundWinner = roundPlayer1.alive
+                    ? roundPlayer1
+                    : roundPlayer2.alive
+                        ? roundPlayer2
+                        : null;
+
+                const duration = Math.max(
+                    roundPlayer1.lifetime,
+                    roundPlayer2.lifetime
+                );
+
+                const winnerText = roundWinner
+                    ? `${roundWinner.username.toUpperCase()} won`
+                    : "No winner";
+
+                return `**Round ${index + 1} — ${winnerText} in ${formatPreciseTime(duration)}**
+            - **${player1.username.toUpperCase()}:** ${formatNumber(roundPlayer1.stats.pps, 2)} PPS | ${formatNumber(roundPlayer1.stats.apm, 2)} APM | ${formatNumber(roundPlayer1.stats.vsscore, 2)} VS | ${formatNumber(roundPlayer1.stats.garbagesent)} sent
+            - **${player2.username.toUpperCase()}:** ${formatNumber(roundPlayer2.stats.pps, 2)} PPS | ${formatNumber(roundPlayer2.stats.apm, 2)} APM | ${formatNumber(roundPlayer2.stats.vsscore, 2)} VS | ${formatNumber(roundPlayer2.stats.garbagesent)} sent`;
+            }).join("\n\n");
+
+            const leagueRoundsContainer = new ContainerBuilder()
+                .setAccentColor(0xffb980)
+                .addTextDisplayComponents(
+                    new TextDisplayBuilder()
+                        .setContent(`### __[Replay ${replay.id} (League)](https://tetr.io/#R:${replay.id}) -> Rounds__
+${roundLines}
+
+${userSuffix}`)
+                );
+            
+
+            //pages
+            const pages = [
+                leagueOverviewContainer,
+                leagueRoundsContainer,
+            ];
+
+            const labels = [
+                "Overview",
+                "Rounds",
+            ];
+
+            const key = interaction.id;
+            const commandName = "analyzereplay";
+
+            pages.forEach((container, pageIndex) => {
+                container
+                    .addSeparatorComponents(
+                        new SeparatorBuilder(),
+                    )
+                    .addActionRowComponents(
+                        buildPageSelectRow({
+                            commandName,
+                            key,
+                            labels,
+                            activeIndex: pageIndex,
+                        }),
+                    );
+            });
+
+            interaction.client.pageData.set(key, {
+                commandName,
+                ownerId: interaction.user.id,
+                pages,
+                labels,
+                currentPage: 0,
+                ttlMs: 10 * 60 * 1000,
+                expiresAt: Date.now() + 10 * 60 * 1000,
+                useComponentsV2: true,
+            });
+
+            await interaction.editReply({
+                flags: MessageFlags.IsComponentsV2,
+                components: [pages[0]],
+            });
+            
         } else {
             const replayStats = replayData.results.stats;
 
@@ -113,8 +240,7 @@ module.exports = {
                 }
             }
             const handling = replayData.options.handling;
-            const inputCountString = 
-`- **Placed ${formatNumber(replayStats.piecesplaced)} pieces**
+            const inputCountString = `- **Placed ${formatNumber(replayStats.piecesplaced)} pieces**
 - Held ${formatNumber(replayStats.holds)} pieces
 - Pressed ${formatNumber(replayStats.inputs)} inputs
 - ⇊ ${formatNumber(inputCounts.hardDrop)} | ⇃ ${formatNumber(inputCounts.softDrop)} | ⇄ ${formatNumber(inputCounts.hold)}
@@ -136,8 +262,7 @@ module.exports = {
             // TODO maybe add an API call here to get an actual rank
             const effectiveRank = null;
 
-            const userSuffix = `
-${formatUsername(replay.users[0].username)} ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}`;
+            const userSuffix = `\n${formatUsername(replay.users[0].username)} ${countryCodeToEmoji(replay.users[0].country)} | ${formattedDate}`;
 
             const performanceEmbed = new ContainerBuilder()
                 .setAccentColor(0x80ffc4)
