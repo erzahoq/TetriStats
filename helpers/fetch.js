@@ -1,4 +1,5 @@
 const uuid = require('uuid');
+const config = require('../config.json');
 
 // according to the API, X-Session-ID is a good idea, but also not sometimes (??) https://tetr.io/about/api/
 // i think it's smth to do with caching but we're already handling it clientside so idk
@@ -14,10 +15,15 @@ async function fetchCached(url) {
         sessionId = uuid.v4();
     }
 
+    const userAgent = config.userAgent || "TetriStats-Discord-Bot/0.1 by @erzahoq";
+    if (!config.userAgent) {
+        console.warn('config.json: `userAgent` is not set — using default; consider setting a custom User-Agent for forks.');
+    }
+
     const response = await fetch(url, {
         headers: {
             'X-Session-ID': sessionId,
-            'User-Agent': "TetriStats-Discord-Bot/0.1 by @erzahoq"
+            'User-Agent': userAgent
         }
     });
     const data = await response.json();

@@ -3,6 +3,7 @@ const { database } = require('../database.js');
 const uuid = require('uuid');
 const fs = require('fs');
 const path = require('path');
+const config = require('../config.json');
 
 let sessionId;
 
@@ -510,7 +511,12 @@ async function fetchWithCooldown(url, cooldown) {
 
     lastRequestTime = Date.now();
     try {
-        const response = await fetch(url, { headers: { 'X-Session-ID': sessionId, 'User-Agent': "TetriStats-League-Averager/0.1 by @erzahoq" } });
+        const userAgent = config.userAgent || "TetriStats-League-Averager/0.1 by @erzahoq";
+        if (!config.userAgent) {
+            console.warn('config.json: `userAgent` is not set, using default. consider setting a custom User-Agent for forks.');
+        }
+
+        const response = await fetch(url, { headers: { 'X-Session-ID': sessionId, 'User-Agent': userAgent } });
         return response;
     }
     catch (error) {
