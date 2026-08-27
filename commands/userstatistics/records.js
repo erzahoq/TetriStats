@@ -254,7 +254,7 @@ function formatRecord(record) {
 
     // Add timestamp and replay link
     formatted += `
-    - [${formatISOString(record.ts)}](https://tetr.io/#R:${record.replayid})`;
+    - [Submitted ${formatISOString(record.ts)}](https://tetr.io/#R:${record.replayid})`;
 
     return formatted;
 }
