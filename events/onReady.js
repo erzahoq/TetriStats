@@ -4,6 +4,7 @@ const { initEmojis } = require("../helpers/emojis");
 const { database } = require("../database");
 const { formatNumber } = require("../helpers/formatters");
 const { startCacheCleaner, fetchCached } = require("../helpers/fetch");
+const { lastReload, ownerId } = require("../config.json");
 
 
 module.exports = {
@@ -14,7 +15,7 @@ module.exports = {
         await initEmojis(client);
 
         status(client);
-        setInterval(() => status(client), 300000);
+        setInterval(() => status(client), 1000 * 60 * 10);
         
         checkRdAlerts(client);
         setInterval(() => checkRdAlerts(client), 1000 * 60 * 30);
@@ -23,6 +24,21 @@ module.exports = {
         setInterval(() => cleanPageData(client), 1000 * 60 * 10);
 
         startCacheCleaner();
+
+        
+        //reminder to reload league averages every month
+        if (lastReload < Date.now() - 30 * 24 * 60 * 60 * 1000) {
+            const user = await client.users.fetch(ownerId);
+            if (!user) {
+                console.warn('Could not fetch owner user to send reload reminder! Ensure config.json has an "ownerId" field');
+            }
+
+            const embed = new EmbedBuilder()
+                .setColor('#ff5622')
+                .setDescription('wee woo wee woo reminder to reload league averages at some point')
+
+            await user.send({ embeds: [embed] })
+        }
     }
 }
 

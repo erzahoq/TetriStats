@@ -2,7 +2,7 @@
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const fs = require('node:fs');
 const path = require('node:path');
-const { token, lastReload } = require('./config.json');
+const { token } = require('./config.json');
 
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
@@ -42,11 +42,6 @@ for (const file of eventFiles) {
 }
 // Log in to Discord with your client's token
 client.login(token);
-
-//reminder to reload league averages every month
-if (lastReload < Date.now() - 30 * 24 * 60 * 60 * 1000) {
-    console.log('wee woo wee woo reload league averages at some point')
-}
 
 
 //Error handling
