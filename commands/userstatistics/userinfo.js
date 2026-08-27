@@ -42,13 +42,14 @@ module.exports = {
         .addStringOption((option) =>
             option
                 .setName("user")
-                .setDescription("the TETR.IO username / Discord to search for")
-                .setRequired(true),
+                .setDescription("A specific TETR.IO username / Discord user to view")
+                .setRequired(false),
         ),
 
     async execute(interaction) {
+        const requestedUser = interaction.options.getString("user");
         const user = await getUser(
-            interaction.options.getString("user").toLowerCase(),
+            requestedUser ? requestedUser.toLowerCase() : "me",
             interaction
         ); // calls API only once
 

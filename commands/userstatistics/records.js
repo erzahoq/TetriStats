@@ -27,14 +27,15 @@ module.exports = {
         .addStringOption((option) =>
             option
                 .setName('user')
-                .setDescription('the TETR.IO username / Discord to fetch data for')
-                .setRequired(true),
+                .setDescription('A specific TETR.IO username / Discord user to view')
+                .setRequired(false),
         ),
 
     async execute(interaction) {
         await interaction.deferReply() // defer because this one can take a while (it's 10 API calls :gladeline:)
 
-        const user = await getUser(interaction.options.getString('user').toLowerCase(), interaction); // calls API only once
+        const requestedUser = interaction.options.getString('user');
+        const user = await getUser(requestedUser ? requestedUser.toLowerCase() : 'me', interaction); // calls API only once
 
         if (user === "no such user") {
             return await interaction.editReply({
