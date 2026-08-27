@@ -43,7 +43,7 @@ module.exports = {
         // Defer reply immediately to avoid timeout
         await interaction.deferReply();
 
-        const user = await getUser(interaction.options.getString('user').toLowerCase());
+        const user = await getUser(interaction.options.getString('user').toLowerCase(), interaction);
 
         if (user === "no such user") {
             return await interaction.editReply({

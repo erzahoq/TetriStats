@@ -29,7 +29,7 @@ module.exports = {
         ),
 
     async execute(interaction) {
-        const user = await getUser(interaction.options.getString('user').toLowerCase()); 
+        const user = await getUser(interaction.options.getString('user').toLowerCase(), interaction); 
 
         if (user === "no such user") {
             return await interaction.reply({

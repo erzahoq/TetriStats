@@ -3,13 +3,18 @@ const { fetchCached } = require('./fetch');
 
 // this figures out if a user entered is a Discord user ID or a TETR.IO username, and then returns the TETR.IO ID.
 
-async function getUser(user) {
+async function getUser(user, interaction) {
     user = user.trim().replace(/^@/g, ""); // remove first @ in case discord does a silly
     const discordRegex = new RegExp("[0-9]{18,}"); // regex to check if there are 18 or more numbers in the name, meaning its probably a discord username
     let isDiscordUser = false;
 
     if (discordRegex.test(user)) { // check if it matches
         isDiscordUser = true;
+    }
+
+    if (user === "me") {
+        isDiscordUser = true;
+        user = `<@${interaction.user.id}>`;
     }
 
     // Fetch the account with either discord or tetrio

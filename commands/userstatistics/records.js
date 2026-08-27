@@ -34,7 +34,7 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply() // defer because this one can take a while (it's 10 API calls :gladeline:)
 
-        const user = await getUser(interaction.options.getString('user').toLowerCase()); // calls API only once
+        const user = await getUser(interaction.options.getString('user').toLowerCase(), interaction); // calls API only once
 
         if (user === "no such user") {
             return await interaction.editReply({

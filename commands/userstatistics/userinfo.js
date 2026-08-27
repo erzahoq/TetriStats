@@ -49,6 +49,7 @@ module.exports = {
     async execute(interaction) {
         const user = await getUser(
             interaction.options.getString("user").toLowerCase(),
+            interaction
         ); // calls API only once
 
         if (user === "no such user") {
