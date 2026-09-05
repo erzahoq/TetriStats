@@ -320,7 +320,7 @@ ${userSuffix}`)
 
                 //check if zenith expert
                 const zenithMods = Array.isArray(replayData.options?.zenith_mods) ? replayData.options.zenith_mods : [];
-                const isExpertMod = mods.includes('expert') || zenithMods.includes('expert_reversed');
+                const isExpertMod = mods.includes('expert');
 
                 // time for performance strings yay!
                 const zenithVer = isExpertMod ? 'zenithEx' : 'zenith';
@@ -336,7 +336,7 @@ ${userSuffix}`)
                 await addStatComparisonField(performanceEmbed, `${zenithVer}/app`, 'Attack Per Piece', app, effectiveRank, { decimals: 3 });
                 await addStatComparisonField(performanceEmbed, `${zenithVer}/finesse`, 'Finesse', finesse, effectiveRank, { isPercentage: true });
 
-                // don't show a warning if the only mod is "expert" (including reversed)
+                // don't show a warning if the only mod is "expert"
                 if (mods.length > 0 && !(mods.length === 1 && isExpertMod)) {
                     if (isExpertMod) {
                         performanceDisclaimer = `\n-# ${getEmoji("windup_4")} These stats are based off of Expert Quick Play runs without other mods! Be wary when comparing.`;
