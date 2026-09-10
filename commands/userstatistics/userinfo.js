@@ -130,7 +130,18 @@ module.exports = {
         // ========= end anon/bot detection =========
 
         const country = countryCodeToEmoji(statData.country);
-        const avatarUrl = "https://tetr.io/res/avatar.png";
+        const defaultAvatar = "https://tetr.io/res/avatar.png";
+        let avatarUrl = `https://tetr.io/user-content/avatars/${user._id}.jpg`;
+        try {
+            if (typeof fetch === "function") {
+                //use HEAD to check existence without downloading (idk how this works tbh)
+                const avatarResponse = await fetch(avatarUrl, { method: "HEAD" });
+                if (!avatarResponse.ok) avatarUrl = defaultAvatar;
+            }
+        } catch {
+            avatarUrl = defaultAvatar;
+        }
+
         const profileExtra = `${formatConnections(statData.connections)}${formatOldUsernames(statData.oldusernames)}`.trim();
 
         const key = interaction.id;
@@ -482,7 +493,7 @@ function formatOldUsernames(usernameArray = []) {
         return "";
     }
 
-    let usernames = `- Previous usernames:`;
+    let usernames = `\n- Previous usernames:`;
     const limit = Math.min(validUsernames.length, 5);
 
     for (let i = 0; i < limit; i++) {
