@@ -22,6 +22,7 @@ const {
     formatAchievement,
     buildPageSelectRow,
     specialUserContainers,
+    getAvatarUrl,
 } = require("../../helpers/formatters");
 const { getUser } = require("../../helpers/getuser");
 const { getEmoji } = require("../../helpers/emojis");
@@ -130,8 +131,14 @@ module.exports = {
         // ========= end anon/bot detection =========
 
         const country = countryCodeToEmoji(statData.country);
-        const avatarUrl = "https://tetr.io/res/avatar.png";
-        const profileExtra = `${formatConnections(statData.connections)}${formatOldUsernames(statData.oldusernames)}`.trim();
+        const avatarUrl = getAvatarUrl(statData || user);
+
+        const connectionsText = formatConnections(statData.connections);
+        const oldUsernamesText = formatOldUsernames(statData.oldusernames);
+        let profileExtra = "";
+        if (connectionsText) profileExtra += connectionsText;
+        if (oldUsernamesText) profileExtra += (profileExtra ? "\n" : "") + oldUsernamesText;
+        profileExtra = profileExtra.trim();
 
         const key = interaction.id;
         const commandName = "user";
@@ -482,7 +489,7 @@ function formatOldUsernames(usernameArray = []) {
         return "";
     }
 
-    let usernames = `- Previous usernames:`;
+    let usernames = `\n- Previous usernames:`;
     const limit = Math.min(validUsernames.length, 5);
 
     for (let i = 0; i < limit; i++) {
