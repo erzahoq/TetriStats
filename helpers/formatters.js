@@ -502,7 +502,6 @@ function getAvatarUrl(userData) {
     if (userData?.avatar_revision !== undefined) {
         return `https://tetr.io/user-content/avatars/${userData._id}.jpg?rv=${userData.avatar_revision}`;
     }
-
     return "https://tetr.io/res/avatar.png";
 }
 
@@ -700,9 +699,7 @@ ${escapeUnderscores(username).toUpperCase()} is anonymous, which means they have
     if (role === "bot") {
         const embed = new EmbedBuilder()
             .setColor("#80bdff")
-            .setThumbnail(
-                `https://tetr.io/user-content/avatars/${statData._id}.jpg`,
-            )
+            .setThumbnail(getAvatarUrl(statData))
             .setFooter({ text: `User ID: ${statData._id}` })
             .setDescription(`
 ### __${formatUsername(username)} -> Quick Look__

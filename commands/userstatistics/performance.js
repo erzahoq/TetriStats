@@ -9,7 +9,7 @@ const {
     ApplicationIntegrationType
 } = require('discord.js');
 
-const { getEmojiOfRank, getLeagueRankColour, formatUsername, buildPageSelectRow, addStatComparisonField } = require('../../helpers/formatters');
+const { getEmojiOfRank, getLeagueRankColour, formatUsername, buildPageSelectRow, addStatComparisonField, getAvatarUrl } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
 const { fetchCached } = require('../../helpers/fetch');
 
@@ -73,11 +73,11 @@ module.exports = {
 
         const userLeagueRank = leagueData?.rank ?? null;
 
-        const leagueContainer = getContainer(user.username, 'Tetra League', user._id, !leagueData || leagueData.played === 0, userLeagueRank, leagueData?.percentile_rank);
-        const linesContainer = getContainer(user.username, '40 Lines', user._id, !linesData || linesData.played === 0, userLeagueRank, leagueData?.percentile_rank);
-        const blitzContainer = getContainer(user.username, 'Blitz', user._id, !blitzData || blitzData.played === 0, userLeagueRank, leagueData?.percentile_rank);
-        const quickplayContainer = getContainer(user.username, 'Quick Play', user._id, !zenithData, userLeagueRank, leagueData?.percentile_rank);
-        const quickplayExContainer = getContainer(user.username, 'Expert Quick Play', user._id, !zenithExData, userLeagueRank, leagueData?.percentile_rank);
+        const leagueContainer = getContainer(user.username, 'Tetra League', userStats, !leagueData || leagueData.played === 0, userLeagueRank, leagueData?.percentile_rank);
+        const linesContainer = getContainer(user.username, '40 Lines', userStats, !linesData || linesData.played === 0, userLeagueRank, leagueData?.percentile_rank);
+        const blitzContainer = getContainer(user.username, 'Blitz', userStats, !blitzData || blitzData.played === 0, userLeagueRank, leagueData?.percentile_rank);
+        const quickplayContainer = getContainer(user.username, 'Quick Play', userStats, !zenithData, userLeagueRank, leagueData?.percentile_rank);
+        const quickplayExContainer = getContainer(user.username, 'Expert Quick Play', userStats, !zenithExData, userLeagueRank, leagueData?.percentile_rank);
 
         // Prefer percentile_rank if the user is unranked ('z') or rank is missing
         const effectiveRank = (leagueData?.rank && leagueData.rank !== 'z')
@@ -176,7 +176,7 @@ module.exports = {
                         )
                         .setThumbnailAccessory(
                             new ThumbnailBuilder()
-                                .setURL(`https://tetr.io/user-content/avatars/${user._id}.jpg`)
+                                .setURL(getAvatarUrl(userStats))
                         )
                 );
 
@@ -226,7 +226,7 @@ module.exports = {
     },
 };
 
-function getContainer(username, mode, userId, recordNotExists, userRank, userPercentile) {
+function getContainer(username, mode, userData, recordNotExists, userRank, userPercentile) {
     let statusLine;
     if (recordNotExists) {
         statusLine = `Hasn't played any ${mode} games yet!`;
@@ -254,7 +254,7 @@ function getContainer(username, mode, userId, recordNotExists, userRank, userPer
                 )
                 .setThumbnailAccessory(
                     new ThumbnailBuilder()
-                        .setURL(`https://tetr.io/user-content/avatars/${userId}.jpg`)
+                        .setURL(getAvatarUrl(userData))
                 )
         );
 

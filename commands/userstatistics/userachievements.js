@@ -13,7 +13,7 @@ const {
     SeparatorBuilder,
 } = require("discord.js");
 
-const { formatUsername, formatAchievement, buildPageSelectRow, getClosestRank, formatAchievementVal, formatNumber, formatISOString, getEmojiOfRank, getNextRank, getLeagueStatThresholds, getLeagueRankColour } = require('../../helpers/formatters');
+const { formatUsername, formatAchievement, buildPageSelectRow, getClosestRank, formatAchievementVal, formatNumber, formatISOString, getEmojiOfRank, getNextRank, getLeagueStatThresholds, getLeagueRankColour, getAvatarUrl } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
 const { getEmoji } = require('../../helpers/emojis');
 const { fetchCached } = require('../../helpers/fetch');
@@ -146,7 +146,7 @@ module.exports = {
                                     )
                                     .setThumbnailAccessory(
                                         new ThumbnailBuilder().setURL(
-                                            `https://tetr.io/user-content/avatars/${user._id}.jpg`,
+                                            getAvatarUrl(user),
                                         ),
                                     ),
                             ),
@@ -175,7 +175,7 @@ module.exports = {
                                 )
                                 .setThumbnailAccessory(
                                     new ThumbnailBuilder().setURL(
-                                        `https://tetr.io/user-content/avatars/${user._id}.jpg`,
+                                        getAvatarUrl(user),
                                     ),
                                 ),
                         ),

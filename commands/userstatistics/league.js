@@ -9,7 +9,7 @@ const {
     MessageFlags
 } = require('discord.js');
 
-const { formatNumber, getLeagueRankColour, getEmojiOfRank, formatUsername, buildPageSelectRow } = require('../../helpers/formatters');
+const { formatNumber, getLeagueRankColour, getEmojiOfRank, formatUsername, buildPageSelectRow, getAvatarUrl } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
 const { getEmoji } = require('../../helpers/emojis');
 const { fetchCached } = require('../../helpers/fetch');
@@ -204,7 +204,7 @@ function createLeagueContainer(leagueData, user, past = 0) {
         .addSectionComponents(
             new SectionBuilder()
                 .addTextDisplayComponents(new TextDisplayBuilder().setContent(description))
-                .setThumbnailAccessory(new ThumbnailBuilder().setURL(`https://tetr.io/user-content/avatars/${user._id}.jpg`))
+                .setThumbnailAccessory(new ThumbnailBuilder().setURL(getAvatarUrl(user)))
         );
     
     return container;

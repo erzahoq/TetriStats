@@ -22,6 +22,7 @@ const {
     formatAchievement,
     buildPageSelectRow,
     specialUserContainers,
+    getAvatarUrl,
 } = require("../../helpers/formatters");
 const { getUser } = require("../../helpers/getuser");
 const { getEmoji } = require("../../helpers/emojis");
@@ -130,19 +131,14 @@ module.exports = {
         // ========= end anon/bot detection =========
 
         const country = countryCodeToEmoji(statData.country);
-        const defaultAvatar = "https://tetr.io/res/avatar.png";
-        let avatarUrl = `https://tetr.io/user-content/avatars/${user._id}.jpg`;
-        try {
-            if (typeof fetch === "function") {
-                //use HEAD to check existence without downloading (idk how this works tbh)
-                const avatarResponse = await fetch(avatarUrl, { method: "HEAD" });
-                if (!avatarResponse.ok) avatarUrl = defaultAvatar;
-            }
-        } catch {
-            avatarUrl = defaultAvatar;
-        }
+        const avatarUrl = getAvatarUrl(statData || user);
 
-        const profileExtra = `${formatConnections(statData.connections)}${formatOldUsernames(statData.oldusernames)}`.trim();
+        const connectionsText = formatConnections(statData.connections);
+        const oldUsernamesText = formatOldUsernames(statData.oldusernames);
+        let profileExtra = "";
+        if (connectionsText) profileExtra += connectionsText;
+        if (oldUsernamesText) profileExtra += (profileExtra ? "\n" : "") + oldUsernamesText;
+        profileExtra = profileExtra.trim();
 
         const key = interaction.id;
         const commandName = "user";
