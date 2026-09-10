@@ -1,71 +1,55 @@
-﻿# TetriStats
-## TETR.IO Stats and Performance Viewer in Discord
+# RNG gamble installation
 
-**TetriStats** is a Discord bot designed to give statistics, replay analysis, records, and more for [TETR.IO](https://tetr.io/) players. TetriStats gives live TETR.IO data straight to you and your server, whether you're a casual or high-level player.
+Copy the files into the matching locations in the bot project:
 
-Built with ❤️ for the TETR.IO community, by [@erzahoq](https://github.com/erzahoq) and [@monkeyswithpie](https://github.com/monkeyswithpie)
+```text
+commands/xp/gamble.js
+commands/xp/leaderboard.js
+helpers/rngGamble.js
+data/rngBadges.json
+data/rngRanks.bin
+scripts/buildRngRanks.js
+scripts/validateRngBadges.js
+```
 
-## Features
+No new `PATHS` entries are required. The existing `PATHS.data.gambleStats`,
+`PATHS.data.gambleCooldowns`, `PATHS.data.gambleReminders`, and `PATHS.data.xp`
+entries are reused.
 
-## Player Statistics
+`rngRanks.bin` is the precomputed rarity rank for every integer from 0 through
+1,000,000. It is loaded once and is about 4 MB. Do not parse it as JSON.
 
-View user profiles with detailed info, including PPS, VS score, TR, displayed achievements, and more!
+If badge rules or EP values change, rebuild the table from the project root:
 
-![Image of user stats from the bot](github-images/user.png)
+```bash
+node scripts/buildRngRanks.js
+```
 
-## Replay Analysis
+You can compare the implemented badge rules against the probabilities in the
+badge data with:
 
-Upload .ttr replay files and get a breakdown of the replay, alongside a performance report for each statistic.
-TetriStats compares replay statistics with **nearly 12,000 users** to provide up-to-date rank data.
+```bash
+node scripts/validateRngBadges.js
+```
 
-![Example of performance breakdown in a replay](github-images/replay.png)
+The existing gamble stats remain backwards-compatible. Existing fields are
+preserved and these fields are added as users roll:
 
-## Tetra League
-### Tetra League Statistics
+```text
+lastNumber
+lastTopPercent
+bestNumber
+bestTopPercent
+rarestNumber
+uniqueBadges
+badges
+```
 
-TetriStats allows you to find users and view their league statistics, including TR, rank, and past season info.
+The leaderboard adds three gamble categories:
 
-![Example of League statistics (unranked)](github-images/leagueunranked.png)
-![Example of League statistics (ranked)](github-images/leagueranked.png)
+- Most XP Won From Gamble (`totalXP`)
+- Largest Win From Gamble (`best`, already tracked)
+- Most Gamble Badges (`uniqueBadges`)
 
-### Tetra League RD Alerts
-
-Enable alerts from TetriStats, allowing it to automatically DM you when your Rating Deviation starts increasing!
-
-![User enabling RD alerts](github-images/rdalert.png)
-![User recieving RD alerts](github-images/rdrising.png)
-
-## Player Performance
-
-Use the `/performance` command and get rated on each gamemode, and where to improve!
-
-![Performance command example](github-images/performance.png)
-
-## ...And Much More!
-
-- See achievements of a user with `/userachievements`, and view specific achievement statistics
-- Compare two users with `/compare`
-- View general server stats with `/server-stats`
-- View recent world records with `/news-top`
-
-## Installation & Usage
-TetriStats can be added to both your user applications and as a server bot!
-
-To add TetriStats:
-
-[➡️ Click here to add TetriStats](https://discord.com/oauth2/authorize?client_id=1277041428274479124)
-
-After inviting, try commands like /user, /compare, /league, or /performance to get started!
-## Links
-
-- [GitHub](https://github.com/erzahoq/TetriStats)
-- [Tetra Channel](https://ch.tetr.io/)
-- [TETR.IO](https://tetr.io)
-
-## Credits
-
-- Created by [@erzahoq](https://github.com/erzahoq) and [@monkeyswithpie](https://github.com/monkeyswithpie)
-- Uses the [TETR.IO public API](https://tetr.io/about/api/)
-- Game and data provided by osk, creator of TETR.IO
-
-
+The cooldown is consumed when `/gamble` is invoked, matching the original
+command's behavior. The user then has 60 seconds to press the lever.

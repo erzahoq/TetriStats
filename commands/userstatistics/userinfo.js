@@ -130,6 +130,8 @@ module.exports = {
         // ========= end anon/bot detection =========
 
         const country = countryCodeToEmoji(statData.country);
+        const avatarUrl = "https://tetr.io/res/avatar.png";
+        const profileExtra = `${formatConnections(statData.connections)}${formatOldUsernames(statData.oldusernames)}`.trim();
 
         const key = interaction.id;
         const commandName = "user";
@@ -150,22 +152,25 @@ module.exports = {
 ${statData.supporter ? `  - Has supporter${starConvert(statData.supporter_tier)}${statData.bio ? `\n> -  ${statData.bio}` : ""}` : ""}`),
                     )
                     .setThumbnailAccessory(
-                        new ThumbnailBuilder().setURL(`https://tetr.io/user-content/avatars/${user._id}.jpg`),
+                        new ThumbnailBuilder().setURL(avatarUrl),
                     ),
             )
-            .addSeparatorComponents(new SeparatorBuilder())
-            .addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(`${formatConnections(statData.connections)}
-${formatOldUsernames(statData.oldusernames)}`),
-            )
-            .addActionRowComponents(
-                buildPageSelectRow({
-                    commandName,
-                    key,
-                    labels,
-                    activeIndex: 0,
-                }),
+            .addSeparatorComponents(new SeparatorBuilder());
+
+        if (profileExtra) {
+            profilePage.addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(profileExtra),
             );
+        }
+
+        profilePage.addActionRowComponents(
+            buildPageSelectRow({
+                commandName,
+                key,
+                labels,
+                activeIndex: 0,
+            }),
+        );
             
 
         const generalPage = new ContainerBuilder()
@@ -178,7 +183,7 @@ ${formatOldUsernames(statData.oldusernames)}`),
 ${formatGamesPlayed(statData.gamesplayed, statData.gameswon, statData.gametime) || ""}
     `))
                     .setThumbnailAccessory(
-                        new ThumbnailBuilder().setURL(`https://tetr.io/user-content/avatars/${user._id}.jpg`),
+                        new ThumbnailBuilder().setURL(avatarUrl),
                     ),
             )
             .addActionRowComponents(
@@ -199,7 +204,7 @@ ${formatGamesPlayed(statData.gamesplayed, statData.gameswon, statData.gametime) 
 ${formatLeaguePreview(summaryData, country)} ${formatZenith(summaryData, country)} ${formatZenith(summaryData, country, true)} ${format40Lines(summaryData, country)} ${formatBlitz(summaryData, country)} ${formatZen(summaryData)}`),
                     )
                     .setThumbnailAccessory(
-                        new ThumbnailBuilder().setURL(`https://tetr.io/user-content/avatars/${user._id}.jpg`),
+                        new ThumbnailBuilder().setURL(avatarUrl),
                     ),
             )
             .addActionRowComponents(
