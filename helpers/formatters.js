@@ -499,9 +499,10 @@ function formatUsername(name, asLink = true) {
 }
 
 function getAvatarUrl(userData) {
-    if (userData?.avatar_revision !== undefined) {
+    if (userData?.avatar_revision > 0) {
         return `https://tetr.io/user-content/avatars/${userData._id}.jpg?rv=${userData.avatar_revision}`;
     }
+
     return "https://tetr.io/res/avatar.png";
 }
 

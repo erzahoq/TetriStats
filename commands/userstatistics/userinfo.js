@@ -131,7 +131,9 @@ module.exports = {
         // ========= end anon/bot detection =========
 
         const country = countryCodeToEmoji(statData.country);
-        const avatarUrl = getAvatarUrl(statData || user);
+        const avatarUrl = getAvatarUrl(statData);
+        console.log(statData.avatar_revision);
+        console.log(avatarUrl);       
 
         const connectionsText = formatConnections(statData.connections);
         const oldUsernamesText = formatOldUsernames(statData.oldusernames);

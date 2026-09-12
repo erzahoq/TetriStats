@@ -42,7 +42,8 @@ async function getUser(user, interaction) {
 
         return {
             "_id": stats.data.users[0]._id,
-            "username": stats.data.users[0].username
+            "username": stats.data.users[0].username,
+            "avatar_revision": stats.data.users[0].avatar_revision
         }; // return tetrio small info
     } 
     const stats = await fetchCached(`https://ch.tetr.io/api/users/${user}`);
@@ -57,7 +58,8 @@ async function getUser(user, interaction) {
 
     return {
         "_id": stats.data._id,
-        "username": stats.data.username
+        "username": stats.data.username,
+        "avatar_revision": stats.data.avatar_revision
     }; // return tetrio small info
     
 }
