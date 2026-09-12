@@ -60,6 +60,8 @@ module.exports = {
 
         let achs = await fetchCached(`https://ch.tetr.io/api/users/${user._id}/summaries/achievements`);
         let league = await fetchCached(`https://ch.tetr.io/api/users/${user._id}/summaries/league`);
+        const profileData = await fetchCached(`https://ch.tetr.io/api/users/${user._id}`);
+        const avatarData = profileData?.success && profileData.data ? profileData.data : user;
 
         achs = achs.data;
         league = league.data;
@@ -146,7 +148,7 @@ module.exports = {
                                     )
                                     .setThumbnailAccessory(
                                         new ThumbnailBuilder().setURL(
-                                            getAvatarUrl(user),
+                                            getAvatarUrl(avatarData),
                                         ),
                                     ),
                             ),
@@ -175,7 +177,7 @@ module.exports = {
                                 )
                                 .setThumbnailAccessory(
                                     new ThumbnailBuilder().setURL(
-                                        getAvatarUrl(user),
+                                        getAvatarUrl(avatarData),
                                     ),
                                 ),
                         ),

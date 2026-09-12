@@ -50,6 +50,8 @@ module.exports = {
         }
 
         const records = await fetchAll(user._id)
+        const profileData = await fetchCached(`https://ch.tetr.io/api/users/${user._id}`);
+        const avatarData = profileData?.success && profileData.data ? profileData.data : user;
 
         // mappings and vars
         const gametypeMapping = {
@@ -97,7 +99,7 @@ module.exports = {
                     )
                     .setThumbnailAccessory(
                         new ThumbnailBuilder()
-                            .setURL(getAvatarUrl(user))
+                            .setURL(getAvatarUrl(avatarData))
                     )
             );
 

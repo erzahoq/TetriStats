@@ -56,14 +56,17 @@ module.exports = {
         const leagueData = data.data;
         const past = leagueData.past;
 
-        const currentContainer = createLeagueContainer(leagueData, user);
+        const profileData = await fetchCached(`https://ch.tetr.io/api/users/${user._id}`);
+        const avatarData = profileData?.success && profileData.data ? profileData.data : user;
+
+        const currentContainer = createLeagueContainer(leagueData, avatarData);
         const pages = [currentContainer];
 
         const seasonNumbers = Object.keys(past).map(Number).sort((a, b) => a - b);
         if (past && Object.keys(past).length !== 0) {
             for (const season of seasonNumbers) {
                 const seasonData = past[season];
-                const thisSeasonContainer = createLeagueContainer(seasonData, user, season);
+                const thisSeasonContainer = createLeagueContainer(seasonData, avatarData, season);
 
                 pages.push(thisSeasonContainer);
             }
