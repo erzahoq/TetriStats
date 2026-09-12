@@ -73,10 +73,15 @@ module.exports = {
 
         // Parse the file as JSON
         const replay = JSON.parse(replayDataBuffer.toString());
-        if (!replay || !replay.id || !replay.users) { // some easy checks to see if common replay file structure is there
-            return interaction.editReply({ content: 'The uploaded file does not appear to be a valid TETR.IO replay.' });
-            // note this doesn't technically prevent uploading malformed files
-            // with the right structure but it's a start and should catch most user errors
+        if (
+            !replay ||
+            !Array.isArray(replay.users) ||
+            !replay.replay ||
+            !replay.gamemode
+        ) {
+            return interaction.editReply({
+                content: 'The uploaded file does not appear to be a valid TETR.IO replay.'
+            });
         }
 
         const replayData = replay.replay;
