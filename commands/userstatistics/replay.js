@@ -328,22 +328,22 @@ ${userSuffix}`)
                 }
             }
             const handling = replayData.options.handling;
-            const inputCountString = `- **Placed ${formatNumber(replayStats.piecesplaced)} pieces**
-- Held ${formatNumber(replayStats.holds)} pieces
-- Pressed ${formatNumber(replayStats.inputs)} inputs
-- ⇊ ${formatNumber(inputCounts.hardDrop)} | ⇃ ${formatNumber(inputCounts.softDrop)} | ⇄ ${formatNumber(inputCounts.hold)}
-- ← ${formatNumber(inputCounts.moveLeft)} | → ${formatNumber(inputCounts.moveRight)}
-- ↶ ${formatNumber(inputCounts.rotateCCW)} | ↷ ${formatNumber(inputCounts.rotateCW)} | ⟳ ${formatNumber(inputCounts.rotate180)}
-- ${handling.arr}F ARR | ${handling.das}F DAS | ${handling.sdf === 41 ? "∞" : handling.sdf}x SDF
-- **Cleared ${formatNumber(replayStats.lines)} lines**
-- ${replayStats.clears.singles} singles (${replayStats.clears.tspinsingles ?? 0} spins) 
-- ${replayStats.clears.doubles} doubles (${replayStats.clears.tspindoubles ?? 0} spins) 
-- ${replayStats.clears.triples} triples (${replayStats.clears.tspintriples ?? 0} spins)
-- ${replayStats.clears.quads} quads${finesse === -1 ? '' : `
-- **Had ${formatNumber(finesse * 100, 2)}% finesse**
-- Reached a ${replayStats.finesse.combo} chain
-- Made ${replayStats.finesse.faults} faults
-- Placed ${replayStats.finesse.perfectpieces} pieces perfectly`}`;
+            const inputCountString = `${getEmoji("top")}**Placed ${formatNumber(replayStats.piecesplaced)} pieces**
+${getEmoji("mid")}Held ${formatNumber(replayStats.holds)} pieces
+${getEmoji("mid")}Pressed ${formatNumber(replayStats.inputs)} inputs
+${getEmoji("mid")}⇊ ${formatNumber(inputCounts.hardDrop)} | ⇃ ${formatNumber(inputCounts.softDrop)} | ⇄ ${formatNumber(inputCounts.hold)}
+${getEmoji("mid")}← ${formatNumber(inputCounts.moveLeft)} | → ${formatNumber(inputCounts.moveRight)}
+${getEmoji("mid")}↶ ${formatNumber(inputCounts.rotateCCW)} | ↷ ${formatNumber(inputCounts.rotateCW)} | ⟳ ${formatNumber(inputCounts.rotate180)}
+${getEmoji("mid")}${handling.arr}F ARR | ${handling.das}F DAS | ${handling.sdf === 41 ? "∞" : handling.sdf}x SDF
+${getEmoji("top")}**Cleared ${formatNumber(replayStats.lines)} lines**
+${getEmoji("mid")}${replayStats.clears.singles} singles (${(replayStats.clears.tspinsingles ?? 0) + (replayStats.clears.minitspinsingles ?? 0)} spins) 
+${getEmoji("mid")}${replayStats.clears.doubles} doubles (${(replayStats.clears.tspindoubles ?? 0) + (replayStats.clears.minitspindoubles ?? 0)} spins) 
+${getEmoji("mid")}${replayStats.clears.triples} triples (${(replayStats.clears.tspintriples?? 0) + (replayStats.clears.minitspintriples ?? 0)} spins)
+${getEmoji("mid")}${replayStats.clears.quads} quads${finesse === -1 ? '' : `
+${getEmoji("top")}**Had ${formatNumber(finesse * 100, 2)}% finesse**
+${getEmoji("mid")}Reached a ${replayStats.finesse.combo} chain
+${getEmoji("mid")}Made ${replayStats.finesse.faults} faults
+${getEmoji("mid")}Placed ${replayStats.finesse.perfectpieces} pieces perfectly`}`;
 
             let performanceDisclaimer = "";
             // skips the "compared to rank" line for performance tab
@@ -403,7 +403,7 @@ ${userSuffix}`)
                 const pps = replayData.results.aggregatestats.pps;
                 const apm = replayData.results.aggregatestats.apm;
                 const climbSpeed = zenithStats.rank;
-                const btb = replayStats.topbtb;
+                const btb = replayStats.topbtb - 1;
                 const app = replayStats.garbage.attack / replayStats.piecesplaced;
 
                 //check if zenith expert
@@ -445,17 +445,17 @@ ${userSuffix}`)
                             new TextDisplayBuilder()
                                 .setContent(`### __${replayLinkFormat} -> Overview__
 ${modString}
-- **Finished in ${framesToTime(replayData.frames)}**
-- ${formatNumber(pps,2)} PPS
-- ${formatNumber(apm,2)} APM
-- ${formatNumber(replayData.results.aggregatestats.vsscore,2)} VS Score
-- ${formatNumber(finesse * 100, 2)}% Finesse | ${replayStats.finesse.faults} Faults
-- **Climbed ${formatNumber(height, 1)}m (Floor ${zenithStats.floor})**
-- Reached ${formatNumber(zenithStats.peakrank, 2)} climb speed, averaged ${formatNumber(zenithStats.rank, 2)}
-- Reached ${(replayStats.topbtb) - 1} B2B
-- **KO'd ${replayStats.kills} players**
-- Sent ${formatNumber(garbageStats.sent)} lines 
-- Received ${formatNumber(garbageStats.received)} lines
+${getEmoji("top")}**Finished in ${framesToTime(replayData.frames)}**
+${getEmoji("mid")}${formatNumber(pps,2)} PPS
+${getEmoji("mid")}${formatNumber(apm,2)} APM
+${getEmoji("mid")}${formatNumber(replayData.results.aggregatestats.vsscore,2)} VS Score
+${getEmoji("mid")}${formatNumber(finesse * 100, 2)}% Finesse | ${replayStats.finesse.faults} Faults
+${getEmoji("top")}**Climbed ${formatNumber(height, 1)}m (Floor ${zenithStats.floor})**
+${getEmoji("mid")}Reached ${formatNumber(zenithStats.peakrank, 2)} climb speed, averaged ${formatNumber(zenithStats.rank, 2)}
+${getEmoji("mid")}Reached ${(replayStats.topbtb) - 1} B2B
+${getEmoji("top")}**KO'd ${replayStats.kills} players**
+${getEmoji("mid")}Sent ${formatNumber(garbageStats.sent)} lines 
+${getEmoji("mid")}Received ${formatNumber(garbageStats.received)} lines
 ${userSuffix}`)
                         ),
 
@@ -465,14 +465,14 @@ ${userSuffix}`)
                             new TextDisplayBuilder()
                                 .setContent(`### __${replayLinkFormat} -> Full__
 ${inputCountString}
-- **Sent ${formatNumber(garbageStats.sent)} garbage lines**
-- Recieved ${formatNumber(garbageStats.received)}
-- Cleared ${formatNumber(garbageStats.cleared)}
-- Generated ${formatNumber(garbageStats.attack)} total attack
-- Sent a ${formatNumber(garbageStats.maxspike)} spike
-- **Scored ${formatNumber(stats.score)} points**
-- Reached a ${stats.topcombo} combo
-- Reached a ${(stats.topbtb) - 1} Back-to-Back chain
+${getEmoji("top")}**Sent ${formatNumber(garbageStats.sent)} garbage lines**
+${getEmoji("mid")}Recieved ${formatNumber(garbageStats.received)}
+${getEmoji("mid")}Cleared ${formatNumber(garbageStats.cleared)}
+${getEmoji("mid")}Generated ${formatNumber(garbageStats.attack)} total attack
+${getEmoji("mid")}Sent a ${formatNumber(garbageStats.maxspike)} spike
+${getEmoji("top")}**Scored ${formatNumber(stats.score)} points**
+${getEmoji("mid")}Reached a ${stats.topcombo} combo
+${getEmoji("mid")}Reached a ${(stats.topbtb) - 1} Back-to-Back chain
 ${userSuffix}`)
                         ),
                     new ContainerBuilder()
@@ -504,11 +504,11 @@ ${splitFormat(zenithStats.splits)}
                         .addTextDisplayComponents(
                             new TextDisplayBuilder()
                                 .setContent(`### __${replayLinkFormat} -> Overview__
-- **Finished in ${formatPreciseTime(time)}**
-- ${formatNumber(pps, 2)} PPS
-- ${formatNumber(kpp, 2)} Keys Per Piece
-- ${formatNumber(kps, 2)} Keys Per Second
-- ${formatNumber(finesse * 100, 2)}% Finesse | ${replayStats.finesse.faults} Faults
+${getEmoji("top")}**Finished in ${formatPreciseTime(time)}**
+${getEmoji("mid")}${formatNumber(pps, 2)} PPS
+${getEmoji("mid")}${formatNumber(kpp, 2)} Keys Per Piece
+${getEmoji("mid")}${formatNumber(kps, 2)} Keys Per Second
+${getEmoji("mid")}${formatNumber(finesse * 100, 2)}% Finesse | ${replayStats.finesse.faults} Faults
 ${userSuffix}
     `)
                         ),
@@ -517,8 +517,8 @@ ${userSuffix}
                         .addTextDisplayComponents(
                             new TextDisplayBuilder()
                                 .setContent(`### __${replayLinkFormat} -> Full__
-    ${inputCountString}
-    ${userSuffix}`)
+${inputCountString}
+${userSuffix}`)
                         ),
                 ]
             } else if (replay.gamemode === 'blitz') {
@@ -537,10 +537,10 @@ ${userSuffix}
                         .addTextDisplayComponents(
                             new TextDisplayBuilder()
                                 .setContent(`### __${replayLinkFormat} -> Overview__
-- **Scored ${formatNumber(score)} points**
-- ${formatNumber(pps, 2)} PPS
-- ${formatNumber(spp, 2)} Points Per Piece
-- ${formatNumber(finesse * 100, 2)}% Finesse | ${replayStats.finesse.faults} Faults
+${getEmoji("top")}**Scored ${formatNumber(score)} points**
+${getEmoji("mid")}${formatNumber(pps, 2)} PPS
+${getEmoji("mid")}${formatNumber(spp, 2)} Points Per Piece
+${getEmoji("mid")}${formatNumber(finesse * 100, 2)}% Finesse | ${replayStats.finesse.faults} Faults
 ${userSuffix}
     `)
                         ),
@@ -550,8 +550,8 @@ ${userSuffix}
                         .addTextDisplayComponents(
                             new TextDisplayBuilder()
                                 .setContent(`### __${replayLinkFormat} -> Full__
-    ${inputCountString}
-    ${userSuffix}`)
+${inputCountString}
+${userSuffix}`)
                         ),
                 ]              
             

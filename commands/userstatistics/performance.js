@@ -126,7 +126,7 @@ module.exports = {
             await addStatComparisonField(quickplayContainer, 'zenith/pps', 'Pieces Per Second', zenithData.aggregatestats.pps, effectiveRank, { decimals: 3 });
             await addStatComparisonField(quickplayContainer, 'zenith/apm', 'Attack Per Minute', zenithData.aggregatestats.apm, effectiveRank);
             await addStatComparisonField(quickplayContainer, 'zenith/climbSpeed', 'Average Climb Speed', zenithData.stats.zenith.rank, effectiveRank, { decimals: 3 });
-            await addStatComparisonField(quickplayContainer, 'zenith/btb', 'Highest Back-to-Back', zenithData.stats.topbtb, effectiveRank, { decimals: 0 });
+            await addStatComparisonField(quickplayContainer, 'zenith/btb', 'Highest Back-to-Back', zenithData.stats.topbtb - 1, effectiveRank, { decimals: 0 });
             await addStatComparisonField(quickplayContainer, 'zenith/app', 'Attack Per Piece', (zenithData.stats.garbage.attack/zenithData.stats.piecesplaced), effectiveRank, { decimals: 3 });
             await addStatComparisonField(quickplayContainer, 'zenith/finesse', 'Finesse', (zenithData.stats.finesse.perfectpieces / zenithData.stats.piecesplaced), effectiveRank, { isPercentage: true });
         }
@@ -136,7 +136,7 @@ module.exports = {
             await addStatComparisonField(quickplayExContainer, 'zenithEx/pps', 'Pieces Per Second', zenithExData.aggregatestats.pps, effectiveRank, { decimals: 3 });
             await addStatComparisonField(quickplayExContainer, 'zenithEx/apm', 'Attack Per Minute', zenithExData.aggregatestats.apm, effectiveRank);
             await addStatComparisonField(quickplayExContainer, 'zenithEx/climbSpeed', 'Average Climb Speed', zenithExData.stats.zenith.rank, effectiveRank, { decimals: 3 });
-            await addStatComparisonField(quickplayExContainer, 'zenithEx/btb', 'Highest Back-to-Back', zenithExData.stats.topbtb, effectiveRank, { decimals: 0 });
+            await addStatComparisonField(quickplayExContainer, 'zenithEx/btb', 'Highest Back-to-Back', zenithExData.stats.topbtb - 1, effectiveRank, { decimals: 0 });
             await addStatComparisonField(quickplayExContainer, 'zenithEx/app', 'Attack Per Piece', (zenithExData.stats.garbage.attack/zenithExData.stats.piecesplaced), effectiveRank, { decimals: 3 });
             await addStatComparisonField(quickplayExContainer, 'zenithEx/finesse', 'Finesse', (zenithExData.stats.finesse.perfectpieces / zenithExData.stats.piecesplaced), effectiveRank, { isPercentage: true });
         }
