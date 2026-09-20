@@ -162,7 +162,7 @@ module.exports = {
             const seenUsers = [];
             for (let i = 0; i < Math.min(15, lb.length); i++) { //just in case lb has less than 15 entries
                 if (ach.pair && seenUsers.includes(lb[i].u.username)) continue;
-                lbText += `- `
+                lbText += i === 0 ? `${getEmoji('top')}` : `${getEmoji('mid')}`;
 
                 // not diamond tier; mainly for swamp water aches :P
                 if (lb[i].v < cutoffs.diamond) {
