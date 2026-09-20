@@ -14,7 +14,6 @@ const {
     formatNumber,
     countryCodeToEmoji,
     formatPreciseTime,
-    formatLongTime,
     getEmojiOfRank,
     formatISOString,
     calculateLevel,
@@ -23,6 +22,7 @@ const {
     buildPageSelectRow,
     specialUserContainers,
     getAvatarUrl,
+    formatGamesPlayed
 } = require("../../helpers/formatters");
 const { getUser } = require("../../helpers/getuser");
 const { getEmoji } = require("../../helpers/emojis");
@@ -118,7 +118,7 @@ module.exports = {
                 if (counts[k])
                     parts.push(`${getEmoji("ach_" + names[k])} ${counts[k]}`);
             }
-            return parts.length ? "\n  - " + parts.join(", ") : "";
+            return parts.length ? "\n" + getEmoji("mid") + parts.join(", ") : "";
         })();
 
         // TODO : move these to helper file and make them more generic, so they can be used in other commands too
@@ -131,9 +131,7 @@ module.exports = {
         // ========= end anon/bot detection =========
 
         const country = countryCodeToEmoji(statData.country);
-        const avatarUrl = getAvatarUrl(statData);
-        console.log(statData.avatar_revision);
-        console.log(avatarUrl);       
+        const avatarUrl = getAvatarUrl(statData);     
 
         const connectionsText = formatConnections(statData.connections);
         const oldUsernamesText = formatOldUsernames(statData.oldusernames);
@@ -146,19 +144,21 @@ module.exports = {
         const commandName = "user";
         const labels = ["Profile", "General", "Gameplay"];
 
+        const bioText = statData.bio ? `> ${statData.bio}\n` : "";
+        const levelText = `Level ${formatNumber(Math.floor(calculateLevel(statData.xp)))}`;
+        const friendText = statData.friend_count > 0 ? (statData.friend_count !== 1 ? `\nHas ${formatNumber(statData.friend_count)} friends` : `\nHas 1 friend`) : "";
+        const supporterText = statData.supporter ? `\nSupporter${starConvert(statData.supporter_tier)}` : "";
+        const displayedAchievements = formatDisplayedAchs(statData.achievements, ach);
+        const gameStats = formatGamesPlayed(statData.gamesplayed, statData.gameswon, statData.gametime);
+
         const profilePage = new ContainerBuilder()
             .setAccentColor(0x86c9fc)
             .addSectionComponents(
                 new SectionBuilder()
                     .addTextDisplayComponents(
                         new TextDisplayBuilder().setContent(`### __${formatUsername(user.username)} -> Quick Look__
-
-- About:
-- Account created ${formatISOString(statData.ts)}
-- Level ${formatNumber(Math.floor(calculateLevel(statData.xp)))} (${formatNumber(Math.floor(statData.xp))} XP)
-- ${country}
-- Has ${formatNumber(statData.friend_count)} friends
-${statData.supporter ? `  - Has supporter${starConvert(statData.supporter_tier)}${statData.bio ? `\n> -  ${statData.bio}` : ""}` : ""}`),
+${bioText}${levelText}${friendText}${supporterText}
+Account created ${formatISOString(statData.ts)}`),
                     )
                     .setThumbnailAccessory(
                         new ThumbnailBuilder().setURL(avatarUrl),
@@ -180,29 +180,44 @@ ${statData.supporter ? `  - Has supporter${starConvert(statData.supporter_tier)}
                 activeIndex: 0,
             }),
         );
-            
 
         const generalPage = new ContainerBuilder()
             .setAccentColor(0x80bdff)
             .addSectionComponents(
                 new SectionBuilder()
                     .addTextDisplayComponents(
-                        new TextDisplayBuilder().setContent(`### __${formatUsername(user.username)} -> Quick Look -> General__\n
-- Has ${unlockedCount} achievements${medalLine}${statData.ar > 0 ? `\n  - Totalling ${statData.ar} Achievement Rating` : ""}${formatBadges(badges)} ${formatDisplayedAchs(statData.achievements, ach)}
-${formatGamesPlayed(statData.gamesplayed, statData.gameswon, statData.gametime) || ""}
-    `))
+                        new TextDisplayBuilder().setContent(`### __${formatUsername(user.username)} -> Quick Look -> General__
+${getEmoji("top")}Has **${unlockedCount} achievements**${medalLine}${statData.ar > 0 ? `\n${getEmoji("mid")}Totalling **${statData.ar} Achievement Rating**` : ""}${formatBadges(badges)}`),
+                    )
                     .setThumbnailAccessory(
                         new ThumbnailBuilder().setURL(avatarUrl),
                     ),
-            )
-            .addActionRowComponents(
-                buildPageSelectRow({
-                    commandName,
-                    key,
-                    labels,
-                    activeIndex: 1,
-                }),
             );
+
+        if (displayedAchievements) {
+            generalPage.addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(displayedAchievements),
+            );
+        }
+
+        if (displayedAchievements && gameStats) {
+            generalPage.addSeparatorComponents(new SeparatorBuilder());
+        }
+
+        if (gameStats) {
+            generalPage.addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(gameStats),
+            );
+        }
+
+        generalPage.addActionRowComponents(
+            buildPageSelectRow({
+                commandName,
+                key,
+                labels,
+                activeIndex: 1,
+            }),
+        );
 
         const gameplayPage = new ContainerBuilder()
             .setAccentColor(0x80bdff)
@@ -210,7 +225,7 @@ ${formatGamesPlayed(statData.gamesplayed, statData.gameswon, statData.gametime) 
                 new SectionBuilder()
                     .addTextDisplayComponents(
                         new TextDisplayBuilder().setContent(`### __${formatUsername(user.username)} -> Quick Look -> Gameplay__
-${formatLeaguePreview(summaryData, country)} ${formatZenith(summaryData, country)} ${formatZenith(summaryData, country, true)} ${format40Lines(summaryData, country)} ${formatBlitz(summaryData, country)} ${formatZen(summaryData)}`),
+${formatLeaguePreview(summaryData)} ${formatZenith(summaryData, country)} ${formatZenith(summaryData, country, true)} ${format40Lines(summaryData, country)} ${formatBlitz(summaryData, country)} ${formatZen(summaryData)}`),
                     )
                     .setThumbnailAccessory(
                         new ThumbnailBuilder().setURL(avatarUrl),
@@ -248,32 +263,11 @@ ${formatLeaguePreview(summaryData, country)} ${formatZenith(summaryData, country
 // most of these functions are self-explanatory
 // good typo :aysm:
 
-function gamesWonConvert(gamesWon, gamesPlayed) {
-    if (
-        gamesWon === "Hidden" ||
-        gamesPlayed === "Hidden" ||
-        gamesPlayed === 0
-    ) {
-        return gamesWon;
-    }
-
-    return `${gamesWon} (${formatNumber((100 * gamesWon) / gamesPlayed, 2)}%)`;
-}
-
 function formatBadges(badgelist) {
     if (badgelist.length > 0) {
-        return `\n  - As well as ${badgelist.length} badges`;
+        return `\n${getEmoji("mid")}Alongside **${badgelist.length} badges**`; //TODO: add common badges
     }
     return ``;
-}
-
-function formatGamesPlayed(gamesplayed, gameswon, gamestime) {
-    if (gamesplayed > -1) {
-        return `\n- Played ${gamesplayed} games
-    - Won ${gamesWonConvert(gameswon, gamesplayed)} of them
-    -  ${formatLongTime(gamestime, true)} played (${formatLongTime(gamestime)})`;
-    }
-    return "\n- Has hidden games played";
 }
 
 function starConvert(supporterTier) {
@@ -289,12 +283,12 @@ function starConvert(supporterTier) {
 
 function formatConnections(connections) {
     const connectionTypes = [
-        "Discord",
-        "Twitch",
-        "Twitter",
-        "Reddit",
-        "Youtube",
-        "Steam",
+        "discord",
+        "twitch",
+        "twitter",
+        "reddit",
+        "youtube",
+        "steam",
     ];
     const formattedList = [];
 
@@ -303,7 +297,7 @@ function formatConnections(connections) {
             const username =
                 connections[connection.toLowerCase()].display_username ||
                 connections[connection.toLowerCase()].username;
-            formattedList.push(`  - ${connection}: ${username}`);
+            formattedList.push(`${getEmoji("mid")}${getEmoji(connection)} ${username}`);
         }
     });
 
@@ -312,12 +306,12 @@ function formatConnections(connections) {
     }
 
     return (
-        `\n\n- ${formattedList.length} connections\n` + formattedList.join("\n")
+        `\n\n**${getEmoji("top")}Connections**\n` + formattedList.join("\n")
     );
 }
 
 //small and cute league function (will purr at you if it gets the chance)
-function formatLeaguePreview(statistics, country) {
+function formatLeaguePreview(statistics) {
     const leagueStats = statistics?.league;
 
     if (!leagueStats) {
@@ -348,7 +342,7 @@ function formatLeaguePreview(statistics, country) {
     } else if (hasRating) {
         rating = `${formatNumber(rawRating, 2)} TR`;
     } else {
-        rating = "Unrated";
+        rating = `Unrated`;
     }
 
     let standing = "";
@@ -360,7 +354,7 @@ function formatLeaguePreview(statistics, country) {
         leagueStats.bestrank &&
         rank !== leagueStats.bestrank
     ) {
-        standing += `\n  - Has reached ${getEmojiOfRank(leagueStats.bestrank)}`;
+        standing += `\n${getEmoji("mid")}Has reached ${getEmojiOfRank(leagueStats.bestrank)}`;
     }
 
     if (
@@ -368,14 +362,7 @@ function formatLeaguePreview(statistics, country) {
         ratingDeviation > 100 &&
         estRank
     ) {
-        standing += `\n  - Probably around ${getEmojiOfRank(estRank)}`;
-    }
-
-    if (Number.isFinite(leagueStats.standing) && leagueStats.standing > 0) {
-        standing += `\n  - Ranked #${formatNumber(leagueStats.standing)} ${formatCountry(
-            leagueStats.standing_local,
-            country,
-        )}`;
+        standing += `\n${getEmoji("mid")}Probably around ${getEmojiOfRank(estRank)}`;
     }
 
     if (
@@ -385,26 +372,26 @@ function formatLeaguePreview(statistics, country) {
     ) {
         const winRate = (gamesWon / gamesPlayed) * 100;
 
-        standing += `\n  - Won ${gamesWon}/${gamesPlayed} games (${formatNumber(winRate, 2)}%)`;
+        standing += `\n${getEmoji("mid")}Won ${gamesWon}/${gamesPlayed} games (${formatNumber(winRate, 2)}%)`;
     }
 
     if (Number.isFinite(leagueStats.vs)) {
-        standing += `\n  - ${formatNumber(leagueStats.vs, 2)} VS score`;
+        standing += `\n${getEmoji("mid")}${formatNumber(leagueStats.vs, 2)} VS score`;
     }
 
     const rankText = hasRank ? `, ${getEmojiOfRank(rank)}` : "";
 
-    return `\n- ${getEmoji("league")} **${rating}**${rankText}${standing}`;
+    return `\n${getEmoji("top")}${getEmoji("league")} **${rating}**${rankText}${standing}`;
 }
 
 function format40Lines(statistics, country) {
     if (statistics["40l"].record) {
         const flStatistics = statistics["40l"];
         const results = flStatistics.record.results;
-        return `\n- ${getEmoji("40lines")} **40 Lines in ${formatPreciseTime(results.stats.finaltime)}**
-    - Ranked #${formatNumber(flStatistics.rank)} ${formatCountry(flStatistics.rank_local, country)}
-    - [Submitted ${formatISOString(flStatistics.record.ts)}](https://tetr.io/#R:${flStatistics.record.replayid})
-    - ${formatNumber(results.aggregatestats.pps, 2)} PPS | ${formatNumber(results.stats.finesse.faults)} finesse faults`;
+        return `\n${getEmoji("top")}${getEmoji("40lines")} **40 Lines in ${formatPreciseTime(results.stats.finaltime)}**
+${getEmoji("mid")}Ranked #${formatNumber(flStatistics.rank)} ${formatCountry(flStatistics.rank_local, country)}
+${getEmoji("mid")}[Submitted ${formatISOString(flStatistics.record.ts)}](https://tetr.io/#R:${flStatistics.record.replayid})
+${getEmoji("mid")}${formatNumber(results.aggregatestats.pps, 2)} PPS | ${formatNumber(results.stats.finesse.faults)} finesse faults`;
     }
     return "";
 }
@@ -412,10 +399,10 @@ function format40Lines(statistics, country) {
 function formatBlitz(statistics, country) {
     if (statistics.blitz.record) {
         const blStatistics = statistics.blitz;
-        return `\n- ${getEmoji("blitz")} **${formatNumber(blStatistics.record.results.stats.score)} points in Blitz**
-    - Ranked #${formatNumber(blStatistics.rank)} ${formatCountry(blStatistics.rank_local, country)}
-    - [Submitted ${formatISOString(blStatistics.record.ts)}](https://tetr.io/#R:${blStatistics.record.replayid})
-    - ${formatNumber(blStatistics.record.results.aggregatestats.pps, 2)} PPS | ${formatNumber(blStatistics.record.results.stats.score / blStatistics.record.results.stats.piecesplaced, 2)} Points/Piece`;
+        return `\n${getEmoji("top")}${getEmoji("blitz")} **${formatNumber(blStatistics.record.results.stats.score)} points in Blitz**
+${getEmoji("mid")}Ranked #${formatNumber(blStatistics.rank)} ${formatCountry(blStatistics.rank_local, country)}
+${getEmoji("mid")}[Submitted ${formatISOString(blStatistics.record.ts)}](https://tetr.io/#R:${blStatistics.record.replayid})
+${getEmoji("mid")}${formatNumber(blStatistics.record.results.aggregatestats.pps, 2)} PPS | ${formatNumber(blStatistics.record.results.stats.score / blStatistics.record.results.stats.piecesplaced, 2)} Points/Piece`;
     }
     return "";
 }
@@ -428,20 +415,17 @@ function formatZenith(statistics, country, expert = false) {
 
     if (statistics[zenithVer].record) {
         zenithText = `
-- ${getEmoji("quickplay")} **${formatNumber(zStatistics.record.results.stats.zenith.altitude, 2)}m in ${zenithVerLong}**
-    - Ranked #${formatNumber(zStatistics.rank)} ${formatCountry(zStatistics.rank_local, country)}
-    - [Submitted ${formatISOString(zStatistics.record.ts)}](https://tetr.io/#R:${zStatistics.record.replayid})
-    - ${formatNumber(zStatistics.record.results.aggregatestats.pps, 2)} PPS | ${formatNumber(zStatistics.record.results.aggregatestats.apm, 2)} APM
-    - Floor ${zStatistics.record.results.stats.zenith.floor} | ${zStatistics.record.results.stats.kills} KOs | Reached ${zStatistics.record.results.stats.topbtb - 1} B2B`;
+${getEmoji("top")}${getEmoji("quickplay")} **${formatNumber(zStatistics.record.results.stats.zenith.altitude, 2)}m in ${zenithVerLong}**
+${getEmoji("mid")}[Submitted ${formatISOString(zStatistics.record.ts)}](https://tetr.io/#R:${zStatistics.record.replayid})
+${getEmoji("mid")}${formatNumber(zStatistics.record.results.aggregatestats.pps, 2)} PPS | ${formatNumber(zStatistics.record.results.aggregatestats.apm, 2)} APM | ${zStatistics.record.results.stats.kills} KOs`;
         if (statistics[zenithVer].best.record) {
             zenithText += `
-  - All-time best is ${formatNumber(zStatistics.best.record.results.stats.zenith.altitude, 2)}m (#${formatNumber(zStatistics.best.rank)})`;
+${getEmoji("mid")}All-time best is ${formatNumber(zStatistics.best.record.results.stats.zenith.altitude, 2)}m (#${formatNumber(zStatistics.best.rank)})`;
         }
     } else if (statistics[zenithVer].best.record) {
-        zenithText = `\n- ${getEmoji("quickplay")} Hasn't played ${zenithVerLong} this week
-    - All-time best is ${formatNumber(zStatistics.best.record.results.stats.zenith.altitude, 2)}m
-    - Ranked #${formatNumber(zStatistics.best.rank)}
-    - [Submitted ${formatISOString(zStatistics.best.record.ts)}](https://tetr.io/#R:${zStatistics.best.record.replayid})`;
+        zenithText = `\n${getEmoji("top")}${getEmoji("quickplay")} Hasn't played ${zenithVerLong} this week
+${getEmoji("mid")}All-time best is ${formatNumber(zStatistics.best.record.results.stats.zenith.altitude, 2)}m
+${getEmoji("mid")}[Submitted ${formatISOString(zStatistics.best.record.ts)}](https://tetr.io/#R:${zStatistics.best.record.replayid})`;
     }
 
     return zenithText;
@@ -450,22 +434,22 @@ function formatZenith(statistics, country, expert = false) {
 function formatZen(statistics) {
     if (statistics.zen) {
         const zenStatistics = statistics.zen;
-        return `\n- ${getEmoji("zen")} **Level ${zenStatistics.level} in Zen**
-    - ${formatNumber(Math.round(zenStatistics.score))} points`;
+        return `\n${getEmoji("top")}${getEmoji("zen")} **Level ${zenStatistics.level} in Zen**
+${getEmoji("mid")}${formatNumber(Math.round(zenStatistics.score))} points`;
     }
     return "";
 }
 
 function formatDisplayedAchs(displayed = [], all = []) {
-    let displayCase = "\n  - Displayed achievements:";
+    let displayCase = `\n${getEmoji("top")}**Displayed achievements:**`;
 
     all.forEach((achievement) => {
         if (displayed.includes(achievement.k)) {
-            displayCase += `\n    - ` + formatAchievement(achievement);
+            displayCase += `\n${getEmoji("mid")}` + formatAchievement(achievement);
         }
     });
 
-    if (displayCase !== "\n  - Displayed achievements:") return displayCase;
+    if (displayCase !== "\nDisplayed achievements:") return displayCase;
     return "";
 }
 
@@ -491,11 +475,11 @@ function formatOldUsernames(usernameArray = []) {
         return "";
     }
 
-    let usernames = `\n- Previous usernames:`;
+    let usernames = `\n**${getEmoji('top')}Previous usernames**`;
     const limit = Math.min(validUsernames.length, 5);
 
     for (let i = 0; i < limit; i++) {
-        usernames = usernames + `\n - ${validUsernames[i]}`;
+        usernames = usernames + `\n${getEmoji('mid')}${validUsernames[i]}`;
     }
 
     return usernames;

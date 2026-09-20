@@ -112,11 +112,11 @@ function formatLongTime(seconds, hoursOnly = false) {
 
 function formatGamesPlayed(gamesplayed, gameswon, gamestime) {
     if (gamesplayed > -1) {
-        return `\n- Played ${gamesplayed} games
-    - Won ${gamesWonConvert(gameswon, gamesplayed)} of them
-    -  ${formatLongTime(gamestime, true)} played (${formatLongTime(gamestime)})`;
+        return `\n${getEmoji('top')}**Game Stats**
+${getEmoji('mid')}Played ${formatNumber(gamesplayed)} games, won ${gamesWonConvert(gameswon, gamesplayed)} of them
+${getEmoji('mid')}${formatLongTime(gamestime, true)} played (or ${formatLongTime(gamestime)})`;
     }
-    return "\n- Has hidden games played";
+    return "";
 }
 
 function gamesWonConvert(gamesWon, gamesPlayed) {
@@ -128,7 +128,7 @@ function gamesWonConvert(gamesWon, gamesPlayed) {
         return gamesWon;
     }
 
-    return `${gamesWon} (${formatNumber((100 * gamesWon) / gamesPlayed, 2)}%)`;
+    return `${formatNumber(gamesWon)} (${formatNumber((100 * gamesWon) / gamesPlayed, 2)}%)`;
 }
 
 function getEmojiOfRank(rank) {
@@ -562,8 +562,14 @@ function formatAchievement(ach) {
 
     achText += ` **${ach.name}** - **${displayVal}** ${ach.object}` // show the main info
 
+    //duo achievement
+    if (ach.x?.ally) {
+        const allyUsername = ach.x.ally.username;
+        achText += ` (With ${formatUsername(allyUsername)})`;
+    }
+
     if (ach.rank === 100) { // if it's issued
-        achText += ` (Issue ${ach.pos + 1}/${ach.total})` 
+        achText += ` (Issue **${ach.pos + 1}**/${ach.total})` 
     } else {
         if (ach.pos < 100) { // if you're in the top 100 players
             achText += ` (**#${ach.pos + 1}**)`
@@ -576,11 +582,6 @@ function formatAchievement(ach) {
         }
     }
 
-    //duo achievement
-    if (ach.x?.ally) {
-        const allyUsername = ach.x.ally.username;
-        achText += ` (With ${formatUsername(allyUsername)})`;
-    }
 
     if (ach.event) {
         const eventName = ach.event;
@@ -675,12 +676,12 @@ function specialUserContainers(statData, user) {
         const section = new SectionBuilder()
             .addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(`
-### __${formatUsername(username)}__
+### __${formatUsername(username)} -> Quick Look__
 ## ANONYMOUS
 ${escapeUnderscores(username).toUpperCase()} is anonymous, which means they have no statistics, and cannot save replays. Only first seen date is known.
 
-- About:
-    - First seen ${formatISOString(statData.ts)}
+${getEmoji("top")}**About**
+${getEmoji("mid")}First seen ${formatISOString(statData.ts)}
 `),
             )
             .setThumbnailAccessory(
@@ -688,7 +689,7 @@ ${escapeUnderscores(username).toUpperCase()} is anonymous, which means they have
             );
 
         const container = new ContainerBuilder()
-            .setAccentColor(0x80bdff)
+            .setAccentColor(0xc4e1ff)
             .addSectionComponents(section);
 
         return {
@@ -707,10 +708,10 @@ ${escapeUnderscores(username).toUpperCase()} is anonymous, which means they have
 ## BOT
 ${escapeUnderscores(username).toUpperCase()} is a known bot, owned by ${String(statData.botmaster || "unknown").toLowerCase()}. Their records are not available, but some general information can be shown.
 
-- About:
-    - Account created ${formatISOString(statData.ts)}
-    - Level ${formatNumber(Math.floor(calculateLevel(statData.xp)))} (${formatNumber(Math.floor(statData.xp))} XP)
-    - Has ${formatNumber(statData.friend_count)} friends
+${getEmoji("top")}**About**
+${getEmoji("mid")}Account created ${formatISOString(statData.ts)}
+${getEmoji("mid")}Level ${formatNumber(Math.floor(calculateLevel(statData.xp)))} (${formatNumber(Math.floor(statData.xp))} XP)
+${getEmoji("mid")}Has ${formatNumber(statData.friend_count)} friends
 ${formatGamesPlayed(statData.gamesplayed, statData.gameswon, statData.gametime) || ""}
 `);
 
@@ -727,8 +728,8 @@ ${formatGamesPlayed(statData.gamesplayed, statData.gameswon, statData.gametime) 
 ## BANNED
 ${escapeUnderscores(username).toUpperCase()} is banned, which means they have no statistics, and cannot save replays. Only first seen date is known.
 
-- About:
-    - Account created ${formatISOString(statData.ts)}
+${getEmoji("top")}**About**
+${getEmoji("mid")}Account created ${formatISOString(statData.ts)}
 `);
 
         return { embeds: [embed] };
@@ -761,5 +762,6 @@ module.exports = {
     addStatComparisonField,
     formatAchievementVal,
     specialUserContainers,
-    getAvatarUrl
+    getAvatarUrl,
+    formatGamesPlayed
 }
