@@ -73,18 +73,23 @@ module.exports = {
 
         // Parse the file as JSON
         const replay = JSON.parse(replayDataBuffer.toString());
-        if (
-            !replay ||
-            !Array.isArray(replay.users) ||
-            !replay.replay ||
-            !replay.gamemode
-        ) {
+
+        const hasCommonStructure = replay && Array.isArray(replay.users) && replay.replay; //this is stupid
+        const hasValidMode = isLeague || replay?.gamemode;
+
+        if (!hasCommonStructure || !hasValidMode) {
             return interaction.editReply({
                 content: 'The uploaded file does not appear to be a valid TETR.IO replay.'
             });
         }
 
         const replayData = replay.replay;
+
+        let replayid = replay.id;
+        if (replayid === null) {
+            replayid = "";
+        }
+
 
         //i hate league why did you have to do a different format :aysm:
         //i mean fair because there's different rounds but still :(
@@ -104,9 +109,6 @@ module.exports = {
 
             const [player1, player2] = leaderboard;
 
-            const player1User = replay.users.find(user => user.id === player1.id);
-            const player2User = replay.users.find(user => user.id === player2.id);
-
             let scoreString = `**🏆 ${player1.username.toUpperCase()} ${player1.wins}**-${player2.wins} ${player2.username.toUpperCase()}`
 
             if (player1.wins < player2.wins) {
@@ -114,13 +116,13 @@ module.exports = {
             }
 
             const userSuffix =
-            `${formatUsername(player1.username)} ${countryCodeToEmoji(player1User?.country)} vs ${formatUsername(player2.username)} ${countryCodeToEmoji(player2User?.country)} | ${formattedDate}`;
+            `${formatUsername(player1.username)} vs ${formatUsername(player2.username)} | ${formattedDate}`;
 
             const leagueOverviewContainer = new ContainerBuilder()
                 .setAccentColor(0x80ffc4)
                 .addTextDisplayComponents(
                     new TextDisplayBuilder()
-                        .setContent(`### __[Replay ${replay.id} (League)](https://tetr.io/#R:${replay.id}) -> Overview__
+                        .setContent(`### __[Replay ${replayid} (League)](https://tetr.io/#R:${replayid}) -> Overview__
 ${scoreString}
 
 **${player1.username.toUpperCase()}**
@@ -167,22 +169,103 @@ ${userSuffix}`)
                 .setAccentColor(0xffb980)
                 .addTextDisplayComponents(
                     new TextDisplayBuilder()
-                        .setContent(`### __[Replay ${replay.id} (League)](https://tetr.io/#R:${replay.id}) -> Rounds__
+                        .setContent(`### __[Replay ${replayid} (League)](https://tetr.io/#R:${replayid}) -> Rounds__
 ${roundLines}
 
 ${userSuffix}`)
                 );
+
+            const player1PerformanceContainer = new ContainerBuilder()
+                .setAccentColor(0x80ffc4)
+                .addTextDisplayComponents(
+                    new TextDisplayBuilder()
+                        .setContent(`### __[Replay ${replayid} (League)](https://tetr.io/#R:${replayid}) -> Performance -> ${formatUsername(player1.username)}__s\n\n`)
+                );
+
+            await addStatComparisonField(
+                player1PerformanceContainer,
+                'league/pps',
+                'Pieces Per Second',
+                player1.stats.pps,
+                null,
+                { decimals: 3 }
+            );
+
+            await addStatComparisonField(
+                player1PerformanceContainer,
+                'league/apm',
+                'Attack Per Minute',
+                player1.stats.apm,
+                null,
+                { decimals: 2 }
+            );
+
+            await addStatComparisonField(
+                player1PerformanceContainer,
+                'league/vs',
+                'VS Score',
+                player1.stats.vsscore,
+                null,
+                { decimals: 2 }
+            );
+
+            player1PerformanceContainer.addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(userSuffix)
+            );
+
+
+            const player2PerformanceContainer = new ContainerBuilder()
+                .setAccentColor(0x80ffc4)
+                .addTextDisplayComponents(
+                    new TextDisplayBuilder()
+                        .setContent(`### __[Replay ${replayid} (League)](https://tetr.io/#R:${replayid}) -> Performance -> ${formatUsername(player2.username)}__\n\n`)
+                );
+
+            await addStatComparisonField(
+                player2PerformanceContainer,
+                'league/pps',
+                'Pieces Per Second',
+                player2.stats.pps,
+                null,
+                { decimals: 3 }
+            );
+
+            await addStatComparisonField(
+                player2PerformanceContainer,
+                'league/apm',
+                'Attack Per Minute',
+                player2.stats.apm,
+                null,
+                { decimals: 2 }
+            );
+
+            await addStatComparisonField(
+                player2PerformanceContainer,
+                'league/vs',
+                'VS Score',
+                player2.stats.vsscore,
+                null,
+                { decimals: 2 }
+            );
+
+            player2PerformanceContainer.addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(userSuffix)
+            );
             
 
             //pages
             const pages = [
                 leagueOverviewContainer,
                 leagueRoundsContainer,
+                player1PerformanceContainer,
+                player2PerformanceContainer,
             ];
 
             const labels = [
                 "Overview",
                 "Rounds",
+                `${player1.username.toUpperCase()} - Performance`,
+                `${player2.username.toUpperCase()} - Performance`,
             ];
 
             const key = interaction.id;
@@ -233,7 +316,7 @@ ${userSuffix}`)
             if (replay.gamemode === 'blitz') gamemode = "Blitz";
 
             // common stats
-            const replayLinkFormat = `[Replay ${replay.id} (${gamemode})](https://tetr.io/#R:${replay.id})`;
+            const replayLinkFormat = `[Replay ${replayid} (${gamemode})](https://tetr.io/#R:${replayid})`;
             const formattedDate = formatISOString(replay.ts);
             const finesse = replayStats.finesse ? (replayStats.finesse.perfectpieces / replayStats.piecesplaced) : -1;
 
