@@ -155,48 +155,48 @@ function createLeagueContainer(leagueData, user, past = 0) {
     description += `## ${tr < 0 || rank === "z" ? `${Currently} unranked ${getEmojiOfRank('z')}` : `${Currently} ranked ${getEmojiOfRank(rank)}`}\n`;
 
     if (tr < 0) {
-        description += `- **${Has} played ${gamesPlayed}/10 rating games**\n`;
+        description += `${getEmoji("top")}**${Has} played ${gamesPlayed}/10 rating games**\n`;
         if (gamesPlayed > 0) {
-            description += `  - Won ${gamesWon} of them (${winRate}%)\n  - ${formatNumber(apm, 2)} APM | ${formatNumber(pps, 2)} PPS | ${formatNumber(vs, 2)} VS score\n`;
+            description += `${getEmoji("mid")}Won ${gamesWon} of them (${winRate}%)\n${getEmoji("mid")}${formatNumber(apm, 2)} APM | ${formatNumber(pps, 2)} PPS | ${formatNumber(vs, 2)} VS score\n`;
         }
         rankBar = `${generateProgressBar("Unranked", gamesPlayed / 10, 10)} ${getEmojiOfRank('z')}`;
         if (bestrank && bestrank !== leagueData.percentile_rank) {
-            description += `  - ${Has} reached ${getEmojiOfRank(bestrank)}\n`;
+            description += `${getEmoji("mid")}${Has} reached ${getEmojiOfRank(bestrank)}\n`;
         }
     } else {
-        description += `- **${Has} ${formatNumber(tr, 1)} TR**\n`;
+        description += `${getEmoji("top")}**${Has} ${formatNumber(tr, 1)} TR**\n`;
         if (rd > 100) {
             if (!past) {            
-                description += `  - Around ${getEmojiOfRank(leagueData.percentile_rank)} (Top ${formatNumber(percentile * 100, 1)}%)\n`;
+                description += `${getEmoji("mid")}Around ${getEmojiOfRank(leagueData.percentile_rank)} (Top ${formatNumber(percentile * 100, 1)}%)\n`;
             }
             rankBar = false;
             if (bestrank && bestrank !== leagueData.percentile_rank) {
-                description += `  - ${Has} reached ${getEmojiOfRank(bestrank)}\n`;
+                description += `${getEmoji("mid")}${Has} reached ${getEmojiOfRank(bestrank)}\n`;
             }
         } else {
             if (percentile < 0.005) {
-                description += `  - Ranked #${standing} worldwide\n`;
+                description += `${getEmoji("mid")}Ranked **#${standing}** worldwide\n`;
                 if (standing !== 1) {
-                    description += `  - Ranked #${localStanding} locally\n`;
+                    description += `${getEmoji("mid")}Ranked #${localStanding} locally\n`;
                 }
             } else {
-                description += `  - Ranked #${standing} worldwide (Top ${formatNumber(percentile * 100, 1)}%)\n  - Ranked #${localStanding} locally\n`;
+                description += `${getEmoji("mid")}Ranked **#${standing}** worldwide (Top **${formatNumber(percentile * 100, 1)}%**)\n${getEmoji("mid")}Ranked #${localStanding} locally\n`;
             }
             rankBar = `${getEmojiOfRank(prevRank)} ${generateProgressBar("Ranked", (leagueData.prev_at - standing) / (leagueData.prev_at - leagueData.next_at), 15)} ${getEmojiOfRank(nextRank)}`;
             if (bestrank && bestrank !== rank) {
-                description += `  - ${Has} reached ${getEmojiOfRank(bestrank)}\n`;
+                description += `${getEmoji("mid")}${Has} reached ${getEmojiOfRank(bestrank)}\n`;
             }
         }
-        description += `  - ${Has} ${formatNumber(glicko, 2)} ± ${formatNumber(rd, 1)} Glicko\n`;
+        description += `${getEmoji("mid")}${Has} ${formatNumber(glicko, 2)} ± ${formatNumber(rd, 1)} Glicko\n`;
         if (gxe) {
-            description += `  - ${formatNumber(gxe, 1)}% chance to win against random player\n`;
+            description += `**${getEmoji("mid")}${formatNumber(gxe, 1)}%** chance to win against random player\n`;
         }
         if (decaying) {
-            description += `  - ${Has}n't played in a week; __rating deviation is increasing__\n`;
+            description += `${getEmoji("mid")}${Has}n't played in a week; __rating deviation is increasing__\n`;
         }
-        description += `- **${Has} played ${formatNumber(gamesPlayed)} game${gamesPlayed === 1 ? '' : 's'}**\n`;
+        description += `\n${getEmoji("top")}**${Has} played ${formatNumber(gamesPlayed)} game${gamesPlayed === 1 ? '' : 's'}**\n`;
         if (gamesPlayed > 0) {
-            description += `  - Won ${formatNumber(gamesWon)} of them (${winRate}%)\n  - ${formatNumber(apm, 2)} APM | ${formatNumber(pps, 2)} PPS | ${formatNumber(vs, 2)} VS score\n`;
+            description += `${getEmoji("mid")}Won **${formatNumber(gamesWon)}** of them (**${winRate}%**)\n${getEmoji("mid")}${formatNumber(apm, 2)} APM | ${formatNumber(pps, 2)} PPS | ${formatNumber(vs, 2)} VS score\n`;
         }
     }
 
