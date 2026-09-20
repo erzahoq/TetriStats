@@ -275,7 +275,7 @@ function paginateAchievements(achlist) {
         pageAchs[pageIndex] ??= [];
         pageAchs[pageIndex].push(ach);
 
-        const achText = "\n- " + formatAchievement(ach);
+        const achText = `\n${getEmoji("mid")}` + formatAchievement(ach);
         pageTexts[pageIndex] += achText;
     }
     
@@ -347,7 +347,7 @@ async function buildAchievementDetailContainer(ach, username, league) {
     if (ach.vt !== 5) {
         achText += ` **${displayVal}**${ach.object ? ` ${ach.object}` : ""}\n`; //shows the main info
     } else {
-        achText += ach.object ? ` **${ach.object}** \n` : `\n`;
+        achText += ach.object ? `**${ach.object}** \n` : `\n`;
     }
 
     if (ach.vt === 5) { // if it's issued
@@ -385,7 +385,7 @@ async function buildAchievementDetailContainer(ach, username, league) {
     //if its not issued:
     if (ach.rank !== 100 && closestRank) {
         //show closest rank and data
-        achText += `\n\n**Performance**\nClosest rank is ${getEmojiOfRank(closestRank.rank)}, with`;
+        achText += `\n\n${getEmoji("top")}**Performance**\n${getEmoji("mid")}Closest rank is ${getEmojiOfRank(closestRank.rank)}, with`;
 
         const deltaText = formatAchievementDelta(closestRank.delta, ach);
         let sign = closestRank.delta > 0 ? 'less' : closestRank.delta < 0 ? 'more' : '';
@@ -416,7 +416,7 @@ async function buildAchievementDetailContainer(ach, username, league) {
                 if (need > 0) {
                     const needText = formatAchievementDelta(need, ach);
                     if (needText) {
-                        achText += `\n${getEmojiOfRank(nextRank)} rank has ${needText} more`;
+                        achText += `\n${getEmoji("mid")}${getEmojiOfRank(nextRank)} rank has ${needText} more`;
                     }
                 }
             }
@@ -437,7 +437,7 @@ async function buildAchievementDetailContainer(ach, username, league) {
                 if (need > 0) {
                     const needText = formatAchievementDelta(need, ach);
                     if (needText) {
-                        achText += `\n${getEmojiOfRank(rank)} rank has ${needText} more`;
+                        achText += `\n${getEmoji("mid")}${getEmojiOfRank(rank)} rank has ${needText} more`;
                     }
                 }
             }
