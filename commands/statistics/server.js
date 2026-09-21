@@ -8,6 +8,7 @@ const {
 
 const { formatNumber } = require('../../helpers/formatters');
 const { fetchCached } = require('../../helpers/fetch');
+const { getEmoji } = require('../../helpers/emojis');
 
 
 module.exports = {
@@ -37,26 +38,28 @@ module.exports = {
             .setAccentColor(0x81ff7d)
             .addTextDisplayComponents(
                 new TextDisplayBuilder()
-                    .setContent(
-                        `### __TETR.IO -> Server Statistics__
-
-- Total of **${formatNumber(data.usercount)} Players**
-    - ${formatNumber(data.usercount - data.anoncount)} are registered (*${formatNumber(100 * (data.usercount - data.anoncount) / data.usercount, 2)}%*)
-    - ${formatNumber(data.rankedcount)} are ranked (*${formatNumber(100 * data.rankedcount / data.totalaccounts, 2)}% of total, ${formatNumber(100 * data.rankedcount / (data.usercount - data.anoncount), 2)}% of registered*)
-    - ${formatNumber(data.anoncount)} are anonymous (*${formatNumber(100 * data.anoncount / data.usercount, 2)}%*)
-- **${formatNumber(data.gamesplayed)} Games** played
-    - ${formatNumber(data.gamesfinished)} were finished (*${formatNumber(100 * data.gamesfinished / data.gamesplayed, 2)}%*)
-    - ${formatNumber(data.recordcount)} were saved as replays (*${formatNumber(100 * data.recordcount / data.gamesplayed, 2)}%*)
-    - A total of ${formatNumber(data.gamesplayed_delta, 1)} games per second
-    - Or ${formatNumber(gamesPlayedOverTime * 60 * 60, 2)} games per hour
-- **${formatNumber(secondsToDays(data.gametime), 1)} Days** of playtime
-    - Or ${formatNumber(data.gametime)} seconds
-    - Or ${formatNumber(secondsToYears(data.gametime), 2)} years
-- **${formatNumber(data.piecesplaced)} Pieces** placed
-    - ${formatNumber(data.piecesplaced / data.gametime, 2)} pieces per second on average
-    - ${formatNumber(data.inputs)} Inputs (${formatNumber(data.inputs / data.piecesplaced, 3)} per piece)
-    - ${formatNumber(data.inputs / data.gametime, 3)} inputs per second on average
-`))
+                    .setContent(`### __TETR.IO -> Server Statistics__`),
+                new TextDisplayBuilder()
+                    .setContent(`${getEmoji("top")}Total of **${formatNumber(data.usercount)} Players**
+${getEmoji("mid")}${formatNumber(data.usercount - data.anoncount)} are registered (*${formatNumber(100 * (data.usercount - data.anoncount) / data.usercount, 2)}%*)
+${getEmoji("mid")}${formatNumber(data.rankedcount)} are ranked (*${formatNumber(100 * data.rankedcount / data.totalaccounts, 2)}% of total, ${formatNumber(100 * data.rankedcount / (data.usercount - data.anoncount), 2)}% of registered*)
+${getEmoji("mid")}${formatNumber(data.anoncount)} are anonymous (*${formatNumber(100 * data.anoncount / data.usercount, 2)}%*)`),
+                new TextDisplayBuilder()
+                    .setContent(`${getEmoji("top")}**${formatNumber(data.gamesplayed)} Games** played
+${getEmoji("mid")}${formatNumber(data.gamesfinished)} were finished (*${formatNumber(100 * data.gamesfinished / data.gamesplayed, 2)}%*)
+${getEmoji("mid")}${formatNumber(data.recordcount)} were saved as replays (*${formatNumber(100 * data.recordcount / data.gamesplayed, 2)}%*)
+${getEmoji("mid")}A total of ${formatNumber(data.gamesplayed_delta, 1)} games per second
+${getEmoji("mid")}Or ${formatNumber(gamesPlayedOverTime * 60 * 60, 2)} games per hour`),
+                new TextDisplayBuilder()
+                    .setContent(`${getEmoji("top")}**${formatNumber(secondsToDays(data.gametime), 1)} Days** of playtime
+${getEmoji("mid")}Or ${formatNumber(data.gametime)} seconds
+${getEmoji("mid")}Or ${formatNumber(secondsToYears(data.gametime), 2)} years`),
+                new TextDisplayBuilder()
+                    .setContent(`${getEmoji("top")}**${formatNumber(data.piecesplaced)} Pieces** placed
+${getEmoji("mid")}${formatNumber(data.piecesplaced / data.gametime, 2)} pieces per second on average
+${getEmoji("mid")}${formatNumber(data.inputs)} Inputs (${formatNumber(data.inputs / data.piecesplaced, 3)} per piece)
+${getEmoji("mid")}${formatNumber(data.inputs / data.gametime, 3)} inputs per second on average`),
+            );
     
         await interaction.reply({
             flags: MessageFlags.IsComponentsV2,

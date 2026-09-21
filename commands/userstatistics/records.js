@@ -84,10 +84,12 @@ module.exports = {
             let header = `${title}\n`;
 
             if (fetched.top) {
-                header += `- ${getEmoji('news_lblocal')} Personal best
-                ${formatRecord(fetched.top)}`;
+                header += `${getEmoji("top")}${getEmoji('news_lblocal')} Personal best
+${formatRecord(fetched.top, getEmoji("mid"))}`;
             } else if (fetched.all.length === 0) {
                 header += `${getEmoji('ach_none')} No ${gametypeMapping[category]} records yet...`;
+            } else {
+                header += formatRecord(fetched.all[0]);
             }
 
             // set description and push to list
@@ -104,23 +106,12 @@ module.exports = {
             );
 
             if (!(fetched.all.length === 0 && !fetched.top)) {
-                fetched.all.forEach((rec, index) => {
-                    if (index === 0 && fetched.top) {
-                        container.addSeparatorComponents(
-                            new SeparatorBuilder()
-                        );
-                    }
-
+                fetched.all.forEach((rec, ind) => {
+                    if (ind === 0 && !fetched.top) return; // skip the first one if it's already displayed as the uppermost record
                     container.addTextDisplayComponents(
                         new TextDisplayBuilder()
                             .setContent(formatRecord(rec))
                     );
-
-                    if (index !== fetched.all.length - 1) {
-                        container.addSeparatorComponents(
-                            new SeparatorBuilder()
-                        );
-                    }
                 });
             }
 
@@ -134,6 +125,10 @@ module.exports = {
         const pageList = Object.values(pages);         // embeds in the same order as buttons/pages
 
         for (let i = 0; i < pageList.length; i++) {
+            pageList[i].addSeparatorComponents(
+                new SeparatorBuilder()
+                    .setDivider(true)
+            );
             pageList[i].addActionRowComponents(
                 buildPageSelectRow({
                     commandName,
@@ -193,19 +188,19 @@ async function fetchAll(user) {
     return responses;
 }
 
-function formatRecord(record) {
-    let formatted = `- `; 
+function formatRecord(record, topEmoji = getEmoji("top")) {
+    let formatted = ``; 
     let stats = record.results.stats;
 
     // Determine the type of record and format accordingly
     if (record.gamemode === '40l') {
-        formatted += `**${formatPreciseTime(stats.finaltime)}**`;
+        formatted += `${topEmoji}**${formatPreciseTime(stats.finaltime)}**`;
     } 
     else if (record.gamemode === 'blitz') {
-        formatted += `**${formatNumber(stats.score)}**`;
+        formatted += `${topEmoji}**${formatNumber(stats.score)}**`;
     } 
     else if (record.gamemode === 'zenithex' || record.gamemode === 'zenith') {
-        formatted += `**${formatNumber(stats.zenith.altitude, 1)}m**`;
+        formatted += `${topEmoji}**${formatNumber(stats.zenith.altitude, 1)}m**`;
         stats = record.results.aggregatestats; // PPS and VS Score are in aggregate
 
         // Add any active mod emojis
@@ -223,17 +218,17 @@ function formatRecord(record) {
         // Determine result type and format accordingly
         switch (record.extras.result) {
             case ('victory'):
-                formatted += `**🏆 VICTORY** (${players[0].wins}-${players[1].wins})`;
+                formatted += `${topEmoji}**🏆 VICTORY** (${players[0].wins}-${players[1].wins})`;
                 break;
             case ('dqvictory'):
-                formatted += `**🏆 VICTORY** (by Disqualification)`;
+                formatted += `${topEmoji}**🏆 VICTORY** (by Disqualification)`;
                 break;
             case ('defeat'):
-                formatted += `**❌ DEFEAT** (${players[1].wins}-${players[0].wins})`;
+                formatted += `${topEmoji}**❌ DEFEAT** (${players[1].wins}-${players[0].wins})`;
                 stats = players[1].stats; // The user is only in the first slot if they win
                 break;
             case ('dqdefeat'):
-                formatted += `**❌ DEFEAT** (by Disqualification)`;
+                formatted += `${topEmoji}**❌ DEFEAT** (by Disqualification)`;
                 stats = players[1].stats;
         }
         formatted += ` vs **${formatUsername(record.otherusers[0].username, false)}**`;
@@ -245,19 +240,16 @@ function formatRecord(record) {
     // Add general performance stats (APM, PPS, VS Score)
     if (['zenith', 'zenithex', 'league'].includes(record.gamemode)) {
         formatted += `
-    - **APM:** ${formatNumber(stats.apm, 2)}
-    - **PPS:** ${formatNumber(stats.pps, 2)}
-    - **VS Score:** ${formatNumber(stats.vsscore, 2)}`;
+${getEmoji("mid")}${formatNumber(stats.apm, 2)} APM | ${formatNumber(stats.pps, 2)} PPS | ${formatNumber(stats.vsscore, 2)} VS`;
     } 
     else {
         formatted += `
-    - **PPS:** ${formatNumber(record.results.aggregatestats.pps, 2)}
-    - **Finesse:** ${formatNumber(stats.finesse.perfectpieces / stats.piecesplaced * 100, 2)}% (${formatNumber(stats.finesse.faults)} faults)`;
+${getEmoji("mid")}${formatNumber(record.results.aggregatestats.pps, 2)} PPS | ${formatNumber(stats.finesse.perfectpieces / stats.piecesplaced * 100, 2)}% Finesse (${formatNumber(stats.finesse.faults)} faults)`;
     }
 
     // Add timestamp and replay link
     formatted += `
-    - [Submitted ${formatISOString(record.ts)}](https://tetr.io/#R:${record.replayid})`;
+${getEmoji("mid")}[Submitted ${formatISOString(record.ts)}](https://tetr.io/#R:${record.replayid})`;
 
     return formatted;
 }

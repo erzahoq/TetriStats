@@ -5,6 +5,7 @@ const {
     ContainerBuilder,
     TextDisplayBuilder,
 } = require("discord.js");
+const { getEmoji } = require("../../helpers/emojis");
 
 const { formatLongTime } = require("../../helpers/formatters");
 
@@ -35,43 +36,25 @@ module.exports = {
             )
             .addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
-                    `**Details**
-- TetriStats is an open-source Discord bot that fetches stats from TETR.IO!
-- It's designed to provide detailed insights into TETR.IO player statistics, leaderboards, and replay analysis.`,
+                    `${getEmoji("top")}**Stats**
+${getEmoji("mid")}In ${totalServers} servers
+${getEmoji("mid")}${totalUsers} users across servers
+${getEmoji("mid")}${formatLongTime(client.uptime / 1000)} uptime`,
                 ),
             )
             .addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
-                    `**Features**
-- Player statistics tracking
-- Average league predictions for statistics and achievements
-- Rating deviation increase alerts
-- Tetra League rankings
-- TETR.IO server statistics
-- Detailed user information`,
+                    `${getEmoji("top")}**Links**
+${getEmoji("mid")}[Github Repository](https://github.com/erzahoq/TetriStats)
+${getEmoji("mid")}[Tetra Channel](https://ch.tetr.io/) and [TETR.IO](https://tetr.io)
+${getEmoji("mid")}[Add TetriStats](https://discord.com/oauth2/authorize?client_id=1277041428274479124)`,
                 ),
             )
             .addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
-                    `**Stats**
-- In ${totalServers} servers
-- ${totalUsers} users across servers
-- ${formatLongTime(client.uptime / 1000)} uptime`,
-                ),
-            )
-            .addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(
-                    `**Links**
-- [Github Repository](https://github.com/erzahoq/TetriStats)
-- [Tetra Channel](https://ch.tetr.io/) and [TETR.IO](https://tetr.io)
-- [Add TetriStats](https://discord.com/oauth2/authorize?client_id=1277041428274479124)`,
-                ),
-            )
-            .addTextDisplayComponents(
-                new TextDisplayBuilder().setContent(
-                    `**Credits**
-- Developed by **@erzahoq** and **@monkeyswithpie**
-- Thanks to **osk** and the rest of their team for creating TETR.IO`,
+                    `${getEmoji("top")}**Credits**
+${getEmoji("mid")}Developed by **@erzahoq** and **@monkeyswithpie**
+${getEmoji("mid")}Thanks to **osk** and the rest of their team for creating TETR.IO`,
                 ),
             );
 
