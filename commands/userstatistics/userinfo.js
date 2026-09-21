@@ -457,6 +457,9 @@ ${getEmoji("mid")}${formatNumber(Math.round(zenStatistics.score))} points`;
 }
 
 function formatDisplayedAchs(displayed = [], all = []) {
+    if (displayed.every((x) => x === 0) || all.length === 0) {
+        return null;
+    }
     let displayCase = `\n${getEmoji("top")}**Displayed achievements:**`;
 
     all.forEach((achievement) => {
@@ -465,8 +468,7 @@ function formatDisplayedAchs(displayed = [], all = []) {
         }
     });
 
-    if (displayCase !== "\nDisplayed achievements:") return displayCase;
-    return "";
+    return displayCase;
 }
 
 function formatCountry(localRank, country) {
