@@ -275,7 +275,16 @@ function paginateAchievements(achlist) {
         pageAchs[pageIndex] ??= [];
         pageAchs[pageIndex].push(ach);
 
-        const achText = `\n${getEmoji("mid")}` + formatAchievement(ach);
+        let bulletEmoji = getEmoji("mid");
+        if (ach.pos <= 3) bulletEmoji = getEmoji("mid_t3");
+        else if (ach.pos <= 4) bulletEmoji = getEmoji("mid_t5");
+        else if (ach.pos <= 9) bulletEmoji = getEmoji("mid_t10");
+        else if (ach.pos <= 24) bulletEmoji = getEmoji("mid_t25");
+        else if (ach.pos <= 99) bulletEmoji = getEmoji("mid_t100");
+
+        if (ach.rank === 100) bulletEmoji = getEmoji("mid_iss");
+
+        const achText = `\n${bulletEmoji}` + formatAchievement(ach);
         pageTexts[pageIndex] += achText;
     }
     

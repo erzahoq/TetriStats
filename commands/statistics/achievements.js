@@ -162,7 +162,14 @@ module.exports = {
             const seenUsers = [];
             for (let i = 0; i < Math.min(15, lb.length); i++) { //just in case lb has less than 15 entries
                 if (ach.pair && seenUsers.includes(lb[i].u.username)) continue;
-                lbText += i === 0 ? `${getEmoji('top')}` : `${getEmoji('mid')}`;
+                if (ach.art !== 2) {
+                    lbText += i === 0 ? `${getEmoji('top')}` : `${getEmoji('mid')}`;
+                }
+                else if (i > 9) lbText += `${getEmoji('mid_t25')}`;
+                else if (i > 4) lbText += `${getEmoji('mid_t10')}`;
+                else if (i > 2) lbText += `${getEmoji('mid_t5')}`;
+                else if (i > 0) lbText += `${getEmoji('mid_t3')}`;
+                else lbText += `${getEmoji('top_1st')}`;
 
                 // not diamond tier; mainly for swamp water aches :P
                 if (lb[i].v < cutoffs.diamond) {
