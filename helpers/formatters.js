@@ -404,13 +404,15 @@ async function buildStatComparisonLines(
 
     const displayValue = fmtValue(statValue);
 
-    const lines = [`${getEmoji("top")}${getEmojiOfRank(avgRank)} **${displayValue} ${statName}**`];
+    const formattedAvgRank = avgRank.replace("+", "plus").replace("-", "minus");
+
+    const lines = [`${getEmoji(`top_${formattedAvgRank}`)}${getEmojiOfRank(avgRank)} **${displayValue} ${statName}**`];
 
     const userRankLetter = effectiveRank || null;
 
     // 1) around line
     if (avgRank && deltaToAvg !== null && avgRank !== userRankLetter) {
-        lines.push(`${getEmoji("mid")}Closest rank is ${avgRank.toUpperCase()}, with ${fmtDelta(deltaToAvg)}`);
+        lines.push(`${getEmoji(`mid_${formattedAvgRank}`)}Closest rank is ${avgRank.toUpperCase()}, with ${fmtDelta(deltaToAvg)}`);
     }
 
     // 3) next rank line
@@ -421,14 +423,14 @@ async function buildStatComparisonLines(
         if (nextRow && !isRedundant) {
             const nextAvg = thresholds?.[nextRow];
             if (nextAvg !== null && nextAvg !== undefined && isFinite(Number(nextAvg))) {
-                lines.push(`${getEmoji("mid")}${nextRow.toUpperCase()} rank has ${fmtDelta(deltaFn(statValue, Number(nextAvg)))}`);
+                lines.push(`${getEmoji(`mid_${formattedAvgRank}`)}${nextRow.toUpperCase()} rank has ${fmtDelta(deltaFn(statValue, Number(nextAvg)))}`);
             }
         }
     }
 
     // 2) compared to current rank
     if (userRankLabel !== 'Unranked' && userRankLabel !== avgRank) {
-        if (deltaToUser !== null) lines.push(`${getEmoji("mid")}${userRankLabel.toUpperCase()} rank has ${fmtDelta(deltaToUser)}`);
+        if (deltaToUser !== null) lines.push(`${getEmoji(`mid_${formattedAvgRank}`)}${userRankLabel.toUpperCase()} rank has ${fmtDelta(deltaToUser)}`);
         else lines.push(`- wee woo wee woo ${userRankLabel.toUpperCase()}`); // i dont think this ever triggers but if it does uhhhhh :)
     }
 
