@@ -145,9 +145,9 @@ module.exports = {
         const labels = ["Profile", "General", "Gameplay"];
 
         const bioText = statData.bio ? `> ${statData.bio}\n` : "";
-        const levelText = `Level ${formatNumber(Math.floor(calculateLevel(statData.xp)))}`;
-        const friendText = statData.friend_count > 0 ? (statData.friend_count !== 1 ? `\nHas ${formatNumber(statData.friend_count)} friends` : `\nHas 1 friend`) : "";
-        const supporterText = statData.supporter ? `\nSupporter${starConvert(statData.supporter_tier)}` : "";
+        const levelText = `${getEmoji("mid")}Level ${formatNumber(Math.floor(calculateLevel(statData.xp)))}`;
+        const friendText = statData.friend_count > 0 ? (statData.friend_count !== 1 ? `\n${getEmoji("mid")}Has ${formatNumber(statData.friend_count)} friends` : `\n${getEmoji("mid")}Has 1 friend`) : "";
+        const supporterText = statData.supporter ? `\n${getEmoji("mid")}Supporter${starConvert(statData.supporter_tier)}` : "";
         const displayedAchievements = formatDisplayedAchs(statData.achievements, ach);
         const gameStats = formatGamesPlayed(statData.gamesplayed, statData.gameswon, statData.gametime);
 
@@ -157,14 +157,13 @@ module.exports = {
                 new SectionBuilder()
                     .addTextDisplayComponents(
                         new TextDisplayBuilder().setContent(`### __${formatUsername(user.username)} -> Quick Look__
-${bioText}${levelText}${friendText}${supporterText}
-Account created ${formatISOString(statData.ts)}`),
+${bioText}${getEmoji("top")}**About**\n${levelText}${friendText}${supporterText}
+${getEmoji("mid")}Account created ${formatISOString(statData.ts)}`),
                     )
                     .setThumbnailAccessory(
                         new ThumbnailBuilder().setURL(avatarUrl),
                     ),
             )
-            .addSeparatorComponents(new SeparatorBuilder());
 
         if (profileExtra) {
             profilePage.addTextDisplayComponents(
@@ -172,6 +171,10 @@ Account created ${formatISOString(statData.ts)}`),
             );
         }
 
+        profilePage.addSeparatorComponents(
+            new SeparatorBuilder()
+                .setDivider(true)
+        );
         profilePage.addActionRowComponents(
             buildPageSelectRow({
                 commandName,
@@ -200,16 +203,16 @@ ${getEmoji("top")}Has **${unlockedCount} achievements**${medalLine}${statData.ar
             );
         }
 
-        if (displayedAchievements && gameStats) {
-            generalPage.addSeparatorComponents(new SeparatorBuilder());
-        }
-
         if (gameStats) {
             generalPage.addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(gameStats),
             );
         }
 
+        generalPage.addSeparatorComponents(
+            new SeparatorBuilder()
+                .setDivider(true)
+        );
         generalPage.addActionRowComponents(
             buildPageSelectRow({
                 commandName,
@@ -219,18 +222,31 @@ ${getEmoji("top")}Has **${unlockedCount} achievements**${medalLine}${statData.ar
             }),
         );
 
+        let texts = [formatLeaguePreview(summaryData), formatZenith(summaryData, country), formatZenith(summaryData, country, true), format40Lines(summaryData, country), formatBlitz(summaryData, country), formatZen(summaryData)];
+        texts = texts.filter((text) => text && text.trim().length > 0);
+
         const gameplayPage = new ContainerBuilder()
             .setAccentColor(0x80bdff)
             .addSectionComponents(
                 new SectionBuilder()
                     .addTextDisplayComponents(
                         new TextDisplayBuilder().setContent(`### __${formatUsername(user.username)} -> Quick Look -> Gameplay__
-${formatLeaguePreview(summaryData)} ${formatZenith(summaryData, country)} ${formatZenith(summaryData, country, true)} ${format40Lines(summaryData, country)} ${formatBlitz(summaryData, country)} ${formatZen(summaryData)}`),
+${texts[0] || "No records here...?"}`),
                     )
                     .setThumbnailAccessory(
                         new ThumbnailBuilder().setURL(avatarUrl),
                     ),
             )
+        for (let i = 1; i < texts.length; i++) {
+            gameplayPage.addTextDisplayComponents(
+                new TextDisplayBuilder().setContent(texts[i]),
+            );
+        }
+        
+        gameplayPage.addSeparatorComponents(
+            new SeparatorBuilder()
+                .setDivider(true)
+        )
             .addActionRowComponents(
                 buildPageSelectRow({
                     commandName,

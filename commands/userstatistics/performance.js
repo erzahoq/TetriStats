@@ -6,7 +6,8 @@ const {
     ThumbnailBuilder,
     MessageFlags,
     InteractionContextType,
-    ApplicationIntegrationType
+    ApplicationIntegrationType,
+    SeparatorBuilder
 } = require('discord.js');
 
 const { getEmojiOfRank, getLeagueRankColour, formatUsername, buildPageSelectRow, addStatComparisonField, getAvatarUrl } = require('../../helpers/formatters');
@@ -199,6 +200,10 @@ module.exports = {
         const key = interaction.id;
 
         for (let i = 0; i < pages.length; i++) {
+            pages[i].addSeparatorComponents(
+                new SeparatorBuilder()
+                    .setDivider(true)
+            );
             pages[i].addActionRowComponents(
                 buildPageSelectRow({
                     commandName: 'performance',

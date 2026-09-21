@@ -328,22 +328,29 @@ ${userSuffix}`)
                 }
             }
             const handling = replayData.options.handling;
-            const inputCountString = `${getEmoji("top")}**Placed ${formatNumber(replayStats.piecesplaced)} pieces**
+            const inputCountComponents = [
+                new TextDisplayBuilder().setContent(`${getEmoji("top")}**Placed ${formatNumber(replayStats.piecesplaced)} pieces**
 ${getEmoji("mid")}Held ${formatNumber(replayStats.holds)} pieces
 ${getEmoji("mid")}Pressed ${formatNumber(replayStats.inputs)} inputs
 ${getEmoji("mid")}⇊ ${formatNumber(inputCounts.hardDrop)} | ⇃ ${formatNumber(inputCounts.softDrop)} | ⇄ ${formatNumber(inputCounts.hold)}
 ${getEmoji("mid")}← ${formatNumber(inputCounts.moveLeft)} | → ${formatNumber(inputCounts.moveRight)}
 ${getEmoji("mid")}↶ ${formatNumber(inputCounts.rotateCCW)} | ↷ ${formatNumber(inputCounts.rotateCW)} | ⟳ ${formatNumber(inputCounts.rotate180)}
-${getEmoji("mid")}${handling.arr}F ARR | ${handling.das}F DAS | ${handling.sdf === 41 ? "∞" : handling.sdf}x SDF
-${getEmoji("top")}**Cleared ${formatNumber(replayStats.lines)} lines**
+${getEmoji("mid")}${handling.arr}F ARR | ${handling.das}F DAS | ${handling.sdf === 41 ? "∞" : handling.sdf}x SDF`),
+
+                new TextDisplayBuilder().setContent(`${getEmoji("top")}**Cleared ${formatNumber(replayStats.lines)} lines**
 ${getEmoji("mid")}${replayStats.clears.singles} singles (${(replayStats.clears.tspinsingles ?? 0) + (replayStats.clears.minitspinsingles ?? 0)} spins) 
 ${getEmoji("mid")}${replayStats.clears.doubles} doubles (${(replayStats.clears.tspindoubles ?? 0) + (replayStats.clears.minitspindoubles ?? 0)} spins) 
 ${getEmoji("mid")}${replayStats.clears.triples} triples (${(replayStats.clears.tspintriples?? 0) + (replayStats.clears.minitspintriples ?? 0)} spins)
-${getEmoji("mid")}${replayStats.clears.quads} quads${finesse === -1 ? '' : `
+${getEmoji("mid")}${replayStats.clears.quads} quads`)]
+            if (finesse !== -1) {
+                inputCountComponents.push(
+                    new TextDisplayBuilder().setContent(`
 ${getEmoji("top")}**Had ${formatNumber(finesse * 100, 2)}% finesse**
 ${getEmoji("mid")}Reached a ${replayStats.finesse.combo} chain
 ${getEmoji("mid")}Made ${replayStats.finesse.faults} faults
-${getEmoji("mid")}Placed ${replayStats.finesse.perfectpieces} pieces perfectly`}`;
+${getEmoji("mid")}Placed ${replayStats.finesse.perfectpieces} pieces perfectly`)
+                )
+            }
 
             let performanceDisclaimer = "";
             // skips the "compared to rank" line for performance tab
@@ -449,11 +456,13 @@ ${getEmoji("top")}**Finished in ${framesToTime(replayData.frames)}**
 ${getEmoji("mid")}${formatNumber(pps,2)} PPS
 ${getEmoji("mid")}${formatNumber(apm,2)} APM
 ${getEmoji("mid")}${formatNumber(replayData.results.aggregatestats.vsscore,2)} VS Score
-${getEmoji("mid")}${formatNumber(finesse * 100, 2)}% Finesse | ${replayStats.finesse.faults} Faults
-${getEmoji("top")}**Climbed ${formatNumber(height, 1)}m (Floor ${zenithStats.floor})**
+${getEmoji("mid")}${formatNumber(finesse * 100, 2)}% Finesse | ${replayStats.finesse.faults} Faults`),
+                            new TextDisplayBuilder()
+                                .setContent(`${getEmoji("top")}**Climbed ${formatNumber(height, 1)}m (Floor ${zenithStats.floor})**
 ${getEmoji("mid")}Reached ${formatNumber(zenithStats.peakrank, 2)} climb speed, averaged ${formatNumber(zenithStats.rank, 2)}
-${getEmoji("mid")}Reached ${(replayStats.topbtb) - 1} B2B
-${getEmoji("top")}**KO'd ${replayStats.kills} players**
+${getEmoji("mid")}Reached ${(replayStats.topbtb) - 1} B2B`),
+                            new TextDisplayBuilder()
+                                .setContent(`${getEmoji("top")}**KO'd ${replayStats.kills} players**
 ${getEmoji("mid")}Sent ${formatNumber(garbageStats.sent)} lines 
 ${getEmoji("mid")}Received ${formatNumber(garbageStats.received)} lines
 ${userSuffix}`)
@@ -463,14 +472,16 @@ ${userSuffix}`)
                         .setAccentColor(0xffb980)
                         .addTextDisplayComponents(
                             new TextDisplayBuilder()
-                                .setContent(`### __${replayLinkFormat} -> Full__
-${inputCountString}
-${getEmoji("top")}**Sent ${formatNumber(garbageStats.sent)} garbage lines**
+                                .setContent(`### __${replayLinkFormat} -> Full__`),
+                            ...inputCountComponents,
+                            new TextDisplayBuilder()
+                                .setContent(`${getEmoji("top")}**Sent ${formatNumber(garbageStats.sent)} garbage lines**
 ${getEmoji("mid")}Recieved ${formatNumber(garbageStats.received)}
 ${getEmoji("mid")}Cleared ${formatNumber(garbageStats.cleared)}
 ${getEmoji("mid")}Generated ${formatNumber(garbageStats.attack)} total attack
-${getEmoji("mid")}Sent a ${formatNumber(garbageStats.maxspike)} spike
-${getEmoji("top")}**Scored ${formatNumber(stats.score)} points**
+${getEmoji("mid")}Sent a ${formatNumber(garbageStats.maxspike)} spike`),
+                            new TextDisplayBuilder()
+                                .setContent(`${getEmoji("top")}**Scored ${formatNumber(stats.score)} points**
 ${getEmoji("mid")}Reached a ${stats.topcombo} combo
 ${getEmoji("mid")}Reached a ${(stats.topbtb) - 1} Back-to-Back chain
 ${userSuffix}`)
@@ -516,9 +527,10 @@ ${userSuffix}
                         .setAccentColor(0xffb980)
                         .addTextDisplayComponents(
                             new TextDisplayBuilder()
-                                .setContent(`### __${replayLinkFormat} -> Full__
-${inputCountString}
-${userSuffix}`)
+                                .setContent(`### __${replayLinkFormat} -> Full__`),
+                            ...inputCountComponents,
+                            new TextDisplayBuilder()
+                                .setContent(`${userSuffix}`)
                         ),
                 ]
             } else if (replay.gamemode === 'blitz') {
@@ -549,9 +561,10 @@ ${userSuffix}
                         .setAccentColor(0xffb980)
                         .addTextDisplayComponents(
                             new TextDisplayBuilder()
-                                .setContent(`### __${replayLinkFormat} -> Full__
-${inputCountString}
-${userSuffix}`)
+                                .setContent(`### __${replayLinkFormat} -> Full__`),
+                            ...inputCountComponents,
+                            new TextDisplayBuilder()
+                                .setContent(`${userSuffix}`)
                         ),
                 ]              
             

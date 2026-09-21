@@ -6,7 +6,8 @@ const {
     ThumbnailBuilder,
     InteractionContextType,
     ApplicationIntegrationType,
-    MessageFlags
+    MessageFlags,
+    SeparatorBuilder
 } = require('discord.js');
 
 const { formatNumber, getLeagueRankColour, getEmojiOfRank, formatUsername, buildPageSelectRow, getAvatarUrl } = require('../../helpers/formatters');
@@ -85,6 +86,10 @@ module.exports = {
         const labels = ['Current', ...seasonNumbers.map(s => `Season ${s}`)];
 
         for (let i = 0; i < pages.length; i++) {
+            pages[i].addSeparatorComponents(
+                new SeparatorBuilder()
+                    .setDivider(true)
+            );
             pages[i].addActionRowComponents(
                 buildPageSelectRow({
                     commandName: 'league',
@@ -151,64 +156,75 @@ function createLeagueContainer(leagueData, user, past = 0) {
     const Currently = past ? `Was` : `Currently`;
     const Has = past ? `Had` : `Has`;
 
-    let description = `### __${formatUsername(user.username)} -> Tetra League${past ? ` -> Season ${past}` : ""}__\n`;
-    description += `## ${tr < 0 || rank === "z" ? `${Currently} unranked ${getEmojiOfRank('z')}` : `${Currently} ranked ${getEmojiOfRank(rank)}`}\n`;
+    let thumbnailDescription = `### __${formatUsername(user.username)} -> Tetra League${past ? ` -> Season ${past}` : ""}__\n`;
+    thumbnailDescription += `## ${tr < 0 || rank === "z" ? `${Currently} unranked ${getEmojiOfRank('z')}` : `${Currently} ranked ${getEmojiOfRank(rank)}`}\n`;
+    const textComponents = [];
 
     if (tr < 0) {
-        description += `${getEmoji("top")}**${Has} played ${gamesPlayed}/10 rating games**\n`;
+        thumbnailDescription += `${getEmoji("top")}**${Has} played ${gamesPlayed}/10 rating games**\n`;
         if (gamesPlayed > 0) {
-            description += `${getEmoji("mid")}Won ${gamesWon} of them (${winRate}%)\n${getEmoji("mid")}${formatNumber(apm, 2)} APM | ${formatNumber(pps, 2)} PPS | ${formatNumber(vs, 2)} VS score\n`;
+            thumbnailDescription += `${getEmoji("mid")}Won ${gamesWon} of them (${winRate}%)\n${getEmoji("mid")}${formatNumber(apm, 2)} APM | ${formatNumber(pps, 2)} PPS | ${formatNumber(vs, 2)} VS score\n`;
         }
         rankBar = `${generateProgressBar("Unranked", gamesPlayed / 10, 10)} ${getEmojiOfRank('z')}`;
         if (bestrank && bestrank !== leagueData.percentile_rank) {
-            description += `${getEmoji("mid")}${Has} reached ${getEmojiOfRank(bestrank)}\n`;
+            thumbnailDescription += `${getEmoji("mid")}${Has} reached ${getEmojiOfRank(bestrank)}\n`;
         }
     } else {
-        description += `${getEmoji("top")}**${Has} ${formatNumber(tr, 1)} TR**\n`;
+        thumbnailDescription += `${getEmoji("top")}**${Has} ${formatNumber(tr, 1)} TR**\n`;
         if (rd > 100) {
             if (!past) {            
-                description += `${getEmoji("mid")}Around ${getEmojiOfRank(leagueData.percentile_rank)} (Top ${formatNumber(percentile * 100, 1)}%)\n`;
+                thumbnailDescription += `${getEmoji("mid")}Around ${getEmojiOfRank(leagueData.percentile_rank)} (Top ${formatNumber(percentile * 100, 1)}%)\n`;
             }
             rankBar = false;
             if (bestrank && bestrank !== leagueData.percentile_rank) {
-                description += `${getEmoji("mid")}${Has} reached ${getEmojiOfRank(bestrank)}\n`;
+                thumbnailDescription += `${getEmoji("mid")}${Has} reached ${getEmojiOfRank(bestrank)}\n`;
             }
         } else {
             if (percentile < 0.005) {
-                description += `${getEmoji("mid")}Ranked **#${standing}** worldwide\n`;
+                thumbnailDescription += `${getEmoji("mid")}Ranked **#${standing}** worldwide\n`;
                 if (standing !== 1) {
-                    description += `${getEmoji("mid")}Ranked #${localStanding} locally\n`;
+                    thumbnailDescription += `${getEmoji("mid")}Ranked #${localStanding} locally\n`;
                 }
             } else {
-                description += `${getEmoji("mid")}Ranked **#${standing}** worldwide (Top **${formatNumber(percentile * 100, 1)}%**)\n${getEmoji("mid")}Ranked #${localStanding} locally\n`;
+                thumbnailDescription += `${getEmoji("mid")}Ranked **#${standing}** worldwide (Top **${formatNumber(percentile * 100, 1)}%**)\n${getEmoji("mid")}Ranked #${localStanding} locally\n`;
             }
             rankBar = `${getEmojiOfRank(prevRank)} ${generateProgressBar("Ranked", (leagueData.prev_at - standing) / (leagueData.prev_at - leagueData.next_at), 15)} ${getEmojiOfRank(nextRank)}`;
             if (bestrank && bestrank !== rank) {
-                description += `${getEmoji("mid")}${Has} reached ${getEmojiOfRank(bestrank)}\n`;
+                thumbnailDescription += `${getEmoji("mid")}${Has} reached ${getEmojiOfRank(bestrank)}\n`;
             }
         }
-        description += `${getEmoji("mid")}${Has} ${formatNumber(glicko, 2)} ± ${formatNumber(rd, 1)} Glicko\n`;
+
+        thumbnailDescription += `${getEmoji("mid")}${Has} ${formatNumber(glicko, 2)} ± ${formatNumber(rd, 1)} Glicko\n`;
         if (gxe) {
-            description += `**${getEmoji("mid")}${formatNumber(gxe, 1)}%** chance to win against random player\n`;
+            thumbnailDescription += `**${getEmoji("mid")}${formatNumber(gxe, 1)}%** chance to win against random player\n`;
         }
         if (decaying) {
-            description += `${getEmoji("mid")}${Has}n't played in a week; __rating deviation is increasing__\n`;
+            thumbnailDescription += `${getEmoji("mid")}${Has}n't played in a week; __rating deviation is increasing__\n`;
         }
-        description += `\n${getEmoji("top")}**${Has} played ${formatNumber(gamesPlayed)} game${gamesPlayed === 1 ? '' : 's'}**\n`;
+        
+        let compDesc = "";
+        compDesc += `${getEmoji("top")}**${Has} played ${formatNumber(gamesPlayed)} game${gamesPlayed === 1 ? '' : 's'}**\n`;
         if (gamesPlayed > 0) {
-            description += `${getEmoji("mid")}Won **${formatNumber(gamesWon)}** of them (**${winRate}%**)\n${getEmoji("mid")}${formatNumber(apm, 2)} APM | ${formatNumber(pps, 2)} PPS | ${formatNumber(vs, 2)} VS score\n`;
+            compDesc += `${getEmoji("mid")}Won **${formatNumber(gamesWon)}** of them (**${winRate}%**)\n${getEmoji("mid")}${formatNumber(apm, 2)} APM | ${formatNumber(pps, 2)} PPS | ${formatNumber(vs, 2)} VS score\n`;
         }
+        textComponents.push(new TextDisplayBuilder().setContent(compDesc));
     }
 
-    if (rankBar && !past) description += `\n${rankBar}`;
+    if (rankBar && !past) {
+        const rankBarComponent = new TextDisplayBuilder().setContent(rankBar);
+        textComponents.push(rankBarComponent);
+    }
 
     const container = new ContainerBuilder()
         .setAccentColor(getLeagueRankColour(rank) || 0xff8c57)
         .addSectionComponents(
             new SectionBuilder()
-                .addTextDisplayComponents(new TextDisplayBuilder().setContent(description))
+                .addTextDisplayComponents(new TextDisplayBuilder().setContent(thumbnailDescription))
                 .setThumbnailAccessory(new ThumbnailBuilder().setURL(getAvatarUrl(user)))
         );
+    if (textComponents.length > 0) {
+        container.addTextDisplayComponents(...textComponents);
+    }
     
     return container;
 }

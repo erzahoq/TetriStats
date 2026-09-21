@@ -193,6 +193,7 @@ module.exports = {
 
         textPages.forEach((container, pageIndex) => {
             container
+                .addSeparatorComponents(new SeparatorBuilder())
                 .addActionRowComponents(
                     buildAchSelectRow(
                         key,

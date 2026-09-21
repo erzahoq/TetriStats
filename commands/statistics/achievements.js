@@ -6,6 +6,7 @@ const {
     InteractionContextType,
     ContainerBuilder,
     TextDisplayBuilder,
+    SeparatorBuilder,
 } = require("discord.js");const { fetchCached } = require('../../helpers/fetch.js');
 const { getEmoji } = require('../../helpers/emojis.js');
 const {
@@ -264,6 +265,10 @@ module.exports = {
                 );
 
             if (pageDefinitions.length > 1) {
+                container.addSeparatorComponents(
+                    new SeparatorBuilder()
+                        .setDivider(true)
+                );
                 container
                     .addActionRowComponents(
                         buildPageSelectRow({

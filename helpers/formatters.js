@@ -8,7 +8,6 @@ const {
     EmbedBuilder,
     MessageFlags,
     SectionBuilder,
-    SeparatorBuilder,
     StringSelectMenuBuilder,
     StringSelectMenuOptionBuilder,
     TextDisplayBuilder,
@@ -466,9 +465,6 @@ async function addStatComparisonField(
                 new TextDisplayBuilder()
                     .setContent(content),
             )
-            .addSeparatorComponents(
-                new SeparatorBuilder(),
-            );
 
         return;
     }
