@@ -8,6 +8,7 @@ const {
 const { database } = require('./../../database.js')
 const { Op } = require('sequelize');
 const { getEmojiOfRank, formatPreciseTime, formatNumber } = require('../../helpers/formatters.js');
+const { getEmoji } = require('../../helpers/emojis.js');
 
 const statOptions = {};
 let seenRankTotals = {};
@@ -121,6 +122,7 @@ module.exports = {
         }
         for (const rank of RANKS) {
             const emoji = getEmojiOfRank(rank);
+            const formattedAvgRank = rank.replace("+", "plus").replace("-", "minus");
             if (statEntry.seenCount[rank] === 0) {
                 continue;
             }
@@ -129,9 +131,9 @@ module.exports = {
             const seenPercent = statEntry.seenCount[rank] / seenRankTotals[rank];
 
             if (seenPercent > 0.7) {
-                description += `\n${emoji} **\`${" ".repeat(maxLength - value.length)}${value}\`**`;
+                description += `\n${getEmoji(`mid_${formattedAvgRank}`)}${emoji} **\`${" ".repeat(maxLength - value.length)}${value}\`**`;
             } else if (seenPercent > 0.2) {
-                description += `\n${emoji} \`${" ".repeat(maxLength - value.length)}${value}\` (*${formatNumber(seenPercent * 100, 2)}% of players*)`;
+                description += `\n${getEmoji(`mid_${formattedAvgRank}`)}${emoji} \`${" ".repeat(maxLength - value.length)}${value}\` (*${formatNumber(seenPercent * 100, 2)}% of players*)`;
             } else {
                 continue;
             }
