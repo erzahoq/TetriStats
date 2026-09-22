@@ -428,7 +428,8 @@ async function buildAchievementDetailContainer(ach, username, league) {
                 if (need > 0) {
                     const needText = formatAchievementDelta(need, ach);
                     if (needText) {
-                        achText += `\n${getEmoji(`mid_${formattedAvgRank}`)}${getEmojiOfRank(nextRank)} rank has ${needText} more`;
+                        const direction = lowerIsBetter ? 'less' : 'more';
+                        achText += `\n${getEmoji(`mid_${formattedAvgRank}`)}${getEmojiOfRank(nextRank)} rank has ${needText} ${direction}`;
                     }
                 }
             }
@@ -449,7 +450,8 @@ async function buildAchievementDetailContainer(ach, username, league) {
                 if (need > 0) {
                     const needText = formatAchievementDelta(need, ach);
                     if (needText) {
-                        achText += `\n${getEmoji(`mid_${formattedAvgRank}`)}${getEmojiOfRank(rank)} rank has ${needText} more`;
+                        const direction = lowerIsBetter ? 'less' : 'more';
+                        achText += `\n${getEmoji(`mid_${formattedAvgRank}`)}${getEmojiOfRank(rank)} rank has ${needText} ${direction}`;
                     }
                 }
             }
