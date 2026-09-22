@@ -378,7 +378,7 @@ async function buildAchievementDetailContainer(ach, username, league) {
     //duo achievement
     if (ach.x?.ally) {
         const allyUsername = ach.x.ally.username;
-        achText += `\n With ${formatUsername(allyUsername)}`;
+        achText += `\nWith ${formatUsername(allyUsername)}`;
     }
 
     //league rank stuff
@@ -449,7 +449,7 @@ async function buildAchievementDetailContainer(ach, username, league) {
                 if (need > 0) {
                     const needText = formatAchievementDelta(need, ach);
                     if (needText) {
-                        achText += `\n${`mid_${formattedAvgRank}`}${getEmojiOfRank(rank)} rank has ${needText} more`;
+                        achText += `\n${getEmoji(`mid_${formattedAvgRank}`)}${getEmojiOfRank(rank)} rank has ${needText} more`;
                     }
                 }
             }

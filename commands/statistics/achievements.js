@@ -218,22 +218,23 @@ module.exports = {
 
             for (const rank of RANKS) {
                 const emoji = getEmojiOfRank(rank);
+                const formattedAvgRank = rank.replace("+", "plus").replace("-", "minus");
                 if (!leagueData.seenCount[rank] || !leagueData.values[rank]) {
                     continue;
                 }
 
                 if (ach.rt === 2) {
                     const value = `${formatNumber(leagueData.values[rank] * 100, 2)}%`
-                    leagueText += `\n${emoji} **\`${"0".repeat(6 - value.length)}${value}\`**`;
+                    leagueText += `\n${getEmoji(`mid_${formattedAvgRank}`)}${emoji} **\`${"0".repeat(6 - value.length)}${value}\`**`;
                     continue;
                 }
 
                 const seenPercent = leagueData.seenCount[rank] / seenRankTotals[rank];
                 const value = formatAchievementVal(ach, leagueData.values[rank], null);
                 if (seenPercent > 0.7) {
-                    leagueText += `\n${emoji} **\`${" ".repeat(maxLength - value.length)}${value}\`**`;
+                    leagueText += `\n${getEmoji(`mid_${formattedAvgRank}`)}${emoji} **\`${" ".repeat(maxLength - value.length)}${value}\`**`;
                 } else if (seenPercent > 0.05) {
-                    leagueText += `\n${emoji} \`${" ".repeat(maxLength - value.length)}${value}\` (*${formatNumber(seenPercent * 100, 2)}%*)`;
+                    leagueText += `\n${getEmoji(`mid_${formattedAvgRank}`)}${emoji} \`${" ".repeat(maxLength - value.length)}${value}\` (*${formatNumber(seenPercent * 100, 2)}%*)`;
                 } else {
                     continue;
                 }
