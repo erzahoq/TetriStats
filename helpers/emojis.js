@@ -35,7 +35,7 @@ function getBarEmoji(rank, ar, leagueRank, top = false) {
     }
 
     const competitive = ar === 1 ? 'u_' : '';
-    if (top) return getEmoji('top_1st');
+    if (top) return getEmoji(`top_${competitive}1st`);
     if (rank > 100) return getEmoji('mid');
     if (rank > 25) return getEmoji(`mid_${competitive}t100`);
     if (rank > 10) return getEmoji(`mid_${competitive}t25`);
