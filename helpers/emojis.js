@@ -25,4 +25,24 @@ function getEmoji(name, alternate = null) {
     return emojiCache.get(name) || alternate || `:${name}:`;
 }
 
-module.exports = { initEmojis, getEmoji };
+function getBarEmoji(rank, ar, leagueRank, top = false) {
+    if (leagueRank) {
+        return getEmoji(`${top ? 'top' : 'mid'}_${leagueRank}`);
+    }
+
+    if (ar === 0) {
+        return getEmoji(top ? 'top' : 'mid');
+    }
+
+    const competitive = ar === 1 ? 'u_' : '';
+    if (top) return getEmoji('top_1st');
+    if (rank > 100) return getEmoji('mid');
+    if (rank > 25) return getEmoji(`mid_${competitive}t100`);
+    if (rank > 10) return getEmoji(`mid_${competitive}t25`);
+    if (rank > 5) return getEmoji(`mid_${competitive}t10`);
+    if (rank > 3) return getEmoji(`mid_${competitive}t5`);
+    if (rank > 0) return getEmoji(`mid_${competitive}t3`);
+    return getEmoji('mid');
+}
+
+module.exports = { initEmojis, getEmoji, getBarEmoji };

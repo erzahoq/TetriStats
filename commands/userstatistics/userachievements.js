@@ -15,7 +15,7 @@ const {
 
 const { formatUsername, formatAchievement, buildPageSelectRow, getClosestRank, formatAchievementVal, formatNumber, formatISOString, getEmojiOfRank, getNextRank, getLeagueStatThresholds, getLeagueRankColour, getAvatarUrl } = require('../../helpers/formatters');
 const { getUser } = require('../../helpers/getuser');
-const { getEmoji } = require('../../helpers/emojis');
+const { getEmoji, getBarEmoji } = require('../../helpers/emojis');
 const { fetchCached } = require('../../helpers/fetch');
 const { autocomplete, getChoice } = require('../../helpers/achAutocomplete');
 
@@ -276,14 +276,8 @@ function paginateAchievements(achlist) {
         pageAchs[pageIndex] ??= [];
         pageAchs[pageIndex].push(ach);
 
-        let bulletEmoji = getEmoji("mid");
-        if (ach.pos <= 3) bulletEmoji = getEmoji("mid_t3");
-        else if (ach.pos <= 4) bulletEmoji = getEmoji("mid_t5");
-        else if (ach.pos <= 9) bulletEmoji = getEmoji("mid_t10");
-        else if (ach.pos <= 24) bulletEmoji = getEmoji("mid_t25");
-        else if (ach.pos <= 99) bulletEmoji = getEmoji("mid_t100");
-
-        if (ach.rank === 100) bulletEmoji = getEmoji("mid_iss");
+        let bulletEmoji = getBarEmoji(ach.pos + 1, ach.art, null);
+        if (ach.rank === 100) bulletEmoji = getBarEmoji(null, null, 'iss');
 
         const achText = `\n${bulletEmoji}` + formatAchievement(ach);
         pageTexts[pageIndex] += achText;
@@ -397,7 +391,7 @@ async function buildAchievementDetailContainer(ach, username, league) {
     //if its not issued:
     if (ach.rank !== 100 && closestRank) {
         //show closest rank and data
-        achText += `\n\n${getEmoji(`top_${formattedAvgRank}`)}**Performance**\n${getEmoji(`mid_${formattedAvgRank}`)}Closest rank is ${getEmojiOfRank(closestRank.rank)}, with`;
+        achText += `\n\n${getBarEmoji(null, null, formattedAvgRank, true)}**Performance**\n${getBarEmoji(null, null, formattedAvgRank)}Closest rank is ${getEmojiOfRank(closestRank.rank)}, with`;
 
         const deltaText = formatAchievementDelta(closestRank.delta, ach);
         let sign = closestRank.delta > 0 ? 'less' : closestRank.delta < 0 ? 'more' : '';
@@ -429,7 +423,7 @@ async function buildAchievementDetailContainer(ach, username, league) {
                     const needText = formatAchievementDelta(need, ach);
                     if (needText) {
                         const direction = lowerIsBetter ? 'less' : 'more';
-                        achText += `\n${getEmoji(`mid_${formattedAvgRank}`)}${getEmojiOfRank(nextRank)} rank has ${needText} ${direction}`;
+                        achText += `\n${getBarEmoji(null, null, formattedAvgRank)}${getEmojiOfRank(nextRank)} rank has ${needText} ${direction}`;
                     }
                 }
             }
@@ -451,7 +445,7 @@ async function buildAchievementDetailContainer(ach, username, league) {
                     const needText = formatAchievementDelta(need, ach);
                     if (needText) {
                         const direction = lowerIsBetter ? 'less' : 'more';
-                        achText += `\n${getEmoji(`mid_${formattedAvgRank}`)}${getEmojiOfRank(rank)} rank has ${needText} ${direction}`;
+                        achText += `\n${getBarEmoji(null, null, formattedAvgRank)}${getEmojiOfRank(rank)} rank has ${needText} ${direction}`;
                     }
                 }
             }
