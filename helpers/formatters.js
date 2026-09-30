@@ -290,6 +290,18 @@ async function getClosestRank(
     }
 
     const { thresholds, seen } = getClosestRank._cache[dbStatKey];
+    if (!thresholds) return null;
+
+    if (!getClosestRank._cache['league/apm']) {
+        const totalsRow = await database.LeagueStat.findByPk('league/apm');
+        getClosestRank._cache['league/apm'] = {
+            thresholds: totalsRow?.values ?? {},
+            seen: totalsRow?.seenCount ?? {}
+        };
+    }
+    const rankTotals = dbStatKey === 'league/apm'
+        ? seen
+        : getClosestRank._cache['league/apm'].seen;
 
     let bestRank = null;
     let bestDiff = Infinity;
@@ -297,6 +309,13 @@ async function getClosestRank(
     for (const rank of RANK_ORDER) {
         const ref = thresholds[rank];
         if (ref === null || ref === undefined || !isFinite(Number(ref))) continue;
+
+        const rankSeen = seen?.[rank];
+        const rankTotal = rankTotals?.[rank];
+        if (rankSeen === null || rankSeen === undefined || rankTotal === null || rankTotal === undefined) continue;
+        if (!isFinite(Number(rankSeen)) || Number(rankSeen) < 20) continue;
+        if (!isFinite(Number(rankTotal)) || Number(rankTotal) <= 0) continue;
+        if (Number(rankSeen) / Number(rankTotal) < 0.2) continue;
 
         const diff = Math.abs(Number(value) - Number(ref));
 
@@ -388,6 +407,20 @@ async function buildStatComparisonLines(
     const around = await getClosestRank(statValue, dbStatKey, { lowerIsBetter });
     const avgRank = around?.rank ?? null;
     const deltaToAvg = around ? deltaFn(statValue, around.refValue) : null;
+    const statData = getClosestRank._cache?.[dbStatKey];
+    const rankTotals = dbStatKey === 'league/apm'
+        ? statData?.seen
+        : getClosestRank._cache?.['league/apm']?.seen;
+    const isReliableRank = (rank, value) => {
+        if (value === null || value === undefined || !isFinite(Number(value))) return false;
+
+        const rankSeen = statData?.seen?.[rank];
+        const rankTotal = rankTotals?.[rank];
+        if (rankSeen === null || rankSeen === undefined || rankTotal === null || rankTotal === undefined) return false;
+        if (!isFinite(Number(rankSeen)) || Number(rankSeen) < 20) return false;
+        if (!isFinite(Number(rankTotal)) || Number(rankTotal) <= 0) return false;
+        return Number(rankSeen) / Number(rankTotal) >= 0.2;
+    };
 
     let userRankLabel = 'Unranked';
     let userRankValue = null;
@@ -404,9 +437,11 @@ async function buildStatComparisonLines(
 
     const displayValue = fmtValue(statValue);
 
-    const formattedAvgRank = avgRank.replace("+", "plus").replace("-", "minus");
+    const formattedAvgRank = avgRank ? avgRank.replace("+", "plus").replace("-", "minus") : null;
 
-    const lines = [`${getBarEmoji(null, null, formattedAvgRank, true)}${getEmojiOfRank(avgRank)} **${displayValue} ${statName}**`];
+    const lines = [avgRank
+        ? `${getBarEmoji(null, null, formattedAvgRank, true)}${getEmojiOfRank(avgRank)} **${displayValue} ${statName}**`
+        : `**${displayValue} ${statName}**`];
 
     const userRankLetter = effectiveRank || null;
 
@@ -422,14 +457,14 @@ async function buildStatComparisonLines(
 
         if (nextRow && !isRedundant) {
             const nextAvg = thresholds?.[nextRow];
-            if (nextAvg !== null && nextAvg !== undefined && isFinite(Number(nextAvg))) {
+            if (isReliableRank(nextRow, nextAvg)) {
                 lines.push(`${getBarEmoji(null, null, formattedAvgRank)}${nextRow.toUpperCase()} rank has ${fmtDelta(deltaFn(statValue, Number(nextAvg)))}`);
             }
         }
     }
 
     // 2) compared to current rank
-    if (userRankLabel !== 'Unranked') {
+    if (avgRank && userRankLabel !== 'Unranked' && isReliableRank(effectiveRank, userRankValue)) {
         if (deltaToUser !== null) lines.push(`${getBarEmoji(null, null, formattedAvgRank)}${userRankLabel.toUpperCase()} rank has ${fmtDelta(deltaToUser)}`);
         else lines.push(`- wee woo wee woo ${userRankLabel.toUpperCase()}`); // i dont think this ever triggers but if it does uhhhhh :)
     }
