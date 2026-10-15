@@ -50,7 +50,7 @@ async function autocompleteResults(search) {
         for (const [id, strings] of Object.entries(searchStrings)) {
             if (
                 strings[i].toLowerCase().includes(correctedValue.toLowerCase()) 
-                && !filtered.some(([filteredId]) => filteredId === id)
+                && !filtered.some(filteredId => filteredId === id)
             ) filtered.push(id);
         }
     }

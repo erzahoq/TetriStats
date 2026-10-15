@@ -192,25 +192,24 @@ module.exports = {
         const commandName = 'userachievements';
 
         textPages.forEach((container, pageIndex) => {
+            const pageAchs = pageAchsByPageIndex[pageIndex] ?? [];
+            
+            if (pageAchs.length > 0) {
+                container
+                    .addSeparatorComponents(new SeparatorBuilder())
+                    .addActionRowComponents(buildAchSelectRow(key, pageIndex, pageAchs))
+            }
+            
             container
-                .addSeparatorComponents(new SeparatorBuilder())
-                .addActionRowComponents(
-                    buildAchSelectRow(
-                        key,
-                        pageIndex,
-                        pageAchsByPageIndex[pageIndex] ?? [],
-                    ),
-                )
                 .addSeparatorComponents(new SeparatorBuilder())
                 .addActionRowComponents(
                     buildPageSelectRow({
                         commandName,
                         key,
                         labels,
-                        activeIndex: pageIndex,
+                        activeIndex: pageIndex
                     }),
                 );
-
         });
 
         interaction.client.pageData.set(key, {
