@@ -118,11 +118,17 @@ module.exports = {
             const userSuffix =
             `${formatUsername(player1.username)} vs ${formatUsername(player2.username)} | ${formattedDate}`;
 
+            let title = `[Replay ${replayid} (League)](https://tetr.io/#R:${replayid})`
+
+            if (replayid === "") {
+                title = `Replay (League)`;
+            }
+
             const leagueOverviewContainer = new ContainerBuilder()
                 .setAccentColor(0x80ffc4)
                 .addTextDisplayComponents(
                     new TextDisplayBuilder()
-                        .setContent(`### __[Replay ${replayid} (League)](https://tetr.io/#R:${replayid}) -> Overview__
+                        .setContent(`### __${title} -> Overview__
 ${scoreString}
 
 **${player1.username.toUpperCase()}**
@@ -169,7 +175,7 @@ ${userSuffix}`)
                 .setAccentColor(0xffb980)
                 .addTextDisplayComponents(
                     new TextDisplayBuilder()
-                        .setContent(`### __[Replay ${replayid} (League)](https://tetr.io/#R:${replayid}) -> Rounds__
+                        .setContent(`### __${title} -> Rounds__
 ${roundLines}
 
 ${userSuffix}`)
@@ -179,7 +185,7 @@ ${userSuffix}`)
                 .setAccentColor(0x80ffc4)
                 .addTextDisplayComponents(
                     new TextDisplayBuilder()
-                        .setContent(`### __[Replay ${replayid} (League)](https://tetr.io/#R:${replayid}) -> Performance -> ${formatUsername(player1.username)}__s\n\n`)
+                        .setContent(`### __${title} -> Performance -> ${formatUsername(player1.username)}__s\n\n`)
                 );
 
             await addStatComparisonField(
@@ -218,7 +224,7 @@ ${userSuffix}`)
                 .setAccentColor(0x80ffc4)
                 .addTextDisplayComponents(
                     new TextDisplayBuilder()
-                        .setContent(`### __[Replay ${replayid} (League)](https://tetr.io/#R:${replayid}) -> Performance -> ${formatUsername(player2.username)}__\n\n`)
+                        .setContent(`### __${title} -> Performance -> ${formatUsername(player2.username)}__\n\n`)
                 );
 
             await addStatComparisonField(
@@ -316,7 +322,32 @@ ${userSuffix}`)
             if (replay.gamemode === 'blitz') gamemode = "Blitz";
 
             // common stats
-            const replayLinkFormat = `[Replay ${replayid} (${gamemode})](https://tetr.io/#R:${replayid})`;
+
+            // first check if replay is expired
+            // there might be a easier way to do this?
+            let replayLinkFormat = `[Replay ${replayid} (${gamemode})](https://tetr.io/#R:${replayid})`;
+
+            // 1792972800000 - 1792368000000
+            // = 604800000
+            // time between resets 
+
+            // reset starts 259200000 after 0
+
+            const currentTime = Date.now();
+
+            let timeOfReplay = new Date(replay.ts);
+            timeOfReplay = timeOfReplay.getTime();
+
+            if (currentTime - timeOfReplay > 604800000) {
+                replayLinkFormat = `Replay ${replayid} (${gamemode})`
+            }
+
+            /*
+            if (expired?) {
+                replayLinkFormat = `Replay ${replayid} (${gamemode})`
+            }*/
+
+
             const formattedDate = formatISOString(replay.ts);
             const finesse = replayStats.finesse ? (replayStats.finesse.perfectpieces / replayStats.piecesplaced) : -1;
 
