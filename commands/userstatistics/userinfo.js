@@ -462,7 +462,9 @@ function formatDisplayedAchs(displayed = [], all = []) {
     }
     let displayCase = `\n${getEmoji("top")}**Displayed achievements:**`;
 
-    all.forEach((achievement) => {
+    const allAchs = all.reverse(); // they're in backwards order initially so
+
+    allAchs.forEach((achievement) => {
         if (displayed.includes(achievement.k)) {
             displayCase += `\n${getEmoji("mid")}` + formatAchievement(achievement);
         }
