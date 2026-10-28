@@ -135,7 +135,7 @@ module.exports = {
         const pageAchsByPageIndex = [];
         const labels = [];
 
-        if (Object.keys(achList).length === 0)) {
+        if (Object.keys(achList).length === 0) {
             return await interaction.reply({
                 content:
                     "this user doesn't have any achievements unlocked!",
