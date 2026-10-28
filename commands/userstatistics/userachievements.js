@@ -8,7 +8,8 @@ const {
     ActionRowBuilder,
     StringSelectMenuBuilder,
     StringSelectMenuOptionBuilder,
-    InteractionContextType,
+    
+    ContextType,
     ApplicationIntegrationType,
     SeparatorBuilder,
 } = require("discord.js");
@@ -136,7 +137,7 @@ module.exports = {
         const labels = [];
 
         if (Object.keys(achList).length === 0) {
-            return await interaction.reply({
+            return await interaction.editReply({
                 content:
                     "this user doesn't have any achievements unlocked!",
                 flags: MessageFlags.Ephemeral,
