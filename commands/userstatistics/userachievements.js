@@ -8,7 +8,7 @@ const {
     ActionRowBuilder,
     StringSelectMenuBuilder,
     StringSelectMenuOptionBuilder,
-    
+    InteractionContextType
     ContextType,
     ApplicationIntegrationType,
     SeparatorBuilder,
