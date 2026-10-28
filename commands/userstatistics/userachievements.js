@@ -163,7 +163,8 @@ module.exports = {
 
                 }
             } else {
-                if (cat === "event") return; // no text or button if no event achievements
+                return; // no text or button if no event achievements
+                /*
                 textPages.push(
                     new ContainerBuilder()
                         .setAccentColor(colourMapping[cat])
@@ -184,7 +185,7 @@ module.exports = {
                 );
                 pageAchsByPageIndex.push([]);
 
-                labels.push(`${catMap[cat]}`);
+                labels.push(`${catMap[cat]}`);*/
             }
         })
 
