@@ -129,6 +129,13 @@ module.exports = {
         const pageAchsByPageIndex = [];
         const labels = [];
 
+        if (categories.length === 0) {
+            return await interaction.reply({
+                content:
+                    "this user doesn't have any achievements unlocked!",
+                flags: MessageFlags.Ephemeral,
+            });
+        }
 
         categories.forEach(cat => {
             if (achList[cat]) { // if the achievement list exists
@@ -163,7 +170,7 @@ module.exports = {
 
                 }
             } else {
-                return; // no text or button if no event achievements
+                return; // no text or button if no achievements in that category
                 /*
                 textPages.push(
                     new ContainerBuilder()
