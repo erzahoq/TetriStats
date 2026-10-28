@@ -139,7 +139,7 @@ module.exports = {
         if (Object.keys(achList).length === 0) {
             return await interaction.editReply({
                 content:
-                    "this user doesn't have any achievements unlocked!",
+                    "This user doesn't have any achievements unlocked yet!",
                 flags: MessageFlags.Ephemeral,
             });
         }
