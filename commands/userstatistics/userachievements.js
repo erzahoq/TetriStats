@@ -63,6 +63,12 @@ module.exports = {
         const profileData = await fetchCached(`https://ch.tetr.io/api/users/${user._id}`);
         const avatarData = profileData?.success && profileData.data ? profileData.data : user;
 
+        if (!achs?.success || !Array.isArray(achs.data)) {
+            return await interaction.editReply({
+                content: "Could not retrieve achievements for this user.",
+            });
+        }
+
         achs = achs.data;
         league = league.data;
 
@@ -129,7 +135,7 @@ module.exports = {
         const pageAchsByPageIndex = [];
         const labels = [];
 
-        if (achList.length === 0) {
+        if (Object.keys(achList).length === 0)) {
             return await interaction.reply({
                 content:
                     "this user doesn't have any achievements unlocked!",
@@ -393,10 +399,9 @@ async function buildAchievementDetailContainer(ach, username, league) {
 
     achText += `\nAchieved ${formatISOString(new Date(ach.t).toISOString(), true)}`
 
-    const formattedAvgRank = closestRank.rank.replace("+", "plus").replace("-", "minus");
-
     //if its not issued:
     if (ach.rank !== 100 && closestRank) {
+        const formattedAvgRank = closestRank?.rank?.replace("+", "plus")?.replace("-", "minus");
         //show closest rank and data
         achText += `\n\n${getBarEmoji(null, null, formattedAvgRank, true)}**Performance**\n${getBarEmoji(null, null, formattedAvgRank)}Closest rank is ${getEmojiOfRank(closestRank.rank)}, with`;
 
